@@ -1,33 +1,85 @@
+﻿using AlgoVis.Server.Data;
+using AlgoVis.Server.Models;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace AlgoVis.Server.Controllers
 {
     [ApiController]
-    [Route("[controller]")]
-    public class WeatherForecastController : ControllerBase
+    [Route("api/[controller]")]
+    public class TestController : ControllerBase
     {
-        private static readonly string[] Summaries = new[]
-        {
-            "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-        };
+        private readonly ApplicationDbContext _context;
 
-        private readonly ILogger<WeatherForecastController> _logger;
-
-        public WeatherForecastController(ILogger<WeatherForecastController> logger)
+        public TestController(ApplicationDbContext context)
         {
-            _logger = logger;
+            _context = context;
         }
 
-        [HttpGet(Name = "GetWeatherForecast")]
-        public IEnumerable<WeatherForecast> Get()
+        [HttpGet("database")]
+        public async Task<IActionResult> CheckDatabase()
         {
-            return Enumerable.Range(1, 5).Select(index => new WeatherForecast
+            try
             {
-                Date = DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-                TemperatureC = Random.Shared.Next(-20, 55),
-                Summary = Summaries[Random.Shared.Next(Summaries.Length)]
-            })
-            .ToArray();
+                // Проверяем, что база данных существует и доступна
+                var canConnect = await _context.Database.CanConnectAsync();
+
+                // Получаем информацию о таблицах
+                var sessionsCount = await _context.Sessions.CountAsync();
+                var stepsCount = await _context.Steps.CountAsync();
+
+                // Получаем примененные миграции
+                var migrations = await _context.Database.GetAppliedMigrationsAsync();
+
+                return Ok(new
+                {
+                    DatabaseExists = canConnect,
+                    SessionsCount = sessionsCount,
+                    StepsCount = stepsCount,
+                    AppliedMigrations = migrations.ToArray(),
+                    Message = "✅ База данных работает корректно"
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new
+                {
+                    Error = ex.Message,
+                    Message = "❌ Ошибка подключения к базе данных"
+                });
+            }
+        }
+
+        [HttpPost("test-session")]
+        public async Task<IActionResult> CreateTestSession()
+        {
+            try
+            {
+                var session = new Models.VisualizationSession
+                {
+                    ClientConnectionId = "test-connection",
+                    Code = "print('Hello, World!')",
+                    Language = "python",
+                    Status = "Ready"
+                };
+
+                _context.Sessions.Add(session);
+                await _context.SaveChangesAsync();
+
+                return Ok(new
+                {
+                    SessionId = session.Id,
+                    Message = "✅ Тестовая сессия создана успешно"
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new
+                {
+                    Error = ex.Message,
+                    Message = "❌ Ошибка при создании тестовой сессии"
+                });
+            }
         }
     }
 }

@@ -6,18 +6,14 @@ namespace AlgoVis.Server.Services
 {
     public class CodeAnalysisService : ICodeAnalysisService
     {
-        private readonly ApplicationDbContext _context;
         private readonly ILogger<CodeAnalysisService> _logger;
-        private readonly ISessionService _sessionService;
+        private readonly IServiceScopeFactory _scopeFactory;
 
         public CodeAnalysisService(
-            ApplicationDbContext context,
-            ILogger<CodeAnalysisService> logger,
-            ISessionService sessionService)
+            ILogger<CodeAnalysisService> logger, IServiceScopeFactory scopeFactory)
         {
-            _context = context;
             _logger = logger;
-            _sessionService = sessionService;
+            _scopeFactory = scopeFactory;
         }
 
         public async Task<List<VisualizationStep>> AnalyzeCodeAsync(string code, string language)
@@ -30,6 +26,8 @@ namespace AlgoVis.Server.Services
 
         public async Task ProcessSessionAsync(string sessionId)
         {
+            using var scope = _scopeFactory.CreateScope();
+            var _context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
             var session = await _context.Sessions.FindAsync(sessionId);
             if (session == null) return;
 
@@ -65,7 +63,7 @@ namespace AlgoVis.Server.Services
 
         private async Task<List<VisualizationStep>> GenerateMockStepsAsync(string code)
         {
-            await Task.Delay(1000); // Имитация обработки
+            await Task.Delay(1000);
 
             var steps = new List<VisualizationStep>();
             var array = new[] { 5, 3, 8, 1, 2 };

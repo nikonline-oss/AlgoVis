@@ -7,18 +7,16 @@ namespace AlgoVis.Server.Hubs
     public class VisualizationHub : Hub
     {
         private readonly ISessionService _sessionService;
-        private readonly ICodeAnalysisService _codeAnalysisService;
         private readonly ILogger<VisualizationHub> _logger;
 
         public VisualizationHub(
             ISessionService sessionService,
-            ICodeAnalysisService codeAnalysisService,
             ILogger<VisualizationHub> logger)
         {
             _sessionService = sessionService;
-            _codeAnalysisService = codeAnalysisService;
             _logger = logger;
         }
+
 
         public override async Task OnConnectedAsync()
         {
@@ -32,6 +30,7 @@ namespace AlgoVis.Server.Hubs
             await base.OnDisconnectedAsync(exception);
         }
 
+
         public async Task<string> CreateSession(string code, string language = "python")
         {
             var request = new CreateSessionRequest
@@ -43,23 +42,14 @@ namespace AlgoVis.Server.Hubs
 
             var session = await _sessionService.CreateSessionAsync(request);
 
-            // Запускаем анализ в фоне
-            _ = Task.Run(async () =>
-            {
-                try
-                {
-                    await _codeAnalysisService.ProcessSessionAsync(session.SessionId);
-                    await Clients.Caller.SendAsync("AnalysisCompleted", session.SessionId);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Error in background analysis for session {SessionId}", session.SessionId);
-                    await Clients.Caller.SendAsync("AnalysisFailed", session.SessionId, ex.Message);
-                }
-            });
+            // Сохраняем ConnectionId в сессии (в базе)
+            await _sessionService.UpdateSessionConnectionIdAsync(session.SessionId, Context.ConnectionId);
+
+            _ = Task.Run(() => _sessionService.StartBackgroundAnalysis(session.SessionId));
 
             return session.SessionId;
         }
+
 
         public async Task<SessionResponse> GetSessionState(string sessionId)
         {

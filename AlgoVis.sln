@@ -1,11 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.14.36429.23 d17.14
+VisualStudioVersion = 17.14.36429.23
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{54A90642-561A-4BB1-A94E-469ADEE60C69}") = "algovis.client", "algovis.client\algovis.client.esproj", "{12EA0CF6-609F-2749-51A7-98DBF4F83017}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AlgoVis.Server", "AlgoVis.Server\AlgoVis.Server.csproj", "{A5E19428-C0C5-4CC2-B441-9E7DD71CDA8C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "testing", "testing\testing.csproj", "{0243B1FA-50E4-4705-A9AF-026909D6D55A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -23,6 +25,10 @@ Global
 		{A5E19428-C0C5-4CC2-B441-9E7DD71CDA8C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A5E19428-C0C5-4CC2-B441-9E7DD71CDA8C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A5E19428-C0C5-4CC2-B441-9E7DD71CDA8C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0243B1FA-50E4-4705-A9AF-026909D6D55A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0243B1FA-50E4-4705-A9AF-026909D6D55A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0243B1FA-50E4-4705-A9AF-026909D6D55A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0243B1FA-50E4-4705-A9AF-026909D6D55A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

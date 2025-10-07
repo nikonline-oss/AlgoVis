@@ -8,7 +8,9 @@ namespace AlgoVis.Server.Interfaces
         Task<SessionResponse> CreateSessionAsync(CreateSessionRequest request);
         Task<SessionResponse> GetSessionAsync(string sessionId);
         Task<SessionResponse> UpdateSessionStepAsync(string sessionId, int stepIndex);
+        Task UpdateSessionConnectionIdAsync(string sessionId, string connectionId);
         Task<bool> DeleteSessionAsync(string sessionId);
+        Task StartBackgroundAnalysis(string sessionId);
 
         Task<List<SessionResponse>> GetSessionsByClientAsync(string clientConnrctionId);
     }

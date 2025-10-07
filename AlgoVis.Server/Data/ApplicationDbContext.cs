@@ -14,7 +14,7 @@ namespace AlgoVis.Server.Data
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            base.OnModelCreating(modelBuilder); // РАСКОММЕНТИРОВАТЬ!
+            base.OnModelCreating(modelBuilder); 
 
             modelBuilder.Entity<VisualizationSession>(entity =>
             {
@@ -26,7 +26,7 @@ namespace AlgoVis.Server.Data
                 entity.HasMany(e => e.Steps)
                       .WithOne(e => e.Session)
                       .HasForeignKey(e => e.SessionId)
-                      .OnDelete(DeleteBehavior.Cascade); // Лучше использовать Cascade для автоматического удаления шагов
+                      .OnDelete(DeleteBehavior.Cascade);
             });
 
             modelBuilder.Entity<VisualizationStep>(entity =>

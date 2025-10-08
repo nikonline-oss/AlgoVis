@@ -65,7 +65,6 @@ import { defineConfig } from 'vite';
 import plugin from '@vitejs/plugin-react';
 import { env } from 'process';
 
-// ���������� ��������� ����� �� ���������� ���������
 const port = parseInt(env.DEV_SERVER_PORT || '8000');
 
 const target = env.ASPNETCORE_HTTPS_PORT

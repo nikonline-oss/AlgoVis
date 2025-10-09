@@ -11,15 +11,16 @@ namespace testing.models
         public string SessionId { get; set; } = string.Empty;
         public Dictionary<string, object> Parameters { get; set; } // доп параметры
     }
-    public class AlgorithmResult
+    public class AlgorithmResult<T>
     {
         public string AlgorithmName { get; set; } = string.Empty;
         public string SessionId {  set; get; } = string.Empty;
         public List<SortingStep> Steps { get; set; } = new();
         public AlgorithmStatistics Statistics { get; set; } = new();
         public TimeSpan ExecutionTime { get; set; }
-        public int[] OriginArray { get; set; } = Array.Empty<int>();
-        public int[] SortedArray { get; set; } = Array.Empty<int>();
+        public Dictionary<string, T> Parameters { get; set; } = new(); // сюда заносят данные характерные для определённой структуры в данном случае массивы
+        //public int[] OriginArray { get; set; } = Array.Empty<int>();
+        //public int[] SortedArray { get; set; } = Array.Empty<int>();
     }
     public class SortingStep
     {
@@ -52,6 +53,7 @@ namespace testing.models
         public int TotalSwaps { get; set; }
         public TimeSpan TotalExecutionTime { get; set; }
         public Dictionary<string, int> AlgorithmDistribution { get; set; } = new();
+        
     }
 
     ///тестовые структуры

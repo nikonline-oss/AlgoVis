@@ -14,18 +14,10 @@ namespace testing.Algorithms
 {
     internal class BubbleSort : IVisualizationAlgorithm
     {
-        public string Name => "bubblesort";
-        public StructureType _structureType => StructureType.array;
+        public string Name { get; set; } = "bubblesort";
+        public StructureType _structureType { get; } = StructureType.array;
 
-
-        /// <summary>
-        /// возможные config.parametrs
-        /// [ Detailed ]
-        /// </summary>
-        /// <param name="_steps"></param>
-        /// <param name="config"></param>
-        /// <returns></returns>
-        public AlgorithmResult<int[]> Execute(List<SortingStep> _steps, AlgorithmConfig config)
+        public AlgorithmResult Execute(List<SortingStep> _steps, AlgorithmConfig config)
         {
             bool trackSwaps = config.Parameters?.ContainsKey("TrackSwaps") == true
                 && (bool)config.Parameters["TrackSwaps"];
@@ -105,13 +97,14 @@ namespace testing.Algorithms
             stats.TimeComplexity = Math.Pow(data.Length, 2);
             stats.SpaceComplexity = data.Length;
 
-            return new AlgorithmResult<int[]>
+            return new AlgorithmResult
             {
                 AlgorithmName = Name,
                 SessionId = config.SessionId,
                 Steps = _steps,
                 Statistics = stats,
-                Parameters = new Dictionary<string, int[]>() { ["OriginArray"] = original, ["SortedArray"] = data }
+                OriginArray = original,
+                SortedArray = data
             };
         }
 

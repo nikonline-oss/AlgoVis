@@ -2,9 +2,10 @@
 using System.Text;
 using System.Text.Json;
 using testing.Models.Core;
+using testing.Models.Custom;
 using testing.Models.DataStructures;
 using testing.Models.Visualization;
-using testing.Services;
+using testing.Services.Core;
 using testing.Support;
 
 namespace AlgorithmVisualization
@@ -50,6 +51,8 @@ namespace AlgorithmVisualization
             _menuManager.AddMenuItem("Настроить тестовые данные", SetupTestData);
             _menuManager.AddMenuItem("Тестировать BubbleSort", TestBubbleSort);
             _menuManager.AddMenuItem("Тестировать QuickSort", TestQuickSort);
+            _menuManager.AddMenuItem("Загрузить кастомный алгоритм", LoadCustomAlgorithm);
+            _menuManager.AddMenuItem("Создать кастомный алгоритм", CreateCustomAlgorithm);
             _menuManager.AddMenuItem("Сравнить производительность", CompareAlgorithms);
             _menuManager.AddMenuItem("Показать статистику", ShowStatistics);
             _menuManager.AddMenuItem("Сохранить результаты", SaveResultsMenu);
@@ -74,6 +77,85 @@ namespace AlgorithmVisualization
             setupMenu.AddMenuItem("Показать текущие данные", ShowCurrentData);
 
             setupMenu.Run();
+        }
+
+        private void LoadCustomAlgorithm()
+        {
+            Console.WriteLine("\n=== Загрузка кастомного алгоритма ===");
+            Console.Write("Введите путь к JSON файлу с алгоритмом: ");
+
+            var filePath = Console.ReadLine();
+
+            if (File.Exists(filePath))
+            {
+                try
+                {
+                    var json = File.ReadAllText(filePath);
+                    var customAlgorithm = JsonSerializer.Deserialize<CustomAlgorithmRequest>(json);
+
+                    if (customAlgorithm != null)
+                    {
+                        ExecuteCustomAlgorithm(customAlgorithm);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"❌ Ошибка загрузки алгоритма: {ex.Message}");
+                }
+            }
+            else
+            {
+                Console.WriteLine("❌ Файл не найден.");
+            }
+
+            Console.WriteLine("Нажмите любую клавишу для продолжения...");
+            Console.ReadKey();
+        }
+
+        private void CreateCustomAlgorithm()
+        {
+            Console.WriteLine("\n=== Создание кастомного алгоритма ===");
+            Console.WriteLine("Эта функция в разработке...");
+            Console.WriteLine("Сейчас вы можете создать JSON файл по шаблону и загрузить его.");
+            Console.WriteLine("Нажмите любую клавишу для продолжения...");
+            Console.ReadKey();
+        }
+
+        private void ExecuteCustomAlgorithm(CustomAlgorithmRequest customAlgorithm)
+        {
+            if (!ValidateTestData()) return;
+
+            var array = (int[])_testData["current_array"];
+            var arrayStructure = StructureFactory.CreateStructure("array", array);
+
+            try
+            {
+                Console.WriteLine($"\n=== Выполнение кастомного алгоритма: {customAlgorithm.name} ===");
+                Console.WriteLine($"Описание: {customAlgorithm.description}");
+
+                var result = _algorithmManager.ExecuteCustomAlgorithm(customAlgorithm, arrayStructure);
+
+                if (result.success)
+                {
+                    Console.WriteLine("✅ Алгоритм выполнен успешно!");
+                    DisplayAlgorithmResult(result.result, array);
+
+                    // Сохраняем результат
+                    _testData["last_result"] = result.result;
+                    _testData["custom_algorithm"] = customAlgorithm;
+                }
+                else
+                {
+                    Console.WriteLine($"❌ Ошибка: {result.message}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Ошибка выполнения: {ex.Message}");
+            }
+
+            Console.WriteLine("Нажмите любую клавишу для продолжения...");
+            Console.ReadKey();
         }
 
         private void GenerateRandomArray()
@@ -1042,45 +1124,45 @@ namespace AlgorithmVisualization
             var filePath = Path.Combine(_resultsDirectory, htmlFileName);
 
             var htmlContent = $@"
-<!DOCTYPE html>
-<html lang='ru'>
-<head>
-    <meta charset='UTF-8'>
-    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
-    <title>Визуализация {result.AlgorithmName}</title>
-    <style>
-        body {{ font-family: Arial, sans-serif; margin: 20px; }}
-        .step {{ margin-bottom: 20px; padding: 10px; border: 1px solid #ccc; border-radius: 5px; }}
-        .array {{ display: flex; gap: 5px; margin: 10px 0; }}
-        .element {{ width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; 
-                   border: 1px solid #333; border-radius: 3px; font-weight: bold; }}
-        .comparing {{ background-color: yellow; }}
-        .swapping {{ background-color: red; color: white; }}
-        .sorted {{ background-color: green; color: white; }}
-        .pivot {{ background-color: orange; }}
-        .stats {{ background-color: #f0f0f0; padding: 10px; border-radius: 5px; margin: 10px 0; }}
-        .metadata {{ color: #666; font-size: 0.9em; }}
-    </style>
-</head>
-<body>
-    <h1>Визуализация алгоритма: {result.AlgorithmName}</h1>
-    <div class='stats'>
-        <strong>Статистика:</strong><br>
-        Сравнений: {result.Statistics.Comparisons}<br>
-        Обменов: {result.Statistics.Swaps}<br>
-        Шагов: {result.Statistics.Steps}<br>
-        Время: {result.ExecutionTime.TotalMilliseconds:F2} мс
-    </div>
-    <div id='steps'>
-        <p>Данные для визуализации сохранены в JSON файле.</p>
-        <p>Для полной визуализации используйте React-приложение с загрузкой этого файла.</p>
-    </div>
-    <script>
-        // Здесь может быть код для загрузки и отображения шагов из JSON файла
-        console.log('Загрузите JSON файл для визуализации шагов алгоритма');
-    </script>
-</body>
-</html>";
+            <!DOCTYPE html>
+            <html lang='ru'>
+            <head>
+                <meta charset='UTF-8'>
+                <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+                <title>Визуализация {result.AlgorithmName}</title>
+                <style>
+                    body {{ font-family: Arial, sans-serif; margin: 20px; }}
+                    .step {{ margin-bottom: 20px; padding: 10px; border: 1px solid #ccc; border-radius: 5px; }}
+                    .array {{ display: flex; gap: 5px; margin: 10px 0; }}
+                    .element {{ width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; 
+                               border: 1px solid #333; border-radius: 3px; font-weight: bold; }}
+                    .comparing {{ background-color: yellow; }}
+                    .swapping {{ background-color: red; color: white; }}
+                    .sorted {{ background-color: green; color: white; }}
+                    .pivot {{ background-color: orange; }}
+                    .stats {{ background-color: #f0f0f0; padding: 10px; border-radius: 5px; margin: 10px 0; }}
+                    .metadata {{ color: #666; font-size: 0.9em; }}
+                </style>
+            </head>
+            <body>
+                <h1>Визуализация алгоритма: {result.AlgorithmName}</h1>
+                <div class='stats'>
+                    <strong>Статистика:</strong><br>
+                    Сравнений: {result.Statistics.Comparisons}<br>
+                    Обменов: {result.Statistics.Swaps}<br>
+                    Шагов: {result.Statistics.Steps}<br>
+                    Время: {result.ExecutionTime.TotalMilliseconds:F2} мс
+                </div>
+                <div id='steps'>
+                    <p>Данные для визуализации сохранены в JSON файле.</p>
+                    <p>Для полной визуализации используйте React-приложение с загрузкой этого файла.</p>
+                </div>
+                <script>
+                    // Здесь может быть код для загрузки и отображения шагов из JSON файла
+                    console.log('Загрузите JSON файл для визуализации шагов алгоритма');
+                </script>
+            </body>
+            </html>";
 
             File.WriteAllText(filePath, htmlContent);
             Console.WriteLine($"📄 HTML шаблон для визуализации сохранен в: {htmlFileName}");

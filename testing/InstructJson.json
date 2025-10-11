@@ -1,13 +1,151 @@
 ﻿{
-  "StructureType": "array",            // массив(array), дерево(tree)
-  "Algoritms":[ // алгоритмы например сортировка пузырьком
-  {
-    "name": "BubbleSort", // имя алгоритма
-    "length": 20, // количество аргументов для тестирования
-    "isArgs": false, // булевое значение которое показывают вводяться ли аргументы или сами генерируються
-    "args": [], // просто массив с аргументами
-    "SessionId": 0 //номер сессии
-  }
+  "name": "CustomBubbleSort",
+  "description": "Пользовательская реализация пузырьковой сортировки",
+  "structureType": "array",
+  "variables": [
+    {
+      "name": "i",
+      "type": "int",
+      "initialValue": 0
+    },
+    {
+      "name": "j",
+      "type": "int",
+      "initialValue": 0
+    },
+    {
+      "name": "n",
+      "type": "int",
+      "initialValue": "array_length"
+    },
+    {
+      "name": "swapped",
+      "type": "bool",
+      "initialValue": true
+    }
   ],
-  "lengthOperation": 1
+  "loops": [
+    {
+      "id": "outer_loop",
+      "type": "for",
+      "variable": "i",
+      "from": "0",
+      "to": "n-1",
+      "steps": [ "inner_loop_start", "check_swapped" ]
+    }
+  ],
+  "steps": [
+    {
+      "id": "start",
+      "type": "generic",
+      "operation": "start",
+      "description": "Начало кастомной пузырьковой сортировки",
+      "nextStep": "outer_loop_init"
+    },
+    {
+      "id": "outer_loop_init",
+      "type": "assign",
+      "operation": "assign",
+      "description": "Инициализация переменных внешнего цикла",
+      "parameters": [ "i", "0" ],
+      "nextStep": "outer_loop_condition"
+    },
+    {
+      "id": "outer_loop_condition",
+      "type": "condition",
+      "operation": "condition",
+      "description": "Проверка условия внешнего цикла",
+      "parameters": [ "i < n-1" ],
+      "conditionCases": [
+        {
+          "condition": "true",
+          "nextStep": "inner_loop_init"
+        },
+        {
+          "condition": "false",
+          "nextStep": "end"
+        }
+      ]
+    },
+    {
+      "id": "inner_loop_init",
+      "type": "assign",
+      "operation": "assign",
+      "description": "Инициализация внутреннего цикла",
+      "parameters": [ "j", "0" ],
+      "nextStep": "inner_loop_condition"
+    },
+    {
+      "id": "inner_loop_condition",
+      "type": "condition",
+      "operation": "condition",
+      "description": "Проверка условия внутреннего цикла",
+      "parameters": [ "j < n-i-1" ],
+      "conditionCases": [
+        {
+          "condition": "true",
+          "nextStep": "compare_step"
+        },
+        {
+          "condition": "false",
+          "nextStep": "outer_loop_increment"
+        }
+      ]
+    },
+    {
+      "id": "compare_step",
+      "type": "compare",
+      "operation": "compare",
+      "description": "Сравнение соседних элементов",
+      "parameters": [ "j", "j+1" ],
+      "nextStep": "swap_condition"
+    },
+    {
+      "id": "swap_condition",
+      "type": "condition",
+      "operation": "condition",
+      "description": "Проверка необходимости обмена",
+      "parameters": [ "last_comparison > 0" ],
+      "conditionCases": [
+        {
+          "condition": "true",
+          "nextStep": "swap_step"
+        },
+        {
+          "condition": "false",
+          "nextStep": "inner_loop_increment"
+        }
+      ]
+    },
+    {
+      "id": "swap_step",
+      "type": "swap",
+      "operation": "swap",
+      "description": "Обмен элементов",
+      "parameters": [ "j", "j+1" ],
+      "nextStep": "inner_loop_increment"
+    },
+    {
+      "id": "inner_loop_increment",
+      "type": "assign",
+      "operation": "assign",
+      "description": "Увеличение счетчика внутреннего цикла",
+      "parameters": [ "j", "j+1" ],
+      "nextStep": "inner_loop_condition"
+    },
+    {
+      "id": "outer_loop_increment",
+      "type": "assign",
+      "operation": "assign",
+      "description": "Увеличение счетчика внешнего цикла",
+      "parameters": [ "i", "i+1" ],
+      "nextStep": "outer_loop_condition"
+    },
+    {
+      "id": "end",
+      "type": "generic",
+      "operation": "complete",
+      "description": "Сортировка завершена"
+    }
+  ]
 }

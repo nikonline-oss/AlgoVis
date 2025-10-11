@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using testing.Models.DataStructures;
 using testing.Support;
 
-namespace testing.Services
+namespace testing.Services.Core
 {
     public static class StructureFactory
     {

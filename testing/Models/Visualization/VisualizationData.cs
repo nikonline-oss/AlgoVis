@@ -9,9 +9,9 @@ namespace testing.Models.Visualization
 {
     public class VisualizationData
     {
-        public string StructureType { get; set; } = string.Empty;
-        public Dictionary<string, object> Elements { get; set; } = new();
-        public List<HighlightedElement> Highlights { get; set; } = new();
-        public List<Connection> Connections { get; set; } = new();
+        public string structureType { get; set; } = string.Empty;
+        public Dictionary<string, object> elements { get; set; } = new();
+        public List<HighlightedElement> highlights { get; set; } = new();
+        public List<Connection> connections { get; set; } = new();
     }
 }

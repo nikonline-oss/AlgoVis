@@ -1,17 +1,17 @@
 ﻿{
-  "name": "CustomBubbleSort",
-  "description": "Пользовательская реализация пузырьковой сортировки",
+  "name": "ModularBubbleSort",
+  "description": "Модульная пузырьковая сортировка с функциями",
   "structureType": "array",
   "variables": [
     {
       "name": "i",
       "type": "int",
-      "initialValue": 0
+      "initialValue": "0"
     },
     {
       "name": "j",
       "type": "int",
-      "initialValue": 0
+      "initialValue": "0"
     },
     {
       "name": "n",
@@ -21,45 +21,108 @@
     {
       "name": "swapped",
       "type": "bool",
-      "initialValue": true
+      "initialValue": "false"
     }
   ],
-  "loops": [
+  "functions": [
     {
-      "id": "outer_loop",
-      "type": "for",
-      "variable": "i",
-      "from": "0",
-      "to": "n-1",
-      "steps": [ "inner_loop_start", "check_swapped" ]
+      "name": "bubble_pass",
+      "description": "Один проход пузырьковой сортировки",
+      "parameters": [ "current_i" ],
+      "entryPoint": "init_j",
+      "steps": [
+        {
+          "id": "init_j",
+          "type": "assign",
+          "description": "Инициализация внутреннего цикла",
+          "parameters": [ "j", "0" ],
+          "nextStep": "inner_loop_condition"
+        },
+        {
+          "id": "inner_loop_condition",
+          "type": "condition",
+          "description": "Проверка условия внутреннего цикла",
+          "parameters": [ "j < n - current_i - 1" ],
+          "conditionCases": [
+            {
+              "condition": "true",
+              "nextStep": "compare_neighbors"
+            },
+            {
+              "condition": "false",
+              "nextStep": "return_from_pass"
+            }
+          ]
+        },
+        {
+          "id": "compare_neighbors",
+          "type": "compare",
+          "description": "Сравнение соседних элементов",
+          "parameters": [ "j", "j+1" ],
+          "nextStep": "check_swap"
+        },
+        {
+          "id": "check_swap",
+          "type": "condition",
+          "description": "Проверка необходимости обмена",
+          "parameters": [ "last_comparison > 0" ],
+          "conditionCases": [
+            {
+              "condition": "true",
+              "nextStep": "swap_elements"
+            },
+            {
+              "condition": "false",
+              "nextStep": "increment_j"
+            }
+          ]
+        },
+        {
+          "id": "swap_elements",
+          "type": "swap",
+          "description": "Обмен элементов",
+          "parameters": [ "j", "j+1" ],
+          "nextStep": "set_swapped"
+        },
+        {
+          "id": "set_swapped",
+          "type": "assign",
+          "description": "Установка флага обмена",
+          "parameters": [ "swapped", "true" ],
+          "nextStep": "increment_j"
+        },
+        {
+          "id": "increment_j",
+          "type": "assign",
+          "description": "Увеличение счетчика",
+          "parameters": [ "j", "j+1" ],
+          "nextStep": "inner_loop_condition"
+        },
+        {
+          "id": "return_from_pass",
+          "type": "return",
+          "description": "Возврат из прохода"
+        }
+      ]
     }
   ],
   "steps": [
     {
       "id": "start",
-      "type": "generic",
-      "operation": "start",
-      "description": "Начало кастомной пузырьковой сортировки",
-      "nextStep": "outer_loop_init"
-    },
-    {
-      "id": "outer_loop_init",
       "type": "assign",
-      "operation": "assign",
-      "description": "Инициализация переменных внешнего цикла",
+      "description": "Инициализация переменных",
       "parameters": [ "i", "0" ],
       "nextStep": "outer_loop_condition"
     },
     {
       "id": "outer_loop_condition",
       "type": "condition",
-      "operation": "condition",
       "description": "Проверка условия внешнего цикла",
       "parameters": [ "i < n-1" ],
       "conditionCases": [
         {
           "condition": "true",
-          "nextStep": "inner_loop_init"
+          "nextStep": "reset_swapped"
         },
         {
           "condition": "false",
@@ -68,75 +131,42 @@
       ]
     },
     {
-      "id": "inner_loop_init",
+      "id": "reset_swapped",
       "type": "assign",
-      "operation": "assign",
-      "description": "Инициализация внутреннего цикла",
-      "parameters": [ "j", "0" ],
-      "nextStep": "inner_loop_condition"
+      "description": "Сброс флага обмена",
+      "parameters": [ "swapped", "false" ],
+      "nextStep": "call_bubble_pass"
     },
     {
-      "id": "inner_loop_condition",
+      "id": "call_bubble_pass",
+      "type": "call_function",
+      "description": "Выполнение одного прохода сортировки",
+      "functionName": "bubble_pass",
+      "functionParameters": {
+        "current_i": "i"
+      },
+      "returnToStep": "check_early_exit",
+      "nextStep": ""
+    },
+    {
+      "id": "check_early_exit",
       "type": "condition",
-      "operation": "condition",
-      "description": "Проверка условия внутреннего цикла",
-      "parameters": [ "j < n-i-1" ],
+      "description": "Проверка досрочного завершения",
+      "parameters": [ "swapped == false" ],
       "conditionCases": [
         {
           "condition": "true",
-          "nextStep": "compare_step"
+          "nextStep": "end"
         },
         {
           "condition": "false",
-          "nextStep": "outer_loop_increment"
+          "nextStep": "increment_i"
         }
       ]
     },
     {
-      "id": "compare_step",
-      "type": "compare",
-      "operation": "compare",
-      "description": "Сравнение соседних элементов",
-      "parameters": [ "j", "j+1" ],
-      "nextStep": "swap_condition"
-    },
-    {
-      "id": "swap_condition",
-      "type": "condition",
-      "operation": "condition",
-      "description": "Проверка необходимости обмена",
-      "parameters": [ "last_comparison > 0" ],
-      "conditionCases": [
-        {
-          "condition": "true",
-          "nextStep": "swap_step"
-        },
-        {
-          "condition": "false",
-          "nextStep": "inner_loop_increment"
-        }
-      ]
-    },
-    {
-      "id": "swap_step",
-      "type": "swap",
-      "operation": "swap",
-      "description": "Обмен элементов",
-      "parameters": [ "j", "j+1" ],
-      "nextStep": "inner_loop_increment"
-    },
-    {
-      "id": "inner_loop_increment",
+      "id": "increment_i",
       "type": "assign",
-      "operation": "assign",
-      "description": "Увеличение счетчика внутреннего цикла",
-      "parameters": [ "j", "j+1" ],
-      "nextStep": "inner_loop_condition"
-    },
-    {
-      "id": "outer_loop_increment",
-      "type": "assign",
-      "operation": "assign",
       "description": "Увеличение счетчика внешнего цикла",
       "parameters": [ "i", "i+1" ],
       "nextStep": "outer_loop_condition"

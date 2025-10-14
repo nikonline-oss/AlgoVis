@@ -9,10 +9,10 @@ namespace testing.Models.Visualization
 {
     public class VisualizationStep
     {
-        public int StepNumber { get; set; }
-        public string Operation { get; set; } = string.Empty;
-        public string Description { get; set; } = string.Empty;
-        public Dictionary<string, object> Metadata { get; set; } = new();
-        public VisualizationData VisualizationData { get; set; } = new();
+        public int stepNumber { get; set; }
+        public string operation { get; set; } = string.Empty;
+        public string description { get; set; } = string.Empty;
+        public Dictionary<string, object> metadata { get; set; } = new();
+        public VisualizationData visualizationData { get; set; } = new();
     }
 }

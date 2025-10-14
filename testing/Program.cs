@@ -112,14 +112,622 @@ namespace AlgorithmVisualization
             Console.ReadKey();
         }
 
+        #region Создание кастомного алгоритма
         private void CreateCustomAlgorithm()
         {
             Console.WriteLine("\n=== Создание кастомного алгоритма ===");
-            Console.WriteLine("Эта функция в разработке...");
-            Console.WriteLine("Сейчас вы можете создать JSON файл по шаблону и загрузить его.");
+
+            var algorithm = new CustomAlgorithmRequest
+            {
+                name = "Новый алгоритм",
+                description = "Описание алгоритма",
+                structureType = "array",
+                variables = new List<VariableDefinition>(),
+                steps = new List<AlgorithmStep>(),
+            };
+
+            var creationMenu = new MenuManager(this);
+            creationMenu.SubMenuBool = true;
+            creationMenu.LastTextShowMenu = "Сохранить и выйти";
+
+            creationMenu.AddMenuItem("📝 Название и описание", () => EditAlgorithmInfo(algorithm));
+            creationMenu.AddMenuItem("🔢 Переменные", () => ManageVariables(algorithm));
+            creationMenu.AddMenuItem("⚡ Шаги алгоритма", () => ManageSteps(algorithm));
+            creationMenu.AddMenuItem("👁️ Предпросмотр алгоритма", () => PreviewAlgorithm(algorithm));
+            creationMenu.AddMenuItem("💾 Сохранить в файл", () => SaveAlgorithmToFile(algorithm));
+            creationMenu.AddMenuItem("🚀 Протестировать алгоритм", () => TestCreatedAlgorithm(algorithm));
+
+            creationMenu.Run();
+        }
+
+        private void EditAlgorithmInfo(CustomAlgorithmRequest algorithm)
+        {
+            Console.WriteLine("\n=== Название и описание алгоритма ===");
+
+            Console.Write($"Название алгоритма [{algorithm.name}]: ");
+            var name = Console.ReadLine();
+            if (!string.IsNullOrWhiteSpace(name))
+                algorithm.name = name;
+
+            Console.Write($"Описание алгоритма [{algorithm.description}]: ");
+            var description = Console.ReadLine();
+            if (!string.IsNullOrWhiteSpace(description))
+                algorithm.description = description;
+
+            Console.WriteLine($"\n✅ Обновлено: {algorithm.name}");
+            Console.WriteLine($"📖 Описание: {algorithm.description}");
+            Console.WriteLine("\nНажмите любую клавишу для продолжения...");
+            Console.ReadKey();
+        }
+
+        private void ManageVariables(CustomAlgorithmRequest algorithm)
+        {
+            var variablesMenu = new MenuManager(this);
+            variablesMenu.SubMenuBool = true;
+            variablesMenu.LastTextShowMenu = "Назад";
+
+            variablesMenu.AddMenuItem("➕ Добавить переменную", () => AddVariable(algorithm));
+            variablesMenu.AddMenuItem("📋 Список переменных", () => ListVariables(algorithm));
+            variablesMenu.AddMenuItem("✏️ Редактировать переменную", () => EditVariable(algorithm));
+            variablesMenu.AddMenuItem("❌ Удалить переменную", () => DeleteVariable(algorithm));
+
+            variablesMenu.Run();
+        }
+
+        private void AddVariable(CustomAlgorithmRequest algorithm)
+        {
+            Console.WriteLine("\n=== Добавление переменной ===");
+
+            Console.Write("Имя переменной: ");
+            var name = Console.ReadLine();
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                Console.WriteLine("❌ Имя переменной не может быть пустым");
+                return;
+            }
+
+            Console.Write("Тип переменной (int/double/string) [int]: ");
+            var type = Console.ReadLine();
+            if (string.IsNullOrWhiteSpace(type)) type = "int";
+
+            Console.Write("Начальное значение: ");
+            var initialValue = Console.ReadLine();
+            if (string.IsNullOrWhiteSpace(initialValue)) initialValue = "0";
+
+            algorithm.variables.Add(new VariableDefinition
+            {
+                name = name,
+                type = type,
+                initialValue = initialValue
+            });
+
+            Console.WriteLine($"✅ Добавлена переменная: {name} ({type}) = {initialValue}");
             Console.WriteLine("Нажмите любую клавишу для продолжения...");
             Console.ReadKey();
         }
+
+        private void ListVariables(CustomAlgorithmRequest algorithm)
+        {
+            Console.WriteLine("\n=== Список переменных ===");
+
+            if (algorithm.variables.Count == 0)
+            {
+                Console.WriteLine("📭 Переменные не добавлены");
+            }
+            else
+            {
+                for (int i = 0; i < algorithm.variables.Count; i++)
+                {
+                    var variable = algorithm.variables[i];
+                    Console.WriteLine($"{i + 1}. {variable.name} ({variable.type}) = {variable.initialValue}");
+                }
+            }
+
+            Console.WriteLine("\nНажмите любую клавишу для продолжения...");
+            Console.ReadKey();
+        }
+
+        private void EditVariable(CustomAlgorithmRequest algorithm)
+        {
+            if (algorithm.variables.Count == 0)
+            {
+                Console.WriteLine("❌ Нет переменных для редактирования");
+                Console.WriteLine("Нажмите любую клавишу для продолжения...");
+                Console.ReadKey();
+                return;
+            }
+
+            ListVariables(algorithm);
+            Console.Write("\nВыберите номер переменной для редактирования: ");
+
+            if (int.TryParse(Console.ReadLine(), out int index) && index > 0 && index <= algorithm.variables.Count)
+            {
+                var variable = algorithm.variables[index - 1];
+
+                Console.Write($"Новое имя [{variable.name}]: ");
+                var newName = Console.ReadLine();
+                if (!string.IsNullOrWhiteSpace(newName))
+                    variable.name = newName;
+
+                Console.Write($"Новый тип [{variable.type}]: ");
+                var newType = Console.ReadLine();
+                if (!string.IsNullOrWhiteSpace(newType))
+                    variable.type = newType;
+
+                Console.Write($"Новое начальное значение [{variable.initialValue}]: ");
+                var newValue = Console.ReadLine();
+                if (!string.IsNullOrWhiteSpace(newValue))
+                    variable.initialValue = newValue;
+
+                Console.WriteLine($"✅ Переменная обновлена: {variable.name} ({variable.type}) = {variable.initialValue}");
+            }
+            else
+            {
+                Console.WriteLine("❌ Неверный номер переменной");
+            }
+
+            Console.WriteLine("Нажмите любую клавишу для продолжения...");
+            Console.ReadKey();
+        }
+
+        private void DeleteVariable(CustomAlgorithmRequest algorithm)
+        {
+            if (algorithm.variables.Count == 0)
+            {
+                Console.WriteLine("❌ Нет переменных для удаления");
+                Console.WriteLine("Нажмите любую клавишу для продолжения...");
+                Console.ReadKey();
+                return;
+            }
+
+            ListVariables(algorithm);
+            Console.Write("\nВыберите номер переменной для удаления: ");
+
+            if (int.TryParse(Console.ReadLine(), out int index) && index > 0 && index <= algorithm.variables.Count)
+            {
+                var variable = algorithm.variables[index - 1];
+                algorithm.variables.RemoveAt(index - 1);
+                Console.WriteLine($"✅ Переменная '{variable.name}' удалена");
+            }
+            else
+            {
+                Console.WriteLine("❌ Неверный номер переменной");
+            }
+
+            Console.WriteLine("Нажмите любую клавишу для продолжения...");
+            Console.ReadKey();
+        }
+
+        private void ManageSteps(CustomAlgorithmRequest algorithm)
+        {
+            var stepsMenu = new MenuManager(this);
+            stepsMenu.SubMenuBool = true;
+            stepsMenu.LastTextShowMenu = "Назад";
+
+            stepsMenu.AddMenuItem("➕ Добавить шаг", () => AddStep(algorithm));
+            stepsMenu.AddMenuItem("📋 Список шагов", () => ListSteps(algorithm));
+            stepsMenu.AddMenuItem("✏️ Редактировать шаг", () => EditStep(algorithm));
+            stepsMenu.AddMenuItem("🔄 Изменить порядок шагов", () => ReorderSteps(algorithm));
+            stepsMenu.AddMenuItem("❌ Удалить шаг", () => DeleteStep(algorithm));
+            stepsMenu.AddMenuItem("🔗 Настроить связи шагов", () => ConfigureStepLinks(algorithm));
+
+            stepsMenu.Run();
+        }
+
+        private void AddStep(CustomAlgorithmRequest algorithm)
+        {
+            Console.WriteLine("\n=== Добавление шага алгоритма ===");
+
+            var stepTypes = new Dictionary<string, string>
+            {
+                ["assign"] = "Присвоение значения переменной",
+                ["compare"] = "Сравнение элементов",
+                ["swap"] = "Обмен элементов",
+                ["condition"] = "Условие",
+                ["loop"] = "Цикл",
+                ["recursive_call"] = "Рекурсивный вызов",
+                ["return"] = "Возврат из рекурсии",
+                ["generic"] = "Общий шаг"
+            };
+
+            Console.WriteLine("Выберите тип шага:");
+            int i = 1;
+            foreach (var type in stepTypes)
+            {
+                Console.WriteLine($"{i}. {type.Value} ({type.Key})");
+                i++;
+            }
+
+            Console.Write("Ваш выбор: ");
+            if (int.TryParse(Console.ReadLine(), out int typeChoice) && typeChoice > 0 && typeChoice <= stepTypes.Count)
+            {
+                var selectedType = stepTypes.Keys.ElementAt(typeChoice - 1);
+
+                Console.Write("ID шага (уникальный идентификатор): ");
+                var id = Console.ReadLine();
+                if (string.IsNullOrWhiteSpace(id))
+                {
+                    Console.WriteLine("❌ ID шага не может быть пустым");
+                    return;
+                }
+
+                Console.Write("Описание шага: ");
+                var description = Console.ReadLine();
+
+                var step = new AlgorithmStep
+                {
+                    id = id,
+                    type = selectedType,
+                    description = description,
+                    parameters = new List<string>(),
+                    conditionCases = new List<ConditionCase>(),
+                    metadata = new Dictionary<string, object>()
+                };
+
+                // Запрашиваем параметры в зависимости от типа шага
+                switch (selectedType)
+                {
+                    case "assign":
+                        Console.Write("Имя переменной: ");
+                        step.parameters.Add(Console.ReadLine());
+                        Console.Write("Значение: ");
+                        step.parameters.Add(Console.ReadLine());
+                        break;
+
+                    case "compare":
+                        Console.Write("Первый элемент/индекс: ");
+                        step.parameters.Add(Console.ReadLine());
+                        Console.Write("Второй элемент/индекс: ");
+                        step.parameters.Add(Console.ReadLine());
+                        break;
+
+                    case "swap":
+                        Console.Write("Первый индекс: ");
+                        step.parameters.Add(Console.ReadLine());
+                        Console.Write("Второй индекс: ");
+                        step.parameters.Add(Console.ReadLine());
+                        break;
+
+                    case "condition":
+                        Console.Write("Условие: ");
+                        step.parameters.Add(Console.ReadLine());
+
+                        // Добавляем случаи условия
+                        Console.WriteLine("Добавление случая для true:");
+                        step.conditionCases.Add(new ConditionCase { condition = "true", nextStep = AskForNextStep() });
+
+                        Console.WriteLine("Добавление случая для false:");
+                        step.conditionCases.Add(new ConditionCase { condition = "false", nextStep = AskForNextStep() });
+                        break;
+
+                }
+
+                // Для всех шагов, кроме condition, запрашиваем следующий шаг
+                if (selectedType != "condition" && selectedType != "return")
+                {
+                    step.nextStep = AskForNextStep();
+                }
+
+                algorithm.steps.Add(step);
+                Console.WriteLine($"✅ Добавлен шаг: {id} ({selectedType})");
+            }
+            else
+            {
+                Console.WriteLine("❌ Неверный выбор типа шага");
+            }
+
+            Console.WriteLine("Нажмите любую клавишу для продолжения...");
+            Console.ReadKey();
+        }
+
+        private string AskForNextStep()
+        {
+            Console.Write("Следующий шаг (ID): ");
+            return Console.ReadLine();
+        }
+
+        private void ListSteps(CustomAlgorithmRequest algorithm)
+        {
+            Console.WriteLine("\n=== Список шагов алгоритма ===");
+
+            if (algorithm.steps.Count == 0)
+            {
+                Console.WriteLine("📭 Шаги не добавлены");
+            }
+            else
+            {
+                for (int i = 0; i < algorithm.steps.Count; i++)
+                {
+                    var step = algorithm.steps[i];
+                    Console.WriteLine($"{i + 1}. [{step.id}] {step.type}: {step.description}");
+
+                    if (step.parameters.Any())
+                        Console.WriteLine($"   Параметры: {string.Join(", ", step.parameters)}");
+
+                    if (!string.IsNullOrEmpty(step.nextStep))
+                        Console.WriteLine($"   Следующий шаг: {step.nextStep}");
+
+                    if (step.conditionCases.Any())
+                    {
+                        Console.WriteLine("   Условия:");
+                        foreach (var condition in step.conditionCases)
+                        {
+                            Console.WriteLine($"     - {condition.condition} -> {condition.nextStep}");
+                        }
+                    }
+
+                    Console.WriteLine();
+                }
+            }
+
+            Console.WriteLine("Нажмите любую клавишу для продолжения...");
+            Console.ReadKey();
+        }
+
+        private void EditStep(CustomAlgorithmRequest algorithm)
+        {
+            if (algorithm.steps.Count == 0)
+            {
+                Console.WriteLine("❌ Нет шагов для редактирования");
+                Console.WriteLine("Нажмите любую клавишу для продолжения...");
+                Console.ReadKey();
+                return;
+            }
+
+            ListSteps(algorithm);
+            Console.Write("\nВыберите номер шага для редактирования: ");
+
+            if (int.TryParse(Console.ReadLine(), out int index) && index > 0 && index <= algorithm.steps.Count)
+            {
+                var step = algorithm.steps[index - 1];
+
+                Console.Write($"Новое описание [{step.description}]: ");
+                var newDescription = Console.ReadLine();
+                if (!string.IsNullOrWhiteSpace(newDescription))
+                    step.description = newDescription;
+
+                // Здесь можно добавить редактирование других полей шага
+
+                Console.WriteLine($"✅ Шаг '{step.id}' обновлен");
+            }
+            else
+            {
+                Console.WriteLine("❌ Неверный номер шага");
+            }
+
+            Console.WriteLine("Нажмите любую клавишу для продолжения...");
+            Console.ReadKey();
+        }
+
+        private void DeleteStep(CustomAlgorithmRequest algorithm)
+        {
+            if (algorithm.steps.Count == 0)
+            {
+                Console.WriteLine("❌ Нет шагов для удаления");
+                Console.WriteLine("Нажмите любую клавишу для продолжения...");
+                Console.ReadKey();
+                return;
+            }
+
+            ListSteps(algorithm);
+            Console.Write("\nВыберите номер шага для удаления: ");
+
+            if (int.TryParse(Console.ReadLine(), out int index) && index > 0 && index <= algorithm.steps.Count)
+            {
+                var step = algorithm.steps[index - 1];
+                algorithm.steps.RemoveAt(index - 1);
+                Console.WriteLine($"✅ Шаг '{step.id}' удален");
+            }
+            else
+            {
+                Console.WriteLine("❌ Неверный номер шага");
+            }
+
+            Console.WriteLine("Нажмите любую клавишу для продолжения...");
+            Console.ReadKey();
+        }
+
+        private void ConfigureStepLinks(CustomAlgorithmRequest algorithm)
+        {
+            Console.WriteLine("\n=== Настройка связей между шагами ===");
+
+            ListSteps(algorithm);
+            Console.Write("\nВыберите номер шага для настройки связей: ");
+
+            if (int.TryParse(Console.ReadLine(), out int index) && index > 0 && index <= algorithm.steps.Count)
+            {
+                var step = algorithm.steps[index - 1];
+
+                if (step.type == "condition")
+                {
+                    Console.WriteLine("Настройка условий:");
+                    foreach (var condition in step.conditionCases)
+                    {
+                        Console.Write($"Следующий шаг для '{condition.condition}' [{condition.nextStep}]: ");
+                        var newNextStep = Console.ReadLine();
+                        if (!string.IsNullOrWhiteSpace(newNextStep))
+                            condition.nextStep = newNextStep;
+                    }
+                }
+                else if (step.type != "return")
+                {
+                    Console.Write($"Следующий шаг [{step.nextStep}]: ");
+                    var newNextStep = Console.ReadLine();
+                    if (!string.IsNullOrWhiteSpace(newNextStep))
+                        step.nextStep = newNextStep;
+                }
+
+                Console.WriteLine($"✅ Связи для шага '{step.id}' обновлены");
+            }
+            else
+            {
+                Console.WriteLine("❌ Неверный номер шага");
+            }
+
+            Console.WriteLine("Нажмите любую клавишу для продолжения...");
+            Console.ReadKey();
+        }
+
+
+        private void PreviewAlgorithm(CustomAlgorithmRequest algorithm)
+        {
+            Console.WriteLine("\n=== Предпросмотр алгоритма ===");
+            Console.WriteLine($"📝 Название: {algorithm.name}");
+            Console.WriteLine($"📖 Описание: {algorithm.description}");
+            Console.WriteLine($"🏗️ Тип структуры: {algorithm.structureType}");
+
+            Console.WriteLine($"\n🔢 Переменные ({algorithm.variables.Count}):");
+            foreach (var variable in algorithm.variables)
+            {
+                Console.WriteLine($"   {variable.name} ({variable.type}) = {variable.initialValue}");
+            }
+
+            Console.WriteLine($"\n⚡ Шаги ({algorithm.steps.Count}):");
+            foreach (var step in algorithm.steps)
+            {
+                Console.WriteLine($"   [{step.id}] {step.type}: {step.description}");
+                if (step.parameters.Any())
+                    Console.WriteLine($"      Параметры: {string.Join(", ", step.parameters)}");
+            }
+
+            Console.WriteLine("\nНажмите любую клавишу для продолжения...");
+            Console.ReadKey();
+        }
+
+        private void SaveAlgorithmToFile(CustomAlgorithmRequest algorithm)
+        {
+            Console.WriteLine("\n=== Сохранение алгоритма ===");
+            Console.Write("Введите путь для сохранения JSON файла: ");
+
+            var filePath = Console.ReadLine();
+            if (string.IsNullOrWhiteSpace(filePath))
+            {
+                Console.WriteLine("❌ Путь не может быть пустым");
+                return;
+            }
+
+            try
+            {
+                var options = new JsonSerializerOptions
+                {
+                    WriteIndented = true,
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                };
+
+                var json = JsonSerializer.Serialize(algorithm, options);
+                File.WriteAllText(filePath, json);
+
+                Console.WriteLine($"✅ Алгоритм сохранен в: {filePath}");
+                Console.WriteLine($"📊 Статистика:");
+                Console.WriteLine($"   - Переменные: {algorithm.variables.Count}");
+                Console.WriteLine($"   - Шаги: {algorithm.steps.Count}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Ошибка сохранения: {ex.Message}");
+            }
+
+            Console.WriteLine("Нажмите любую клавишу для продолжения...");
+            Console.ReadKey();
+        }
+
+        private void TestCreatedAlgorithm(CustomAlgorithmRequest algorithm)
+        {
+            if (!ValidateTestData())
+            {
+                Console.WriteLine("❌ Сначала настройте тестовые данные");
+                Console.WriteLine("Нажмите любую клавишу для продолжения...");
+                Console.ReadKey();
+                return;
+            }
+
+            try
+            {
+                Console.WriteLine("\n=== Тестирование созданного алгоритма ===");
+
+                var array = (int[])_testData["current_array"];
+                var arrayStructure = StructureFactory.CreateStructure("array", array);
+
+                Console.WriteLine($"Запуск алгоритма: {algorithm.name}");
+                Console.WriteLine($"Тестовый массив: [{string.Join(", ", array)}]");
+
+                var result = _algorithmManager.ExecuteCustomAlgorithm(algorithm, arrayStructure);
+
+                if (result.success)
+                {
+                    Console.WriteLine("✅ Алгоритм выполнен успешно!");
+                    DisplayAlgorithmResult(result.result, array);
+                    _testData["last_result"] = result.result;
+                }
+                else
+                {
+                    Console.WriteLine($"❌ Ошибка выполнения: {result.message}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Ошибка тестирования: {ex.Message}");
+            }
+
+            Console.WriteLine("Нажмите любую клавишу для продолжения...");
+            Console.ReadKey();
+        }
+
+        private void ReorderSteps(CustomAlgorithmRequest algorithm)
+        {
+            if (algorithm.steps.Count == 0)
+            {
+                Console.WriteLine("❌ Нет шагов для изменения порядка");
+                Console.WriteLine("Нажмите любую клавишу для продолжения...");
+                Console.ReadKey();
+                return;
+            }
+
+            Console.WriteLine("\n=== Изменение порядка шагов ===");
+            ListSteps(algorithm);
+
+            Console.WriteLine("Введите номера шагов в новом порядке (через запятую):");
+            var orderInput = Console.ReadLine();
+
+            if (string.IsNullOrWhiteSpace(orderInput))
+            {
+                Console.WriteLine("❌ Неверный ввод");
+                return;
+            }
+
+            try
+            {
+                var newOrder = orderInput.Split(',')
+                    .Select(s => s.Trim())
+                    .Where(s => !string.IsNullOrWhiteSpace(s))
+                    .Select(int.Parse)
+                    .ToList();
+
+                // Проверяем корректность ввода
+                if (newOrder.Count != algorithm.steps.Count ||
+                    newOrder.Any(n => n < 1 || n > algorithm.steps.Count) ||
+                    newOrder.Distinct().Count() != newOrder.Count)
+                {
+                    Console.WriteLine("❌ Неверный порядок шагов");
+                    return;
+                }
+
+                var reorderedSteps = newOrder.Select(i => algorithm.steps[i - 1]).ToList();
+                algorithm.steps.Clear();
+                algorithm.steps.AddRange(reorderedSteps);
+
+                Console.WriteLine("✅ Порядок шагов изменен");
+                ListSteps(algorithm);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Ошибка: {ex.Message}");
+            }
+
+            Console.WriteLine("Нажмите любую клавишу для продолжения...");
+            Console.ReadKey();
+        }
+        #endregion
 
         private void ExecuteCustomAlgorithm(CustomAlgorithmRequest customAlgorithm)
         {
@@ -289,7 +897,7 @@ namespace AlgorithmVisualization
                 SessionId = Guid.NewGuid().ToString(),
                 Parameters = new Dictionary<string, object>
                 {
-                    ["Detailed"] = true,
+                    ["Detailed"] = false,
                     ["TrackSwaps"] = true
                 }
             };
@@ -937,24 +1545,24 @@ namespace AlgorithmVisualization
                 SavedSteps = stepsToSave.Count,
                 Steps = stepsToSave.Select(step => new
                 {
-                    step.StepNumber,
-                    step.Operation,
-                    step.Description,
-                    ArrayState = step.VisualizationData.Elements.ContainsKey("0") ?
-                        GetArrayFromVisualizationData(step.VisualizationData) : null,
-                    Comparing = step.VisualizationData.Highlights
+                    step.stepNumber,
+                    step.operation,
+                    step.description,
+                    ArrayState = step.visualizationData.elements.ContainsKey("0") ?
+                        GetArrayFromVisualizationData(step.visualizationData) : null,
+                    Comparing = step.visualizationData.highlights
                         .Where(h => h.HighlightType == "comparing")
                         .Select(h => h.ElementId).ToArray(),
-                    Swapping = step.VisualizationData.Highlights
+                    Swapping = step.visualizationData.highlights
                         .Where(h => h.HighlightType == "swapping")
                         .Select(h => h.ElementId).ToArray(),
-                    Sorted = step.VisualizationData.Highlights
+                    Sorted = step.visualizationData.highlights
                         .Where(h => h.HighlightType == "sorted")
                         .Select(h => h.ElementId).ToArray(),
-                    PivotIndex = step.VisualizationData.Highlights
+                    PivotIndex = step.visualizationData.highlights
                         .Where(h => h.HighlightType == "pivot")
                         .Select(h => h.ElementId).FirstOrDefault(),
-                    step.Metadata
+                    step.metadata
                 }).ToList()
             };
 
@@ -1003,18 +1611,18 @@ namespace AlgorithmVisualization
 
                 foreach (var step in stepsToSave)
                 {
-                    writer.WriteLine($"Шаг {step.StepNumber}: {step.Operation}");
-                    writer.WriteLine($"  Описание: {step.Description}");
+                    writer.WriteLine($"Шаг {step.stepNumber}: {step.operation}");
+                    writer.WriteLine($"  Описание: {step.description}");
 
                     // Состояние массива
-                    if (step.VisualizationData.Elements.ContainsKey("0"))
+                    if (step.visualizationData.elements.ContainsKey("0"))
                     {
-                        var array = GetArrayFromVisualizationData(step.VisualizationData);
+                        var array = GetArrayFromVisualizationData(step.visualizationData);
                         writer.WriteLine($"  Массив: [{string.Join(", ", array)}]");
                     }
 
                     // Подсвеченные элементы
-                    var highlights = step.VisualizationData.Highlights
+                    var highlights = step.visualizationData.highlights
                         .GroupBy(h => h.HighlightType)
                         .Select(g => $"{g.Key}: {string.Join(", ", g.Select(h => h.ElementId))}");
 
@@ -1024,9 +1632,9 @@ namespace AlgorithmVisualization
                     }
 
                     // Метаданные
-                    if (step.Metadata.Any())
+                    if (step.metadata.Any())
                     {
-                        writer.WriteLine($"  Метаданные: {string.Join(", ", step.Metadata.Select(kv => $"{kv.Key}={kv.Value}"))}");
+                        writer.WriteLine($"  Метаданные: {string.Join(", ", step.metadata.Select(kv => $"{kv.Key}={kv.Value}"))}");
                     }
 
                     writer.WriteLine();
@@ -1076,18 +1684,18 @@ namespace AlgorithmVisualization
                     },
                     Steps = result.Steps.Select(step => new
                     {
-                        step.StepNumber,
-                        step.Operation,
-                        step.Description,
-                        Array = GetArrayFromVisualizationData(step.VisualizationData),
-                        Highlights = step.VisualizationData.Highlights.Select(h => new
+                        step.stepNumber,
+                        step.operation,
+                        step.description,
+                        Array = GetArrayFromVisualizationData(step.visualizationData),
+                        Highlights = step.visualizationData.highlights.Select(h => new
                         {
                             h.ElementId,
                             h.HighlightType,
                             h.Color,
                             h.Label
                         }).ToList(),
-                        Connections = step.VisualizationData.Connections.Select(c => new
+                        Connections = step.visualizationData.connections.Select(c => new
                         {
                             c.FromId,
                             c.ToId,
@@ -1095,7 +1703,7 @@ namespace AlgorithmVisualization
                             c.Weight,
                             c.IsHighlighted
                         }).ToList(),
-                        step.Metadata
+                        step.metadata
                     }).ToList()
                 };
 
@@ -1202,7 +1810,7 @@ namespace AlgorithmVisualization
         private void SaveResultAsJson(AlgorithmResult result, string baseFileName)
         {
             var filePath = Path.Combine(_resultsDirectory, baseFileName + ".json");
-            var serializedResult = SerializeAlgorithmResult(result, true); // Включаем шаги
+            var serializedResult = (object)result; // Включаем шаги
 
             var options = new JsonSerializerOptions { WriteIndented = true };
             var json = JsonSerializer.Serialize(serializedResult, options);
@@ -1248,20 +1856,19 @@ namespace AlgorithmVisualization
                     result.Statistics.Swaps,
                     result.Statistics.Steps,
                     result.Statistics.RecursiveCalls,
-                    result.Statistics.MemoryOperations,
-                    Efficiency = CalculateEfficiency(result)
+                    result.Statistics.MemoryOperations
                 },
                 result.OutputData,
                 StepsCount = result.Steps.Count,
                 Steps = includeSteps ? result.Steps.Select(step => new
                 {
-                    step.StepNumber,
-                    step.Operation,
-                    step.Description,
-                    Array = GetArrayFromVisualizationData(step.VisualizationData),
-                    Highlights = step.VisualizationData.Highlights,
-                    Connections = step.VisualizationData.Connections,
-                    step.Metadata
+                    step.stepNumber,
+                    step.operation,
+                    step.description,
+                    Array = GetArrayFromVisualizationData(step.visualizationData),
+                    Highlights = step.visualizationData.highlights,
+                    Connections = step.visualizationData.connections,
+                    step.metadata
                 }).ToList() : null
             };
             return serialized;
@@ -1270,13 +1877,13 @@ namespace AlgorithmVisualization
         // Вспомогательные методы
         private int[] GetArrayFromVisualizationData(VisualizationData data)
         {
-            if (!data.Elements.Any()) return Array.Empty<int>();
+            if (!data.elements.Any()) return Array.Empty<int>();
 
             // Предполагаем, что элементы массива имеют ключи "0", "1", "2", ...
             var array = new List<int>();
-            for (int i = 0; data.Elements.ContainsKey(i.ToString()); i++)
+            for (int i = 0; data.elements.ContainsKey(i.ToString()); i++)
             {
-                if (data.Elements[i.ToString()] is JsonElement element && element.TryGetProperty("value", out var valueElement))
+                if (data.elements[i.ToString()] is JsonElement element && element.TryGetProperty("value", out var valueElement))
                 {
                     if (valueElement.ValueKind == JsonValueKind.Number && valueElement.TryGetInt32(out int value))
                     {
@@ -1291,8 +1898,8 @@ namespace AlgorithmVisualization
         {
             // Определяем ключевые шаги для сохранения
             var keyOperations = new[] { "swap", "compare", "select_pivot", "partition_complete", "recursive_call", "complete" };
-            return keyOperations.Contains(step.Operation) ||
-                   step.VisualizationData.Highlights.Any(h =>
+            return keyOperations.Contains(step.operation) ||
+                   step.visualizationData.highlights.Any(h =>
                        h.HighlightType == "swapping" || h.HighlightType == "comparing");
         }
 
@@ -1318,9 +1925,6 @@ namespace AlgorithmVisualization
             }
             return $"{number:n1} {suffixes[counter]}";
         }
-
-        
-
     }
 
 

@@ -12,10 +12,12 @@ namespace testing.Models.DataStructures
         public string Type => "array";
         public string Id { get; } = Guid.NewGuid().ToString();
         private int[] _data;
+        private readonly int[] _originData;
 
         public ArrayStructure(int[] data)
         {
             _data = data;
+            _originData = (int[])_data.Clone();
         }
 
         public int[] GetState() => (int[])_data.Clone();
@@ -26,8 +28,8 @@ namespace testing.Models.DataStructures
         {
             return new VisualizationData
             {
-                StructureType = "array",
-                Elements = _data.Select((value, index) =>
+                structureType = "array",
+                elements = _data.Select((value, index) =>
                     new KeyValuePair<string, object>(index.ToString(), new
                     {
                         value,
@@ -36,5 +38,8 @@ namespace testing.Models.DataStructures
                     })).ToDictionary(kvp => kvp.Key, kvp => kvp.Value)
             };
         }
+
+        public int[] GetOriginState() => (int[])_originData;
+
     }
 }

@@ -40,11 +40,11 @@ namespace testing.Models.DataStructures
 
         public VisualizationData ToVisualizationData()
         {
-            var data = new VisualizationData { StructureType = "graph" };
+            var data = new VisualizationData { structureType = "graph" };
 
             foreach (var node in Nodes)
             {
-                data.Elements[node.Id] = new
+                data.elements[node.Id] = new
                 {
                     value = node.Value,
                     label = $"Node: {node.Value}",
@@ -55,7 +55,7 @@ namespace testing.Models.DataStructures
 
             foreach (var edge in Edges)
             {
-                data.Connections.Add(new Connection
+                data.connections.Add(new Connection
                 {
                     FromId = edge.FromId,
                     ToId = edge.ToId,
@@ -65,6 +65,11 @@ namespace testing.Models.DataStructures
             }
 
             return data;
+        }
+
+        public GraphState GetOriginState()
+        {
+            throw new NotImplementedException();
         }
     }
 }

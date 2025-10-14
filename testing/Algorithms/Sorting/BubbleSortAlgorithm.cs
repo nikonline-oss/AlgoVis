@@ -27,10 +27,14 @@ namespace testing.Algorithms.Sorting
                     RecordComparison();
 
                     AddStep("compare", $"Сравнение элементов [{j}] и [{j + 1}]", structure,
+                        metadata: new Dictionary<string, object>()
+                        {
+                            ["current_array"] = structure.GetState()
+                        },
                         highlights: new List<HighlightedElement>
                         {
-                            new() { ElementId = j.ToString(), HighlightType = "comparing", Color = "yellow" },
-                            new() { ElementId = (j + 1).ToString(), HighlightType = "comparing", Color = "yellow" }
+                            new() { ElementId = j.ToString(), HighlightType = "comparing", Color = "bg-yellow-500" },
+                            new() { ElementId = (j + 1).ToString(), HighlightType = "comparing", Color = "bg-yellow-500" }
                         });
 
                     if (array[j] > array[j + 1])
@@ -41,10 +45,14 @@ namespace testing.Algorithms.Sorting
                         structure.ApplyState(array);
 
                         AddStep("swap", $"Обмен элементов [{j}] и [{j + 1}]", structure,
+                            metadata: new Dictionary<string, object>()
+                            {
+                                ["current_array"] = structure.GetState()
+                            },
                             highlights: new List<HighlightedElement>
                             {
-                                new() { ElementId = j.ToString(), HighlightType = "swapping", Color = "red" },
-                                new() { ElementId = (j + 1).ToString(), HighlightType = "swapping", Color = "red" }
+                                new() { ElementId = j.ToString(), HighlightType = "swapping", Color = "bg-red-500" },
+                                new() { ElementId = (j + 1).ToString(), HighlightType = "swapping", Color = "bg-red-500" }
                             });
                     }
                 }
@@ -53,6 +61,10 @@ namespace testing.Algorithms.Sorting
                 {
                     var sortedIndices = Enumerable.Range(array.Length - i - 1, i + 1).ToArray();
                     AddStep("mark_sorted", $"Завершена итерация {i + 1}", structure,
+                            metadata: new Dictionary<string, object>()
+                            {
+                                ["current_array"] = structure.GetState()
+                            },
                         highlights: sortedIndices.Select(idx =>
                             new HighlightedElement
                             {
@@ -70,6 +82,7 @@ namespace testing.Algorithms.Sorting
         {
             return new Dictionary<string, object>
             {
+                ["origin_array"] = structure.GetOriginState(),
                 ["sorted_array"] = structure.GetState(),
                 ["is_sorted"] = true
             };

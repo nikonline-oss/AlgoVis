@@ -40,8 +40,8 @@ namespace testing.Algorithms.Tree
         protected override Dictionary<string, object> GetOutputData(BinaryTreeStructure structure)
         {
             var visitedNodes = Steps
-                .Where(s => s.Operation == "visit")
-                .Select(s => s.Description)
+                .Where(s => s.operation == "visit")
+                .Select(s => s.description)
                 .ToList();
 
             return new Dictionary<string, object>

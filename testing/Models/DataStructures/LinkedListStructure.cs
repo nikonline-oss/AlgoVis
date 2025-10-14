@@ -21,13 +21,13 @@ namespace testing.Models.DataStructures
 
         public VisualizationData ToVisualizationData()
         {
-            var data = new VisualizationData { StructureType = "linkedlist" };
+            var data = new VisualizationData { structureType = "linkedlist" };
             var visited = new HashSet<string>();
             var current = Head;
 
             while (current != null && !visited.Contains(current.Id))
             {
-                data.Elements[current.Id] = new
+                data.elements[current.Id] = new
                 {
                     value = current.Value,
                     label = $"Node: {current.Value}"
@@ -35,7 +35,7 @@ namespace testing.Models.DataStructures
 
                 if (current.Next != null)
                 {
-                    data.Connections.Add(new Connection
+                    data.connections.Add(new Connection
                     {
                         FromId = current.Id,
                         ToId = current.Next.Id,
@@ -66,6 +66,11 @@ namespace testing.Models.DataStructures
             }
 
             return newHead;
+        }
+
+        public ListNode GetOriginState()
+        {
+            throw new NotImplementedException();
         }
     }
 }

@@ -22,6 +22,7 @@ namespace MyMenuSystem
         public Action ActionExite { get; set; } = null;
         public bool SubMenuBool { get; set; } = false;
 
+        private bool isRunnig = true;
         private const int MaxMenuItems = 20;
         private MenuItem[] _menuItems = new MenuItem[MaxMenuItems];
         private int _menuItemCounter = 0;
@@ -82,7 +83,8 @@ namespace MyMenuSystem
         {
             if (SubMenuBool)
             {
-                _mainMenu.BackToMainMenu();
+                //_mainMenu.BackToMainMenu();
+                isRunnig = false;
             }
             else
             {
@@ -100,7 +102,8 @@ namespace MyMenuSystem
 
         public void Run()
         {
-            while (true)
+            isRunnig = true;
+            while (isRunnig)
             {
                 Console.Clear();
                 ShowMenu();

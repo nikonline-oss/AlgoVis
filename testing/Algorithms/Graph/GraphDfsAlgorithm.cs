@@ -67,8 +67,8 @@ namespace testing.Algorithms.Graph
         {
             return new Dictionary<string, object>
             {
-                ["traversal_order"] = Steps.Where(s => s.Operation == "visit").Select(s => s.Description).ToList(),
-                ["visited_count"] = Steps.Count(s => s.Operation == "visit")
+                ["traversal_order"] = Steps.Where(s => s.operation == "visit").Select(s => s.description).ToList(),
+                ["visited_count"] = Steps.Count(s => s.operation == "visit")
             };
         }
     }

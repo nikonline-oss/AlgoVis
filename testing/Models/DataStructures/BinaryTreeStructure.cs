@@ -20,7 +20,7 @@ namespace testing.Models.DataStructures
 
         public VisualizationData ToVisualizationData()
         {
-            var data = new VisualizationData { StructureType = "binarytree" };
+            var data = new VisualizationData { structureType = "binarytree" };
             BuildVisualizationData(Root, data, null);
             return data;
         }
@@ -29,7 +29,7 @@ namespace testing.Models.DataStructures
         {
             if (node == null) return;
 
-            data.Elements[node.Id] = new
+            data.elements[node.Id] = new
             {
                 value = node.Value,
                 label = $"Node: {node.Value}"
@@ -37,7 +37,7 @@ namespace testing.Models.DataStructures
 
             if (parentId != null)
             {
-                data.Connections.Add(new Connection
+                data.connections.Add(new Connection
                 {
                     FromId = parentId,
                     ToId = node.Id,
@@ -47,7 +47,7 @@ namespace testing.Models.DataStructures
 
             if (node.Left != null)
             {
-                data.Connections.Add(new Connection
+                data.connections.Add(new Connection
                 {
                     FromId = node.Id,
                     ToId = node.Left.Id,
@@ -58,7 +58,7 @@ namespace testing.Models.DataStructures
 
             if (node.Right != null)
             {
-                data.Connections.Add(new Connection
+                data.connections.Add(new Connection
                 {
                     FromId = node.Id,
                     ToId = node.Right.Id,
@@ -80,5 +80,9 @@ namespace testing.Models.DataStructures
             };
         }
 
+        public TreeNode GetOriginState()
+        {
+            throw new NotImplementedException();
+        }
     }
 }

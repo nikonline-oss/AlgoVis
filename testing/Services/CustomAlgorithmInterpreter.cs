@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -8,36 +9,54 @@ using testing.Models.Core;
 using testing.Models.Custom;
 using testing.Models.DataStructures;
 using testing.Models.Visualization;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace testing.Services
 {
-    public class CustomAlgorithmInterpreter : ICustomAlgorithmInterpreter
+    public class CustomAlgori1thmInterpreter : ICustomAlgorithmInterpreter
     {
-        private Dictionary<string, AlgorithmStep> _steps;
-        private Dictionary<string, object> _variables;
-        private List<VisualizationStep> _visualizationSteps;
-        private AlgorithmStatistics _statistics;
+        private Dictionary<string, AlgorithmStep> _steps = new();
+        private Stack<Dictionary<string, object>> _variableScopes = new Stack<Dictionary<string, object>>();
+        private Dictionary<string, object> _globalVariables = new Dictionary<string, object>();
+        private Dictionary<string, FunctionGroup> _functions = new();
+        //private Dictionary<string, object> _variables = new();
+        private List<VisualizationStep> _visualizationSteps = new();
+        private AlgorithmStatistics _statistics = new();
         private IDataStructure _structure;
         private CustomAlgorithmRequest _request;
+        private Stopwatch _stopwatch;
+
+        private Stack<FunctionContext> _callStack = new Stack<FunctionContext>();
+        private int _currentCallDepth = 0;
+        private const int MAX_CALL_DEPTH = 100;
 
         public CustomAlgorithmResult Execute(CustomAlgorithmRequest request, IDataStructure structure)
         {
+            _stopwatch = Stopwatch.StartNew();
             try
             {
                 _request = request;
                 _structure = structure;
                 _steps = request.steps.ToDictionary(s => s.id);
-                _variables = InitializeVariables(request.variables);
+                _functions = request.functions?.ToDictionary(s => s.name) ?? new Dictionary<string, FunctionGroup>();
                 _visualizationSteps = new List<VisualizationStep>();
                 _statistics = new AlgorithmStatistics();
+                _callStack.Clear();
+                _currentCallDepth = 0;
+                _variableScopes.Clear();
+                _globalVariables.Clear();
 
-                // Начальный шаг
-                AddVisualizationStep("start", "Начало выполнения кастомного алгоритма");
+                _globalVariables = InitializeVariables(request.variables);
+                _globalVariables["array_length"] = GetArrayState().Length;
+
+                _variableScopes.Push(new Dictionary<string, object>());
+
+                var originalArray = GetArrayState().Clone();
 
                 // Выполняем алгоритм
                 ExecuteStep("start");
 
-                AddVisualizationStep("complete", "Кастомный алгоритм завершен");
+                _stopwatch.Stop();
 
                 return new CustomAlgorithmResult
                 {
@@ -50,14 +69,18 @@ namespace testing.Services
                         StructureType = structure.Type,
                         Steps = _visualizationSteps,
                         Statistics = _statistics,
-                        ExecutionTime = TimeSpan.Zero,
+                        ExecutionTime = _stopwatch.Elapsed,
                         OutputData = new Dictionary<string, object>
                         {
+                            ["start_structure"] = originalArray,
+                            ["final_structure"] = GetArrayState(),
                             ["custom_algorithm"] = true,
-                            ["variables"] = _variables
+                            ["variables"] = GetAllVariables(),
+                            ["call_depth"] = _currentCallDepth,
+                            ["function_calls"] = _statistics.RecursiveCalls
                         }
                     },
-                    executionState = new Dictionary<string, object>(_variables)
+                    executionState = new Dictionary<string, object>(GetAllVariables())
                 };
             }
             catch (Exception ex)
@@ -70,12 +93,28 @@ namespace testing.Services
                 };
             }
         }
-
+        //----------------
         private void ExecuteStep(string stepId)
         {
-            if (!_steps.ContainsKey(stepId)) return;
+            if (string.IsNullOrEmpty(stepId)) return;
 
-            var step = _steps[stepId];
+            if (_currentCallDepth > MAX_CALL_DEPTH)
+            {
+                throw new InvalidOperationException($"Превышена максимальная глубина рекурсии: {MAX_CALL_DEPTH}");
+            }
+
+            // Определяем, выполняем ли мы шаг из основной программы или из функции
+            var (step, function) = GetStepAndFunction(stepId);
+
+
+            if (step == null)
+            {
+                Console.WriteLine($"❌ Шаг '{stepId}' не найден");
+                return;
+            }
+
+            Console.WriteLine($" шаг №{step.id}, тип :{step.type}, описание: {step.description}");
+
 
             switch (step.type.ToLower())
             {
@@ -89,22 +128,34 @@ namespace testing.Services
                     ExecuteAssign(step);
                     break;
                 case "condition":
-                    ExecuteCondition(step);
-                    return;
-                case "loop":
-                    ExecuteLoop(step);
-                    return;
+                    ExecuteCondition(step, function);
+                    break;
+                case "call_function": 
+                    ExecuteFunctionCall(step);
+                    break;
+                case "return":
+                    ExecuteReturn(step);
+                    break;
                 default:
                     ExecuteGenericStep(step);
                     break;
             }
 
-            if (string.IsNullOrEmpty(step.nextStep) && step.type != "condition" && step.type != "loop")
+            if (step.type != "condition" &&
+                step.type != "call_function" &&
+                step.type != "return")
             {
-                var nextStep = GetNextStep(stepId);
-                if (!string.IsNullOrEmpty(nextStep))
+                string nextStepId = step.nextStep;
+
+                // Если nextStep не указан явно, пытаемся получить следующий шаг по порядку
+                if (string.IsNullOrEmpty(nextStepId))
                 {
-                    ExecuteStep(nextStep);
+                    nextStepId = GetNextStep(stepId, function);
+                }
+
+                if (!string.IsNullOrEmpty(nextStepId))
+                {
+                    ExecuteStep(nextStepId);
                 }
             }
             else if (!string.IsNullOrEmpty(step.nextStep))
@@ -113,6 +164,142 @@ namespace testing.Services
             }
         }
 
+        #region function
+        //----------------
+        private (AlgorithmStep step, FunctionGroup function) GetStepAndFunction(string stepId)
+        {
+            // Сначала ищем в основной программе
+            if (_steps.ContainsKey(stepId))
+            {
+                return (_steps[stepId], null);
+            }
+
+            // Затем ищем в функциях
+            foreach (var function in _functions.Values)
+            {
+                var step = function.steps.FirstOrDefault(s => s.id == stepId);
+                if (step != null)
+                {
+                    return (step, function);
+                }
+            }
+
+            return (null, null);
+        }
+        //----------------
+        private string GetNextStep(string currentStepId, FunctionGroup function)
+        {
+            var steps = function?.steps ?? _request.steps;
+            var stepIds = steps.Select(s => s.id).ToList();
+            var currentIndex = stepIds.IndexOf(currentStepId);
+
+            return currentIndex >= 0 && currentIndex < stepIds.Count - 1 ?
+                stepIds[currentIndex + 1] : null;
+        }
+        //----------------
+        private void ExecuteFunctionCall(AlgorithmStep step)
+        {
+            if (_currentCallDepth >= MAX_CALL_DEPTH)
+                throw new InvalidOperationException($"Превышена максимальная глубина вызовов: {MAX_CALL_DEPTH}");
+
+            if (!_functions.ContainsKey(step.functionName))
+                throw new ArgumentException($"Функция '{step.functionName}' не найдена");
+
+            var function = _functions[step.functionName];
+            _statistics.RecursiveCalls++;
+            _currentCallDepth++;
+
+            // Создаем новую область видимости для функции
+            var localVariables = new Dictionary<string, object>();
+            _variableScopes.Push(localVariables);
+
+            // Сохраняем контекст вызова
+            var context = new FunctionContext
+            {
+                callerStepId = step.returnToStep,
+                depth = _currentCallDepth,
+                functionName = step.functionName
+            };
+            _callStack.Push(context);
+
+            // Инициализируем параметры функции
+            foreach (var param in step.functionParameters)
+            {
+                try
+                {
+                    var value = EvaluateExpression(param.Value);
+                    localVariables[param.Key] = value;
+                }
+                catch (Exception ex)
+                {
+                    throw new ArgumentException($"Ошибка инициализации параметра {param.Key}: {ex.Message}");
+                }
+            }
+
+
+            var description = step.description ?? $"Вызов функции: {step.functionName}";
+            AddVisualizationStep("call_function", description, metadata: new Dictionary<string, object>
+            {
+                ["call_depth"] = _currentCallDepth,
+                ["function_name"] = step.functionName,
+                ["parameters"] = step.functionParameters
+            });
+
+            ExecuteStep(function.entryPoint);
+        }
+        //----------------
+        private void ExecuteReturn(AlgorithmStep step)
+        {
+            if (_callStack.Count == 0)
+            {
+                return;
+            }
+
+            var context = _callStack.Pop();
+            _currentCallDepth--;
+
+            // Удаляем область видимости функции (если это не глобальная область)
+            if (_variableScopes.Count > 1)
+            {
+                _variableScopes.Pop();
+            }
+
+            var description = step.description ?? $"Возврат из функции";
+            AddVisualizationStep("return", description, metadata: new Dictionary<string, object>
+            {
+                ["call_depth"] = _currentCallDepth,
+                ["function_name"] = context.functionName
+            });
+
+            // Возвращаемся к шагу после вызова
+            if (!string.IsNullOrEmpty(context.callerStepId))
+            {
+                ExecuteStep(context.callerStepId);
+            }
+        }
+        //----------------
+        private void ExecuteCondition(AlgorithmStep step, FunctionGroup function)
+        {
+            var conditionResult = EvaluateCondition(step.parameters.FirstOrDefault() ?? "");
+            var description = step.description ?? $"Проверка условия: {step.parameters.FirstOrDefault()}";
+
+            AddVisualizationStep("condition", description, metadata: new Dictionary<string, object>
+            {
+                ["condition"] = step.parameters.FirstOrDefault(),
+                ["result"] = conditionResult
+            });
+
+            var nextStep = conditionResult ?
+                step.conditionCases.FirstOrDefault(c => c.condition == "true")?.nextStep :
+                step.conditionCases.FirstOrDefault(c => c.condition == "false")?.nextStep;
+
+            if (!string.IsNullOrEmpty(nextStep))
+            {
+                ExecuteStep(nextStep);
+            }
+        }
+        #endregion
+        //----------------
         private void ExecuteCompare(AlgorithmStep step)
         {
             _statistics.Comparisons++;
@@ -124,8 +311,8 @@ namespace testing.Services
             var index2 = EvaluateExpression(step.parameters[1]);
 
             var array = GetArrayState();
-            var value1 = array[(int)index1];
-            var value2 = array[(int)index2];
+            var value1 = array[ConvertToInt(index1)];
+            var value2 = array[ConvertToInt(index2)];
 
             var comparisonResult = value1.CompareTo(value2);
             var description = step.description ?? $"Сравнение [{index1}]={value1} и [{index2}]={value2}";
@@ -141,10 +328,14 @@ namespace testing.Services
                 ["value2"] = value2
             });
 
-            _variables["last_comparison"] = comparisonResult;
-            _variables[$"compare_{step.id}"] = comparisonResult;
+            // Безопасно устанавливаем переменные сравнения
+            SetVariableValue("last_comparison", comparisonResult);
+            if (!string.IsNullOrEmpty(step.id))
+            {
+                SetVariableValue($"compare_{step.id}", comparisonResult);
+            }
         }
-
+        //------------------
         private void ExecuteSwap(AlgorithmStep step)
         {
             _statistics.Swaps++;
@@ -156,7 +347,7 @@ namespace testing.Services
             var index2 = EvaluateExpression(step.parameters[1]);
 
             var array = GetArrayState();
-            (array[(int)index2], array[(int)index1]) = (array[(int)index1], array[(int)index2]);
+            (array[ConvertToInt(index2)], array[ConvertToInt(index1)]) = (array[ConvertToInt(index1)], array[ConvertToInt(index2)]);
 
             UpdateArrayState(array);
 
@@ -168,7 +359,7 @@ namespace testing.Services
                 new() { ElementId = index2.ToString(), HighlightType = "swapping", Color = "red" }
             });
         }
-
+        //------------------
         private void ExecuteAssign(AlgorithmStep step)
         {
             if (step.parameters.Count < 2)
@@ -177,126 +368,47 @@ namespace testing.Services
             var variableName = step.parameters[0];
             var value = EvaluateExpression(step.parameters[1]);
 
-            _variables[variableName] = value;
+            SetVariableValue(variableName, value);
 
             var description = step.description ?? $"Присвоение {variableName} = {value}";
 
-            //AddVisualizationStep("assign", description, metadata: new Dictionary<string, object>
-            //{
-            //    ["variable"] = variableName,
-            //    ["value"] = value
-            //});
-        }
-
-        private void ExecuteCondition(AlgorithmStep step)
-        {
-            var conditionResult = EvaluateCondition(step.parameters.FirstOrDefault() ?? "");
-            var description = step.description ?? $"Проверка условия: {step.parameters.FirstOrDefault()}";
-
-            //AddVisualizationStep("condition", description, metadata: new Dictionary<string, object>
-            //{
-            //    ["condition"] = step.parameters.FirstOrDefault(),
-            //    ["result"] = conditionResult
-            //});
-
-            var nextStep = conditionResult ?
-                step.conditionCases.FirstOrDefault(c => c.condition == "true")?.nextStep :
-                step.conditionCases.FirstOrDefault(c => c.condition == "false")?.nextStep;
-
-            if (!string.IsNullOrEmpty(nextStep))
+            AddVisualizationStep("assign", description, metadata: new Dictionary<string, object>
             {
-                ExecuteStep(nextStep);
-            }
+                ["variable"] = variableName,
+                ["value"] = value
+            });
         }
 
-        private void ExecuteLoop(AlgorithmStep step)
-        {
-            var loopConfig = _request.loops.FirstOrDefault(l => l.id == step.parameters.FirstOrDefault());
-            if (loopConfig == null) return;
+        //private void ExecuteCondition(AlgorithmStep step)
+        //{
+        //    var conditionResult = EvaluateCondition(step.parameters.FirstOrDefault() ?? "");
+        //    var description = step.description ?? $"Проверка условия: {step.parameters.FirstOrDefault()}";
 
-            switch (loopConfig.type.ToLower())
-            {
-                case "for":
-                    ExecuteForLoop(loopConfig);
-                    break;
-                case "while":
-                    ExecuteWhileLoop(loopConfig);
-                    break;
-            }
-        }
+        //    AddVisualizationStep("condition", description, metadata: new Dictionary<string, object>
+        //    {
+        //        ["condition"] = step.parameters.FirstOrDefault(),
+        //        ["result"] = conditionResult
+        //    });
 
-        private void ExecuteForLoop(LoopDefinition loop)
-        {
-            var from = EvaluateExpression(loop.from);
-            var to = EvaluateExpression(loop.to);
+        //    var nextStep = conditionResult ?
+        //        step.conditionCases.FirstOrDefault(c => c.condition == "true")?.nextStep :
+        //        step.conditionCases.FirstOrDefault(c => c.condition == "false")?.nextStep;
 
-            _variables[loop.variable] = from;
-
-            //AddVisualizationStep("loop_start", $"Начало цикла for: {loop.variable} от {from} до {to}",
-            //    metadata: new Dictionary<string, object>
-            //    {
-            //        ["loop_type"] = "for",
-            //        ["variable"] = loop.variable,
-            //        ["from"] = from,
-            //        ["to"] = to
-            //    });
-
-            for (int i = (int)from; i < (int)to; i++)
-            {
-                _variables[loop.variable] = i;
-
-                foreach (var stepId in loop.steps)
-                {
-                    ExecuteStep(stepId);
-                }
-
-                //AddVisualizationStep("loop_iteration", $"Итерация цикла: {loop.variable} = {i}",
-                //    metadata: new Dictionary<string, object>
-                //    {
-                //        ["iteration"] = i,
-                //        ["variable"] = loop.variable
-                //    });
-            }
-
-            //AddVisualizationStep("loop_end", "Цикл for завершен");
-        }
-
-        private void ExecuteWhileLoop(LoopDefinition loop)
-        {
-            int iteration = 0;
-
-            //AddVisualizationStep("loop_start", $"Начало цикла while: {loop.condition}",
-            //    metadata: new Dictionary<string, object>
-            //    {
-            //        ["loop_type"] = "while",
-            //        ["condition"] = loop.condition
-            //    });
-
-            while (EvaluateCondition(loop.condition) && iteration < 1000)
-            {
-                foreach (var stepId in loop.steps)
-                {
-                    ExecuteStep(stepId);
-                }
-
-                iteration++;
-                //AddVisualizationStep("loop_iteration", $"Итерация цикла while: {iteration}",
-                //    metadata: new Dictionary<string, object>
-                //    {
-                //        ["iteration"] = iteration,
-                //        ["condition"] = loop.condition
-                //    });
-            }
-
-            //AddVisualizationStep("loop_end", "Цикл while завершен");
-        }
-
+        //    if (!string.IsNullOrEmpty(nextStep))
+        //    {
+        //        ExecuteStep(nextStep);
+        //    }
+        //}
+        //------------------
         private void ExecuteGenericStep(AlgorithmStep step)
         {
             AddVisualizationStep(step.operation, step.description, metadata: step.metadata);
         }
 
+
+
         // Вспомогательные методы
+        //----------------
         private Dictionary<string, object> InitializeVariables(List<VariableDefinition> variableDefs)
         {
             var variables = new Dictionary<string, object>
@@ -306,43 +418,91 @@ namespace testing.Services
 
             foreach (var varDef in variableDefs)
             {
-                variables[varDef.name] = varDef.initialValue;
+                variables[varDef.name] = ParseVariableValue(varDef.type, varDef.initialValue.ToString());
             }
 
             return variables;
         }
-
-        private double EvaluateExpression(string expression)
+        //----------------
+        private object EvaluateExpression(string expression)
         {
             if (string.IsNullOrWhiteSpace(expression))
                 return 0;
 
             expression = expression.Trim();
-            Console.WriteLine($"🔢 Evaluating expression: {expression}");
 
-            // Сначала заменяем переменные
-            foreach (var variable in _variables)
+            try
             {
-                expression = expression.Replace(variable.Key, variable.Value.ToString());
+                // Определяем тип выражения
+                var expressionType = DetectExpressionType(expression);
+
+                return expressionType switch
+                {
+                    "bool" => ParseBooleanValue(expression),
+                    "string" => EvaluateStringExpression(expression),
+                    _ => EvaluateNumericExpression(expression)
+                };
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Ошибка вычисления выражения '{expression}': {ex.Message}");
+                throw new ArgumentException($"Не удалось вычислить выражение: {expression}");
+            }
+        }
+        //----------------
+        private double EvaluateNumericExpression(string expression)
+        {
+            if (string.IsNullOrWhiteSpace(expression))
+                return 0;
+
+            expression = expression.Trim();
+
+            // Обрабатываем доступ к элементам массива: array[index]
+            if (expression.Contains("array["))
+            {
+                expression = ProcessArrayAccess(expression);
             }
 
+            expression = ReplaceVariables(expression);
             Console.WriteLine($"🔢 After variable substitution: {expression}");
 
             try
             {
-                // Удаляем пробелы для упрощения парсинга
                 expression = expression.Replace(" ", "");
-
-                // Обрабатываем сложные выражения с приоритетами операций
                 return EvaluateComplexExpression(expression);
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"❌ Error evaluating expression '{expression}': {ex.Message}");
+                Console.WriteLine($"❌ Error evaluating numeric expression '{expression}': {ex.Message}");
                 throw;
             }
         }
+        //----------------
+        private string ProcessArrayAccess(string expression)
+        {
+            // Обрабатываем выражения типа array[index]
+            var arrayAccessPattern = @"array\[([^\]]+)\]";
+            var matches = Regex.Matches(expression, arrayAccessPattern);
 
+            foreach (Match match in matches)
+            {
+                string indexExpr = match.Groups[1].Value;
+                int index = ConvertToInt(EvaluateExpression(indexExpr));
+
+                var array = GetArrayState();
+                if (index >= 0 && index < array.Length)
+                {
+                    expression = expression.Replace(match.Value, array[index].ToString());
+                }
+                else
+                {
+                    throw new ArgumentException($"Invalid array index: {index}");
+                }
+            }
+
+            return expression;
+        }
+        //----------------
         private double EvaluateComplexExpression(string expression)
         {
             // Обрабатываем выражения в скобках сначала
@@ -405,7 +565,7 @@ namespace testing.Services
 
             throw new ArgumentException($"Could not evaluate expression: {expression}");
         }
-
+        //----------------
         private double GetLeftOperand(string expression, int opIndex)
         {
             // Находим начало левого операнда
@@ -423,7 +583,7 @@ namespace testing.Services
 
             throw new ArgumentException($"Invalid left operand: {leftStr}");
         }
-
+        //----------------
         private double GetRightOperand(string expression, int opIndex)
         {
             // Находим конец правого операнда
@@ -440,7 +600,7 @@ namespace testing.Services
 
             throw new ArgumentException($"Invalid right operand: {rightStr}");
         }
-
+        //----------------
         private string ReplaceOperation(string expression, int opIndex, double left, double right, double result)
         {
             int leftStart = opIndex - left.ToString().Length;
@@ -449,44 +609,326 @@ namespace testing.Services
             return expression.Substring(0, leftStart) + result.ToString() + expression.Substring(rightEnd);
         }
 
-        // Новый метод для безопасной замены переменных
+        //----------------
         private string ReplaceVariables(string input)
         {
             if (string.IsNullOrEmpty(input))
                 return input;
 
             string result = input;
+            int maxIterations = 3; // Уменьшили для безопасности
 
-            // Сортируем переменные по длине (от самых длинных к самым коротким)
-            // чтобы избежать проблем с частичным перекрытием (например, "i" и "index")
-            var sortedVariables = _variables
-                .OrderByDescending(v => v.Key.Length)
-                .ThenByDescending(v => v.Key);
-
-            foreach (var variable in sortedVariables)
+            for (int i = 0; i < maxIterations; i++)
             {
-                // Используем регулярное выражение для замены только целых слов
-                string pattern = $@"\b{Regex.Escape(variable.Key)}\b";
-                result = Regex.Replace(result, pattern, variable.Value.ToString());
+                string previous = result;
+                bool changed = false;
+
+                // Ищем переменные вида {имя} или просто имя
+                var variablePattern = @"\b([a-zA-Z_][a-zA-Z0-9_]*)\b";
+                var matches = Regex.Matches(result, variablePattern);
+
+                foreach (Match match in matches)
+                {
+                    string varName = match.Groups[1].Value;
+
+                    // Пропускаем ключевые слова и числа
+                    if (IsKeyword(varName) || double.TryParse(varName, out _))
+                        continue;
+
+                    try
+                    {
+                        var value = GetVariableValue(varName);
+                        string replacement = GetVariableStringRepresentation(value);
+
+                        // Заменяем только если нашли переменную и значение отличается
+                        if (replacement != varName)
+                        {
+                            result = Regex.Replace(result, $@"\b{Regex.Escape(varName)}\b", replacement);
+                            changed = true;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"⚠️ Ошибка при замене переменной {varName}: {ex.Message}");
+                        // Не бросаем исключение, продолжаем работу
+                    }
+                }
+
+                if (!changed || result == previous)
+                    break;
             }
 
             return result;
         }
-
+        //----------------
+        private string GetVariableStringRepresentation(object value)
+        {
+            return value switch
+            {
+                bool boolVal => boolVal ? "1" : "0", // Для совместимости с числовыми выражениями
+                double doubleVal => doubleVal.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                int intVal => intVal.ToString(),
+                string strVal => strVal,
+                _ => value?.ToString() ?? "0"
+            };
+        }
+        //----------------
         private bool EvaluateCondition(string condition)
         {
-            if (string.IsNullOrEmpty(condition)) return false;
+            if (string.IsNullOrEmpty(condition))
+                return false;
 
             condition = condition.Trim();
+            //Console.WriteLine($"🔍 Evaluating condition: {condition}");
 
-            Console.WriteLine($"🔍 Evaluating condition: {condition}"); // Отладочная информация
+            // Сначала пробуем вычислить как булево выражение
+            var boolResult = EvaluateBooleanCondition(condition);
+            if (boolResult.HasValue)
+                return boolResult.Value;
 
-            // Безопасная замена переменных
+            // Затем пробуем как числовое сравнение
+            return EvaluateNumericCondition(condition);
+        }
+        //----------------
+        private int[] GetArrayState()
+        {
+            var state = _structure.GetState();
+            if (state is int[] array)
+                return array;
+
+            throw new InvalidOperationException("Кастомные алгоритмы поддерживают только массивы");
+        }
+        //----------------
+        private void UpdateArrayState(int[] array)
+        {
+            _structure.ApplyState(array);
+        }
+
+        //----------------
+        private void AddVisualizationStep(string operation, string description,
+            List<HighlightedElement> highlights = null, Dictionary<string, object> metadata = null)
+        {
+            _statistics.Steps++;
+
+            var step = new VisualizationStep
+            {
+                stepNumber = _visualizationSteps.Count + 1,
+                operation = operation,
+                description = description,
+                visualizationData = _structure.ToVisualizationData(),
+                metadata = metadata ?? new Dictionary<string, object>()
+            };
+
+            if (highlights != null)
+            {
+                step.visualizationData.highlights.AddRange(highlights);
+            }
+
+            var arrayState = GetArrayState();
+            step.metadata["array_state"] = arrayState;
+            step.metadata["array_string"] = $"[{string.Join(", ", arrayState)}]";
+
+            _visualizationSteps.Add(step);
+        }
+
+        //private string GetNextStep(string currentStepId)
+        //{
+        //    var stepIds = _request.steps.Select(s => s.id).ToList();
+        //    var currentIndex = stepIds.IndexOf(currentStepId);
+
+        //    return currentIndex >= 0 && currentIndex < stepIds.Count - 1 ?
+        //        stepIds[currentIndex + 1] : null;
+        //}
+        //----------------
+        private object ParseVariableValue(string type, string value)
+        {
+            try
+            {
+                return type.ToLower() switch
+                {
+                    "int" => int.Parse(EvaluateNumericExpression(value).ToString()),
+                    "double" => EvaluateNumericExpression(value),
+                    "bool" => ParseBooleanValue(value),
+                    "string" => EvaluateStringExpression(value),
+                    _ => EvaluateNumericExpression(value) // fallback to numeric
+                };
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Ошибка парсинга переменной: тип={type}, значение={value}, ошибка={ex.Message}");
+                return type.ToLower() switch
+                {
+                    "bool" => false,
+                    "string" => string.Empty,
+                    _ => 0
+                };
+            }
+        }
+        //----------------
+        private bool ParseBooleanValue(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                return false;
+
+            value = value.Trim().ToLower();
+            return value switch
+            {
+                "true" => true,
+                "false" => false,
+                "да" => true,
+                "нет" => false,
+                "yes" => true,
+                "no" => false,
+                _ => bool.Parse(value)
+            };
+        }
+        //----------------
+        private string EvaluateStringExpression(string expression)
+        {
+            if (string.IsNullOrWhiteSpace(expression))
+                return string.Empty;
+
+            expression = expression.Trim();
+
+            // Обработка строк в кавычках
+            if (expression.StartsWith("\"") && expression.EndsWith("\""))
+            {
+                return expression.Substring(1, expression.Length - 2);
+            }
+
+            // Замена переменных
+            expression = ReplaceVariables(expression);
+
+            // Вычисление выражений внутри строк
+            expression = EvaluateExpressionsInString(expression);
+
+            return expression;
+        }
+        //----------------
+        private string EvaluateExpressionsInString(string input)
+        {
+            // Обрабатываем выражения в фигурных скобках: "Значение: {variable}"
+            var pattern = @"\{([^}]+)\}";
+            var matches = Regex.Matches(input, pattern);
+
+            foreach (Match match in matches)
+            {
+                string expr = match.Groups[1].Value;
+                object result;
+
+                try
+                {
+                    // Пробуем вычислить как число
+                    result = EvaluateNumericExpression(expr);
+                }
+                catch
+                {
+                    try
+                    {
+                        // Пробуем вычислить как булево значение
+                        result = ParseBooleanValue(expr);
+                    }
+                    catch
+                    {
+                        // Оставляем как строку
+                        result = expr;
+                    }
+                }
+
+                input = input.Replace(match.Value, result.ToString());
+            }
+
+            return input;
+        }
+        //----------------
+        private string DetectExpressionType(string expression)
+        {
+            if (string.IsNullOrWhiteSpace(expression))
+                return "double";
+
+            expression = expression.Trim().ToLower();
+
+            // Булевы литералы
+            if (expression == "true" || expression == "false" ||
+                expression == "да" || expression == "нет")
+                return "bool";
+
+            // Строковые литералы (в кавычках)
+            if ((expression.StartsWith("\"") && expression.EndsWith("\"")) ||
+                (expression.StartsWith("'") && expression.EndsWith("'")))
+                return "string";
+
+            // Содержит арифметические операторы - числовое выражение
+            if (expression.Contains("+") || expression.Contains("-") ||
+                expression.Contains("*") || expression.Contains("/") ||
+                expression.Contains("(") || expression.Contains(")"))
+                return "double";
+
+            // По умолчанию считаем числовым
+            return "double";
+        }
+        //----------------
+        private bool? EvaluateBooleanCondition(string condition)
+        {
+            condition = condition.Trim();
+
+            // Прямые булевы значения
+            if (condition.Equals("true", StringComparison.OrdinalIgnoreCase) ||
+                condition.Equals("1", StringComparison.OrdinalIgnoreCase))
+                return true;
+
+            if (condition.Equals("false", StringComparison.OrdinalIgnoreCase) ||
+                condition.Equals("0", StringComparison.OrdinalIgnoreCase))
+                return false;
+
+            // Булевы операции
+            if (condition.Contains("&&") || condition.Contains("||") || condition.Contains("!"))
+            {
+                return EvaluateBooleanExpression(condition);
+            }
+
+            // Простая булева переменная
+            if (GetAllVariables().ContainsKey(condition) && GetAllVariables()[condition] is bool boolValue)
+            {
+                return boolValue;
+            }
+
+            return null;
+        }
+        //----------------
+        private bool EvaluateBooleanExpression(string expression)
+        {
+            expression = ReplaceVariables(expression);
+            expression = expression.Trim().ToLower();
+
+            // Простые случаи
+            if (expression.Contains("&&"))
+            {
+                var parts = expression.Split("&&", StringSplitOptions.RemoveEmptyEntries);
+                return parts.All(part => EvaluateBooleanCondition(part.Trim()) == true);
+            }
+
+            if (expression.Contains("||"))
+            {
+                var parts = expression.Split("||", StringSplitOptions.RemoveEmptyEntries);
+                return parts.Any(part => EvaluateBooleanCondition(part.Trim()) == true);
+            }
+
+            if (expression.StartsWith("!"))
+            {
+                var inner = expression.Substring(1).Trim();
+                return EvaluateBooleanCondition(inner) != true;
+            }
+
+            // Одиночное выражение
+            return EvaluateBooleanCondition(expression) == true;
+        }
+        //----------------
+        private bool EvaluateNumericCondition(string condition)
+        {
             condition = ReplaceVariables(condition);
-            Console.WriteLine($"🔍 After variable substitution: {condition}");
+            //Console.WriteLine($"🔍 After variable substitution: {condition}");
 
-
-            // Поддерживаемые операторы (в порядке приоритета для разделения)
             var operators = new[] { ">=", "<=", "==", "!=", ">", "<" };
 
             foreach (var op in operators)
@@ -494,21 +936,18 @@ namespace testing.Services
                 int opIndex = condition.IndexOf(op);
                 if (opIndex >= 0)
                 {
-                    // Разделяем условие на левую и правую части
                     string leftPart = condition.Substring(0, opIndex).Trim();
                     string rightPart = condition.Substring(opIndex + op.Length).Trim();
 
-                    Console.WriteLine($"🔍 Split condition: '{leftPart}' {op} '{rightPart}'");
+                    //Console.WriteLine($"🔍 Split condition: '{leftPart}' {op} '{rightPart}'");
 
                     try
                     {
-                        // Вычисляем обе части как выражения
-                        double leftValue = EvaluateExpression(leftPart);
-                        double rightValue = EvaluateExpression(rightPart);
+                        double leftValue = EvaluateNumericExpression(leftPart);
+                        double rightValue = EvaluateNumericExpression(rightPart);
 
-                        Console.WriteLine($"🔍 Values: {leftValue} {op} {rightValue}");
+                        //Console.WriteLine($"🔍 Values: {leftValue} {op} {rightValue}");
 
-                        // Выполняем сравнение
                         return op switch
                         {
                             "<" => leftValue < rightValue,
@@ -528,12 +967,12 @@ namespace testing.Services
                 }
             }
 
-            // Если нет операторов сравнения, пытаемся вычислить как булево выражение
+            // Если нет операторов сравнения, проверяем как булево значение
             try
             {
-                double result = EvaluateExpression(condition);
-                Console.WriteLine($"🔍 Boolean expression result: {result} (non-zero = true)");
-                return Math.Abs(result) > 0.0001; // Любое ненулевое значение = true
+                double result = EvaluateNumericExpression(condition);
+                Console.WriteLine($"🔍 Numeric expression result: {result} (non-zero = true)");
+                return Math.Abs(result) > 0.0001;
             }
             catch
             {
@@ -548,50 +987,89 @@ namespace testing.Services
             Console.WriteLine($"❌ Could not evaluate condition: {condition}");
             return false;
         }
-
-        private int[] GetArrayState()
+        //----------------
+        private int ConvertToInt(object value)
         {
-            var state = _structure.GetState();
-            if (state is int[] array)
-                return array;
-
-            throw new InvalidOperationException("Кастомные алгоритмы поддерживают только массивы");
-        }
-
-        private void UpdateArrayState(int[] array)
-        {
-            _structure.ApplyState(array);
-        }
-
-        private void AddVisualizationStep(string operation, string description,
-            List<HighlightedElement> highlights = null, Dictionary<string, object> metadata = null)
-        {
-            _statistics.Steps++;
-
-            var step = new VisualizationStep
+            return value switch
             {
-                StepNumber = _visualizationSteps.Count + 1,
-                Operation = operation,
-                Description = description,
-                VisualizationData = _structure.ToVisualizationData(),
-                Metadata = metadata ?? new Dictionary<string, object>()
+                int i => i,
+                double d => (int)d, // Явное приведение double к int
+                float f => (int)f,
+                decimal dec => (int)dec,
+                string s when int.TryParse(s, out int result) => result,
+                _ => throw new InvalidCastException($"Cannot convert {value?.GetType().Name} to int")
             };
+        }
 
-            if (highlights != null)
+        //------------------
+        private object GetVariableValue(string name)
+        {
+            // Сначала ищем в локальных областях видимости (сверху вниз)
+            foreach (var scope in _variableScopes)
             {
-                step.VisualizationData.Highlights.AddRange(highlights);
+                if (scope.ContainsKey(name))
+                    return scope[name];
             }
 
-            _visualizationSteps.Add(step);
+            // Затем в глобальных переменных
+            if (_globalVariables.ContainsKey(name))
+                return _globalVariables[name];
+
+            // Если переменная не найдена, создаем ее со значением по умолчанию
+            var defaultValue = GetDefaultValueForVariable(name);
+            SetVariableValue(name, defaultValue);
+            return defaultValue;
+        }
+        //------------------
+        private object GetDefaultValueForVariable(string name)
+        {
+            // Для стандартных переменных алгоритма возвращаем 0
+            if (name.StartsWith("last_") || name.StartsWith("compare_") || name == "i" || name == "j")
+                return 0;
+
+            return 0; // int по умолчанию
         }
 
-        private string GetNextStep(string currentStepId)
+        //-------------------
+        private void SetVariableValue(string name, object value)
         {
-            var stepIds = _request.steps.Select(s => s.id).ToList();
-            var currentIndex = stepIds.IndexOf(currentStepId);
+            if (_globalVariables.ContainsKey(name))
+            {
+                _globalVariables[name] = value;
+                return;
+            }
 
-            return currentIndex >= 0 && currentIndex < stepIds.Count - 1 ?
-                stepIds[currentIndex + 1] : null;
+            _variableScopes.Peek()[name] = value;
+            return;
+        }
+
+        //-------------------
+        private Dictionary<string, object> GetAllVariables()
+        {
+            var allVariables = new Dictionary<string, object>();
+
+            // Сначала добавляем глобальные переменные
+            foreach (var variable in _globalVariables)
+            {
+                allVariables[variable.Key] = variable.Value;
+            }
+
+            // Затем перезаписываем локальными (более приоритетными)
+            foreach (var scope in _variableScopes)
+            {
+                foreach (var variable in scope)
+                {
+                    allVariables[variable.Key] = variable.Value;
+                }
+            }
+
+            return allVariables;
+        }
+        //-------------------
+        private bool IsKeyword(string word)
+        {
+            string[] keywords = { "true", "false", "and", "or", "not", "array" };
+            return keywords.Contains(word.ToLower());
         }
     }
 }

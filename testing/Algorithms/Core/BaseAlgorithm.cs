@@ -25,11 +25,7 @@ namespace testing.Algorithms.Core
             Statistics.Reset();
             CurrentStructure = structure;
 
-            AddStep("start", "Начало выполнения алгоритма", structure);
-
             ExecuteAlgorithm(config, structure);
-
-            AddStep("complete", "Алгоритм завершён", structure);
 
             stopwatch.Stop();
 
@@ -48,26 +44,29 @@ namespace testing.Algorithms.Core
         protected abstract void ExecuteAlgorithm(AlgorithmConfig config, TStructure structure);
         protected abstract Dictionary<string, object> GetOutputData(TStructure structure);
 
-        protected void AddStep(string operation, string description, TStructure structure,
+        protected void AddStep(string operation, string description, TStructure structure, Dictionary<string, object>? metadata = null,
             List<HighlightedElement>? highlights = null, List<Connection>? connections = null)
         {
             var step = new VisualizationStep
             {
-                StepNumber = Steps.Count + 1,
-                Operation = operation,
-                Description = description,
-                VisualizationData = structure.ToVisualizationData()
+                stepNumber = Steps.Count + 1,
+                operation = operation,
+                description = description,
+                visualizationData = structure.ToVisualizationData()
             };
 
             if (highlights != null)
             {
-                step.VisualizationData.Highlights.AddRange(highlights);
+                step.visualizationData.highlights.AddRange(highlights);
             }
 
             if (connections != null)
             {
-                step.VisualizationData.Connections.AddRange(connections);
+                step.visualizationData.connections.AddRange(connections);
             }
+
+            if (metadata != null)
+                step.metadata = metadata;
 
             Steps.Add(step);
             Statistics.Steps++;

@@ -15,15 +15,17 @@ namespace testing.Models.DataStructures
         string Id { get; }
         VisualizationData ToVisualizationData();
         object GetState();
+        object GetOriginState();
         void ApplyState(object state);
     }
 
-    // Обобщенный интерфейс для типобезопасной работы
     public interface IDataStructure<T> : IDataStructure
     {
         new T GetState();
+        new T GetOriginState();
         void ApplyState(T state);
         object IDataStructure.GetState() => GetState()!;
+        object IDataStructure.GetOriginState() => GetOriginState()!;
         void IDataStructure.ApplyState(object state) => ApplyState((T)state);
     }
 }

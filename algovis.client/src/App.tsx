@@ -16,7 +16,7 @@ export default function App() {
       case 'visualizer':
         return <VisualizerPage />;
       case 'profiler':
-        return <ProfilerPage />;
+        return <ProfilerPage onNavigate={setCurrentPage} />;
       case 'help':
         return <HelpPage />;
       default:

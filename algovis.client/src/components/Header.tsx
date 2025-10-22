@@ -15,6 +15,7 @@ interface HeaderProps {
   onPageChange: (page: string) => void;
 }
      
+
 export function Header({ currentPage, onPageChange }: HeaderProps) {
   const { language, setLanguage, theme, setTheme, translations } = useApp();
 

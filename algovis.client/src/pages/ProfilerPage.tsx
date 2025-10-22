@@ -3,23 +3,31 @@ import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
 import { Slider } from '../components/ui/slider';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, Legend } from 'recharts';
 import { useApp } from '../contexts/AppContext';
+import { Send } from 'lucide-react';
 
 interface AlgorithmResult {
   name: string;
   time: number;
-  comparisons: number;
-  swaps: number;
+  comparisons?: number;
+  swaps?: number;
+  operations?: number;
 }
 
-export function ProfilerPage() {
-  const { translations } = useApp();
-  const [arraySize, setArraySize] = useState(1000);
+interface ProfilerPageProps {
+  onNavigate: (page: string) => void;
+}
+
+export function ProfilerPage({ onNavigate }: ProfilerPageProps) {
+  const { translations, setSharedData } = useApp();
+  const [dataStructure, setDataStructure] = useState<'array' | 'tree' | 'graph'>('array');
+  const [dataSize, setDataSize] = useState(1000);
   const [results, setResults] = useState<AlgorithmResult[]>([]);
   const [isRunning, setIsRunning] = useState(false);
 
-  // Mock algorithm implementations for performance testing
+  // Sorting algorithms
   const bubbleSort = (arr: number[]) => {
     const array = [...arr];
     let comparisons = 0;
@@ -37,7 +45,7 @@ export function ProfilerPage() {
     }
     
     const time = performance.now() - start;
-    return { time, comparisons, swaps };
+    return { time, comparisons, swaps, operations: comparisons + swaps };
   };
 
   const quickSort = (arr: number[]) => {
@@ -76,7 +84,7 @@ export function ProfilerPage() {
     
     quickSortHelper(0, array.length - 1);
     const time = performance.now() - start;
-    return { time, comparisons, swaps };
+    return { time, comparisons, swaps, operations: comparisons + swaps };
   };
 
   const mergeSort = (arr: number[]) => {
@@ -116,55 +124,251 @@ export function ProfilerPage() {
     
     mergeSortHelper(array);
     const time = performance.now() - start;
-    return { time, comparisons, swaps };
+    return { time, comparisons, swaps, operations: comparisons + swaps };
+  };
+
+  // Tree algorithms
+  const bstOperations = (size: number) => {
+    let operations = 0;
+    const start = performance.now();
+    
+    interface TreeNode {
+      value: number;
+      left?: TreeNode;
+      right?: TreeNode;
+    }
+    
+    let root: TreeNode | null = null;
+    
+    const insert = (node: TreeNode | null, value: number): TreeNode => {
+      operations++;
+      if (!node) return { value };
+      
+      if (value < node.value) {
+        node.left = insert(node.left || null, value);
+      } else {
+        node.right = insert(node.right || null, value);
+      }
+      return node;
+    };
+    
+    const search = (node: TreeNode | null, value: number): boolean => {
+      operations++;
+      if (!node) return false;
+      if (node.value === value) return true;
+      
+      if (value < node.value) {
+        return search(node.left || null, value);
+      } else {
+        return search(node.right || null, value);
+      }
+    };
+    
+    // Insert nodes
+    for (let i = 0; i < size; i++) {
+      root = insert(root, Math.floor(Math.random() * 1000));
+    }
+    
+    // Search for random values
+    for (let i = 0; i < Math.min(100, size); i++) {
+      search(root, Math.floor(Math.random() * 1000));
+    }
+    
+    const time = performance.now() - start;
+    return { time, operations };
+  };
+
+  // Graph algorithms
+  const graphBFS = (nodeCount: number, edgeCount: number) => {
+    let operations = 0;
+    const start = performance.now();
+    
+    // Create adjacency list
+    const graph = new Map<number, number[]>();
+    for (let i = 0; i < nodeCount; i++) {
+      graph.set(i, []);
+    }
+    
+    // Add random edges
+    for (let i = 0; i < edgeCount; i++) {
+      const from = Math.floor(Math.random() * nodeCount);
+      const to = Math.floor(Math.random() * nodeCount);
+      if (from !== to) {
+        graph.get(from)?.push(to);
+      }
+    }
+    
+    // BFS
+    const visited = new Set<number>();
+    const queue: number[] = [0];
+    
+    while (queue.length > 0) {
+      const current = queue.shift()!;
+      operations++;
+      
+      if (visited.has(current)) continue;
+      visited.add(current);
+      
+      const neighbors = graph.get(current) || [];
+      neighbors.forEach(neighbor => {
+        if (!visited.has(neighbor)) {
+          queue.push(neighbor);
+        }
+      });
+    }
+    
+    const time = performance.now() - start;
+    return { time, operations };
+  };
+
+  const graphDFS = (nodeCount: number, edgeCount: number) => {
+    let operations = 0;
+    const start = performance.now();
+    
+    // Create adjacency list
+    const graph = new Map<number, number[]>();
+    for (let i = 0; i < nodeCount; i++) {
+      graph.set(i, []);
+    }
+    
+    // Add random edges
+    for (let i = 0; i < edgeCount; i++) {
+      const from = Math.floor(Math.random() * nodeCount);
+      const to = Math.floor(Math.random() * nodeCount);
+      if (from !== to) {
+        graph.get(from)?.push(to);
+      }
+    }
+    
+    // DFS
+    const visited = new Set<number>();
+    
+    const dfs = (node: number) => {
+      operations++;
+      if (visited.has(node)) return;
+      visited.add(node);
+      
+      const neighbors = graph.get(node) || [];
+      neighbors.forEach(neighbor => {
+        if (!visited.has(neighbor)) {
+          dfs(neighbor);
+        }
+      });
+    };
+    
+    dfs(0);
+    
+    const time = performance.now() - start;
+    return { time, operations };
   };
 
   const runComparison = async () => {
     setIsRunning(true);
     setResults([]);
     
-    // Generate random array
-    const testArray = Array.from({ length: arraySize }, () => 
-      Math.floor(Math.random() * 1000) + 1
-    );
-    
-    const algorithms = [
-      { name: translations['algorithm.bubblesort'], fn: bubbleSort },
-      { name: translations['algorithm.quicksort'], fn: quickSort },
-      { name: translations['algorithm.mergesort'], fn: mergeSort },
-    ];
-    
-    const newResults: AlgorithmResult[] = [];
-    
-    for (const algorithm of algorithms) {
-      // Add small delay for UI feedback
-      await new Promise(resolve => setTimeout(resolve, 100));
+    if (dataStructure === 'array') {
+      const testArray = Array.from({ length: dataSize }, () => 
+        Math.floor(Math.random() * 1000) + 1
+      );
       
-      const result = algorithm.fn(testArray);
-      newResults.push({
-        name: algorithm.name,
-        ...result,
-      });
+      const algorithms = [
+        { name: translations['algorithm.bubblesort'], fn: () => bubbleSort(testArray) },
+        { name: translations['algorithm.quicksort'], fn: () => quickSort(testArray) },
+        { name: translations['algorithm.mergesort'], fn: () => mergeSort(testArray) },
+      ];
       
-      setResults([...newResults]);
+      const newResults: AlgorithmResult[] = [];
+      
+      for (const algorithm of algorithms) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+        const result = algorithm.fn();
+        newResults.push({ name: algorithm.name, ...result });
+        setResults([...newResults]);
+      }
+    } else if (dataStructure === 'tree') {
+      const algorithms = [
+        { name: 'BST Operations', fn: () => bstOperations(dataSize) },
+      ];
+      
+      const newResults: AlgorithmResult[] = [];
+      
+      for (const algorithm of algorithms) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+        const result = algorithm.fn();
+        newResults.push({ name: algorithm.name, ...result });
+        setResults([...newResults]);
+      }
+    } else if (dataStructure === 'graph') {
+      const edgeCount = Math.min(dataSize * 2, dataSize * (dataSize - 1) / 2);
+      
+      const algorithms = [
+        { name: 'BFS', fn: () => graphBFS(dataSize, edgeCount) },
+        { name: 'DFS', fn: () => graphDFS(dataSize, edgeCount) },
+      ];
+      
+      const newResults: AlgorithmResult[] = [];
+      
+      for (const algorithm of algorithms) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+        const result = algorithm.fn();
+        newResults.push({ name: algorithm.name, ...result });
+        setResults([...newResults]);
+      }
     }
     
     setIsRunning(false);
   };
 
+  const sendToVisualizer = () => {
+    if (dataStructure === 'array') {
+      const testArray = Array.from({ length: Math.min(20, dataSize) }, () => 
+        Math.floor(Math.random() * 100) + 1
+      );
+      setSharedData({
+        type: 'array',
+        algorithm: 'bubblesort',
+        data: testArray,
+      });
+    } else if (dataStructure === 'tree') {
+      setSharedData({
+        type: 'tree',
+        algorithm: 'bst.inorder',
+      });
+    } else if (dataStructure === 'graph') {
+      setSharedData({
+        type: 'graph',
+        algorithm: 'bfs',
+      });
+    }
+    onNavigate('visualizer');
+  };
+
   const chartData = results.map(result => ({
     name: result.name,
     time: parseFloat(result.time.toFixed(2)),
-    comparisons: result.comparisons,
-    swaps: result.swaps,
+    comparisons: result.comparisons || 0,
+    swaps: result.swaps || 0,
+    operations: result.operations || 0,
   }));
 
-  const complexityData = [
-    { size: 100, bubble: 100 * 100, quick: 100 * Math.log2(100), merge: 100 * Math.log2(100) },
-    { size: 500, bubble: 500 * 500, quick: 500 * Math.log2(500), merge: 500 * Math.log2(500) },
-    { size: 1000, bubble: 1000 * 1000, quick: 1000 * Math.log2(1000), merge: 1000 * Math.log2(1000) },
-    { size: 2000, bubble: 2000 * 2000, quick: 2000 * Math.log2(2000), merge: 2000 * Math.log2(2000) },
-    { size: 5000, bubble: 5000 * 5000, quick: 5000 * Math.log2(5000), merge: 5000 * Math.log2(5000) },
+  const complexityData = dataStructure === 'array' ? [
+    { size: 100, bubble: 100 * 100 / 10000, quick: 100 * Math.log2(100) / 100, merge: 100 * Math.log2(100) / 100 },
+    { size: 500, bubble: 500 * 500 / 10000, quick: 500 * Math.log2(500) / 100, merge: 500 * Math.log2(500) / 100 },
+    { size: 1000, bubble: 1000 * 1000 / 10000, quick: 1000 * Math.log2(1000) / 100, merge: 1000 * Math.log2(1000) / 100 },
+    { size: 2000, bubble: 2000 * 2000 / 10000, quick: 2000 * Math.log2(2000) / 100, merge: 2000 * Math.log2(2000) / 100 },
+    { size: 5000, bubble: 5000 * 5000 / 10000, quick: 5000 * Math.log2(5000) / 100, merge: 5000 * Math.log2(5000) / 100 },
+  ] : dataStructure === 'tree' ? [
+    { size: 100, bst: 100 * Math.log2(100) / 10 },
+    { size: 500, bst: 500 * Math.log2(500) / 10 },
+    { size: 1000, bst: 1000 * Math.log2(1000) / 10 },
+    { size: 2000, bst: 2000 * Math.log2(2000) / 10 },
+    { size: 5000, bst: 5000 * Math.log2(5000) / 10 },
+  ] : [
+    { size: 10, bfs: 10 + 20, dfs: 10 + 20 },
+    { size: 50, bfs: 50 + 100, dfs: 50 + 100 },
+    { size: 100, bfs: 100 + 200, dfs: 100 + 200 },
+    { size: 200, bfs: 200 + 400, dfs: 200 + 400 },
+    { size: 500, bfs: 500 + 1000, dfs: 500 + 1000 },
   ];
 
   return (
@@ -174,25 +378,45 @@ export function ProfilerPage() {
           <CardTitle>{translations['profiler.title']}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          <Tabs value={dataStructure} onValueChange={(v) => setDataStructure(v as any)}>
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="array">{translations['structure.array']}</TabsTrigger>
+              <TabsTrigger value="tree">{translations['structure.tree']}</TabsTrigger>
+              <TabsTrigger value="graph">{translations['structure.graph']}</TabsTrigger>
+            </TabsList>
+          </Tabs>
+
           <div className="space-y-2">
-            <label className="text-sm">{translations['data.size']}: {arraySize}</label>
+            <label className="text-sm">
+              {translations['data.size']}: {dataSize}
+            </label>
             <Slider
-              value={[arraySize]}
-              onValueChange={(value) => setArraySize(value[0])}
-              max={5000}
-              min={100}
-              step={100}
+              value={[dataSize]}
+              onValueChange={(value) => setDataSize(value[0])}
+              max={dataStructure === 'array' ? 5000 : dataStructure === 'tree' ? 1000 : 100}
+              min={dataStructure === 'array' ? 100 : dataStructure === 'tree' ? 10 : 5}
+              step={dataStructure === 'array' ? 100 : dataStructure === 'tree' ? 10 : 1}
               className="w-full"
             />
           </div>
           
-          <Button
-            onClick={runComparison}
-            disabled={isRunning}
-            className="bg-primary hover:bg-primary/90 text-primary-foreground"
-          >
-            {isRunning ? 'Выполняется...' : translations['profiler.compare']}
-          </Button>
+          <div className="flex space-x-2">
+            <Button
+              onClick={runComparison}
+              disabled={isRunning}
+              className="bg-primary hover:bg-primary/90 text-primary-foreground flex-1"
+            >
+              {isRunning ? 'Выполняется...' : translations['profiler.run']}
+            </Button>
+            <Button
+              onClick={sendToVisualizer}
+              variant="outline"
+              className="flex items-center space-x-2"
+            >
+              <Send className="h-4 w-4" />
+              <span>{translations['profiler.sendToVisualizer']}</span>
+            </Button>
+          </div>
         </CardContent>
       </Card>
 
@@ -217,7 +441,9 @@ export function ProfilerPage() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Операции</CardTitle>
+              <CardTitle>
+                {dataStructure === 'array' ? 'Операции' : translations['profiler.operations']}
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={300}>
@@ -226,8 +452,14 @@ export function ProfilerPage() {
                   <XAxis dataKey="name" />
                   <YAxis />
                   <Tooltip />
-                  <Bar dataKey="comparisons" fill="var(--color-chart-1)" name="Сравнения" />
-                  <Bar dataKey="swaps" fill="var(--color-chart-2)" name="Перестановки" />
+                  {dataStructure === 'array' ? (
+                    <>
+                      <Bar dataKey="comparisons" fill="var(--color-chart-1)" name="Сравнения" />
+                      <Bar dataKey="swaps" fill="var(--color-chart-2)" name="Перестановки" />
+                    </>
+                  ) : (
+                    <Bar dataKey="operations" fill="var(--color-chart-1)" name="Операции" />
+                  )}
                 </BarChart>
               </ResponsiveContainer>
             </CardContent>
@@ -246,9 +478,23 @@ export function ProfilerPage() {
               <XAxis dataKey="size" />
               <YAxis />
               <Tooltip />
-              <Line type="monotone" dataKey="bubble" stroke="var(--color-chart-1)" name="Bubble Sort O(n²)" />
-              <Line type="monotone" dataKey="quick" stroke="var(--color-chart-2)" name="Quick Sort O(n log n)" />
-              <Line type="monotone" dataKey="merge" stroke="var(--color-chart-3)" name="Merge Sort O(n log n)" />
+              <Legend />
+              {dataStructure === 'array' && (
+                <>
+                  <Line type="monotone" dataKey="bubble" stroke="var(--color-chart-1)" name="Bubble Sort O(n²)" />
+                  <Line type="monotone" dataKey="quick" stroke="var(--color-chart-2)" name="Quick Sort O(n log n)" />
+                  <Line type="monotone" dataKey="merge" stroke="var(--color-chart-3)" name="Merge Sort O(n log n)" />
+                </>
+              )}
+              {dataStructure === 'tree' && (
+                <Line type="monotone" dataKey="bst" stroke="var(--color-chart-1)" name="BST O(log n)" />
+              )}
+              {dataStructure === 'graph' && (
+                <>
+                  <Line type="monotone" dataKey="bfs" stroke="var(--color-chart-1)" name="BFS O(V + E)" />
+                  <Line type="monotone" dataKey="dfs" stroke="var(--color-chart-2)" name="DFS O(V + E)" />
+                </>
+              )}
             </LineChart>
           </ResponsiveContainer>
         </CardContent>
@@ -267,8 +513,15 @@ export function ProfilerPage() {
                     <h4 className="font-medium">{result.name}</h4>
                     <div className="flex space-x-4 text-sm text-muted-foreground">
                       <span>Время: {result.time.toFixed(2)} мс</span>
-                      <span>Сравнения: {result.comparisons}</span>
-                      <span>Перестановки: {result.swaps}</span>
+                      {result.comparisons !== undefined && (
+                        <span>Сравнения: {result.comparisons}</span>
+                      )}
+                      {result.swaps !== undefined && (
+                        <span>Перестановки: {result.swaps}</span>
+                      )}
+                      {result.operations !== undefined && (
+                        <span>Операции: {result.operations}</span>
+                      )}
                     </div>
                   </div>
                   <Badge variant={index === 0 ? "default" : "secondary"}>

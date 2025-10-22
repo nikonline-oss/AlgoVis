@@ -11,6 +11,7 @@ export function HelpPage() {
   const algorithms = [
     {
       name: translations['algorithm.bubblesort'],
+      type: 'sorting',
       complexity: 'O(n²)',
       description: language === 'ru' 
         ? 'Простой алгоритм сортировки, который многократно проходит по списку, сравнивает соседние элементы и меняет их местами, если они находятся в неправильном порядке.'
@@ -21,6 +22,7 @@ export function HelpPage() {
     },
     {
       name: translations['algorithm.quicksort'],
+      type: 'sorting',
       complexity: 'O(n log n)',
       description: language === 'ru'
         ? 'Эффективный алгоритм сортировки, использующий принцип "разделяй и властвуй". Выбирает опорный элемент и разделяет массив на две части.'
@@ -31,12 +33,46 @@ export function HelpPage() {
     },
     {
       name: translations['algorithm.mergesort'],
+      type: 'sorting',
       complexity: 'O(n log n)',
       description: language === 'ru'
         ? 'Стабильный алгоритм сортировки, основанный на принципе "разделяй и властвуй". Разделяет массив пополам, сортирует каждую половину и затем объединяет их.'
         : 'A stable sorting algorithm based on divide-and-conquer. It divides the array in half, sorts each half, and then merges them.',
       bestCase: 'O(n log n)',
       worstCase: 'O(n log n)',
+      stable: true,
+    },
+    {
+      name: 'BST (Binary Search Tree)',
+      type: 'tree',
+      complexity: 'O(log n)',
+      description: language === 'ru'
+        ? 'Двоичное дерево поиска - структура данных, где каждый узел имеет не более двух потомков, при этом левый потомок меньше родителя, а правый - больше.'
+        : 'A binary search tree is a data structure where each node has at most two children, with the left child being less than the parent and the right child being greater.',
+      bestCase: 'O(log n)',
+      worstCase: 'O(n)',
+      stable: true,
+    },
+    {
+      name: translations['algorithm.bfs'],
+      type: 'graph',
+      complexity: 'O(V + E)',
+      description: language === 'ru'
+        ? 'Поиск в ширину - алгоритм обхода графа, который исследует все вершины на текущем уровне перед переходом к вершинам следующего уровня.'
+        : 'Breadth-first search is a graph traversal algorithm that explores all vertices at the current level before moving to vertices at the next level.',
+      bestCase: 'O(V + E)',
+      worstCase: 'O(V + E)',
+      stable: true,
+    },
+    {
+      name: translations['algorithm.dfs'],
+      type: 'graph',
+      complexity: 'O(V + E)',
+      description: language === 'ru'
+        ? 'Поиск в глубину - алгоритм обхода графа, который исследует как можно дальше по каждой ветви перед возвратом.'
+        : 'Depth-first search is a graph traversal algorithm that explores as far as possible along each branch before backtracking.',
+      bestCase: 'O(V + E)',
+      worstCase: 'O(V + E)',
       stable: true,
     },
   ];
@@ -103,9 +139,10 @@ export function HelpPage() {
           <AccordionContent className="space-y-4">
             <ol className="list-decimal list-inside space-y-2">
               <li>{language === 'ru' ? 'Перейдите на страницу "Визуализатор"' : 'Go to the "Visualizer" page'}</li>
-              <li>{language === 'ru' ? 'Выберите алгоритм сортировки' : 'Select a sorting algorithm'}</li>
-              <li>{language === 'ru' ? 'Настройте размер массива' : 'Adjust the array size'}</li>
-              <li>{language === 'ru' ? 'Нажмите "Генерировать данные" для создания случайного массива' : 'Click "Generate Data" to create a random array'}</li>
+              <li>{language === 'ru' ? 'Выберите тип структуры данных (массив, дерево или граф)' : 'Select a data structure type (array, tree, or graph)'}</li>
+              <li>{language === 'ru' ? 'Выберите алгоритм для визуализации' : 'Select an algorithm to visualize'}</li>
+              <li>{language === 'ru' ? 'Настройте размер данных' : 'Adjust the data size'}</li>
+              <li>{language === 'ru' ? 'Нажмите "Генерировать данные" для создания случайных данных' : 'Click "Generate Data" to create random data'}</li>
               <li>{language === 'ru' ? 'Используйте элементы управления для запуска алгоритма' : 'Use the controls to run the algorithm'}</li>
             </ol>
           </AccordionContent>
@@ -187,26 +224,53 @@ export function HelpPage() {
             {language === 'ru' ? 'Обозначения в визуализации' : 'Visualization Legend'}
           </AccordionTrigger>
           <AccordionContent>
-            <div className="grid gap-3">
-              <div className="flex items-center space-x-3">
-                <div className="w-6 h-6 bg-muted rounded"></div>
-                <span>{language === 'ru' ? 'Неотсортированные элементы' : 'Unsorted elements'}</span>
+            <div className="space-y-4">
+              <div>
+                <h4 className="font-medium mb-2">{language === 'ru' ? 'Массивы:' : 'Arrays:'}</h4>
+                <div className="grid gap-2">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-6 h-6 bg-muted rounded"></div>
+                    <span>{language === 'ru' ? 'Неотсортированные элементы' : 'Unsorted elements'}</span>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <div className="w-6 h-6 bg-yellow-500 rounded"></div>
+                    <span>{language === 'ru' ? 'Сравниваемые элементы' : 'Elements being compared'}</span>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <div className="w-6 h-6 bg-red-500 rounded"></div>
+                    <span>{language === 'ru' ? 'Элементы в процессе перестановки' : 'Elements being swapped'}</span>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <div className="w-6 h-6 bg-primary rounded"></div>
+                    <span>{language === 'ru' ? 'Отсортированные элементы' : 'Sorted elements'}</span>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <div className="w-6 h-6 bg-purple-500 rounded"></div>
+                    <span>{language === 'ru' ? 'Опорный элемент (для Quick Sort)' : 'Pivot element (for Quick Sort)'}</span>
+                  </div>
+                </div>
               </div>
-              <div className="flex items-center space-x-3">
-                <div className="w-6 h-6 bg-yellow-500 rounded"></div>
-                <span>{language === 'ru' ? 'Сравниваемые элементы' : 'Elements being compared'}</span>
-              </div>
-              <div className="flex items-center space-x-3">
-                <div className="w-6 h-6 bg-red-500 rounded"></div>
-                <span>{language === 'ru' ? 'Элементы в процессе перестановки' : 'Elements being swapped'}</span>
-              </div>
-              <div className="flex items-center space-x-3">
-                <div className="w-6 h-6 bg-primary rounded"></div>
-                <span>{language === 'ru' ? 'Отсортированные элементы' : 'Sorted elements'}</span>
-              </div>
-              <div className="flex items-center space-x-3">
-                <div className="w-6 h-6 bg-purple-500 rounded"></div>
-                <span>{language === 'ru' ? 'Опорный элемент (для Quick Sort)' : 'Pivot element (for Quick Sort)'}</span>
+              
+              <div>
+                <h4 className="font-medium mb-2">{language === 'ru' ? 'Деревья и графы:' : 'Trees and Graphs:'}</h4>
+                <div className="grid gap-2">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-6 h-6 bg-muted rounded-full border-2 border-foreground"></div>
+                    <span>{language === 'ru' ? 'Обычный узел' : 'Normal node'}</span>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <div className="w-6 h-6 bg-primary rounded-full border-2 border-foreground"></div>
+                    <span>{language === 'ru' ? 'Посещённый узел' : 'Visited node'}</span>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <div className="w-6 h-6 rounded-full border-2 border-foreground" style={{ backgroundColor: 'hsl(var(--chart-2))' }}></div>
+                    <span>{language === 'ru' ? 'Выделенный узел' : 'Highlighted node'}</span>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <div className="w-6 h-6 bg-destructive rounded-full border-2 border-foreground"></div>
+                    <span>{language === 'ru' ? 'Текущий узел' : 'Current node'}</span>
+                  </div>
+                </div>
               </div>
             </div>
           </AccordionContent>
@@ -219,15 +283,15 @@ export function HelpPage() {
           <AccordionContent className="space-y-4">
             <p>
               {language === 'ru' 
-                ? 'Страница "Профайлер" позволяет сравнить производительность различных алгоритмов сортировки:'
-                : 'The "Profiler" page allows you to compare the performance of different sorting algorithms:'
+                ? 'Страница "Профайлер" позволяет сравнить производительность различных алгоритмов на разных структурах данных:'
+                : 'The "Profiler" page allows you to compare the performance of different algorithms on various data structures:'
               }
             </p>
             <ul className="list-disc list-inside space-y-1">
               <li>{language === 'ru' ? 'Время выполнения в миллисекундах' : 'Execution time in milliseconds'}</li>
-              <li>{language === 'ru' ? 'Количество сравнений элементов' : 'Number of element comparisons'}</li>
-              <li>{language === 'ru' ? 'Количество перестановок' : 'Number of swaps'}</li>
+              <li>{language === 'ru' ? 'Количество операций (сравнений, перестановок)' : 'Number of operations (comparisons, swaps)'}</li>
               <li>{language === 'ru' ? 'Теоретическая временная сложность' : 'Theoretical time complexity'}</li>
+              <li>{language === 'ru' ? 'Отправка данных в визуализатор для детального просмотра' : 'Send data to visualizer for detailed view'}</li>
             </ul>
           </AccordionContent>
         </AccordionItem>

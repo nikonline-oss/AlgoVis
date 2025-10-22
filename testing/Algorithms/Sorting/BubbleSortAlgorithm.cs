@@ -17,8 +17,7 @@ namespace testing.Algorithms.Sorting
         protected override void ExecuteAlgorithm(AlgorithmConfig config, ArrayStructure structure)
         {
             var array = structure.GetState();
-            bool detailed = config.Parameters?.ContainsKey("Detailed") == true &&
-                           (bool)config.Parameters["Detailed"];
+            bool detailed = config.Parameters?.ContainsKey("Detailed") == true;
 
             for (int i = 0; i < array.Length - 1; i++)
             {

@@ -13,7 +13,7 @@ using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace testing.Services
 {
-    public class CustomAlgori1thmInterpreter : ICustomAlgorithmInterpreter
+    public class CustomAlgorithmInterpreter : ICustomAlgorithmInterpreter
     {
         private Dictionary<string, AlgorithmStep> _steps = new();
         private Stack<Dictionary<string, object>> _variableScopes = new Stack<Dictionary<string, object>>();

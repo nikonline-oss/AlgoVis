@@ -7,299 +7,313 @@ import { AnimationControls } from '../components/AnimationControls';
 import { ArrayVisualization } from '../components/ArrayVisualization';
 import { useApp } from '../contexts/AppContext';
 
-interface SortingStep {
-  array: number[];
-  comparing?: number[];
-  swapping?: number[];
-  sorted?: number[];
-  pivotIndex?: number;
+interface ApiStep {
+    stepNumber: number;
+    operation: string;
+    description: string;
+    metadata: {
+        current_array: number[];
+    };
+    visualizationData: {
+        structureType: string;
+        elements: Record<string, { value: number; index: number; label: string }>;
+        highlights: Array<{
+            elementId: string;
+            highlightType: string;
+            color: string;
+            label: string;
+        }>;
+        connections: any[];
+    };
+}
+
+interface ApiStatistics {
+    comparisons: number;
+    swaps: number;
+    steps: number;
+    recursiveCalls: number;
+    memoryOperations: number;
+    timeComplexity: number;
+    spaceComplexity: number;
+    customMetrics: Record<string, number>;
+}
+
+interface ApiResult {
+    algorithmName: string;
+    sessionId: string;
+    structureType: string;
+    steps: ApiStep[];
+    statistics: ApiStatistics;
+    executionTime: string;
+    outputData: {
+        origin_array: number[];
+        sorted_array: number[];
+        is_sorted: boolean;
+    };
+}
+
+interface ApiResponse {
+    success: boolean;
+    result: ApiResult;
+    message: string;
 }
 
 export function VisualizerPage() {
-  const { translations } = useApp();
-  const [algorithm, setAlgorithm] = useState('bubblesort');
-  const [arraySize, setArraySize] = useState(20);
-  const [array, setArray] = useState<number[]>([]);
-  const [originalArray, setOriginalArray] = useState<number[]>([]);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [speed, setSpeed] = useState(1);
-  const [currentStep, setCurrentStep] = useState(0);
-  const [steps, setSteps] = useState<SortingStep[]>([]);
-  const [stats, setStats] = useState({ comparisons: 0, swaps: 0 });
+    const { translations } = useApp();
+    const [algorithm, setAlgorithm] = useState('BubbleSort');
+    const [arraySize, setArraySize] = useState(20);
+    const [originalArray, setOriginalArray] = useState<number[]>([]);
+    const [isPlaying, setIsPlaying] = useState(false);
+    const [speed, setSpeed] = useState(1);
+    const [currentStep, setCurrentStep] = useState(0);
+    const [apiSteps, setApiSteps] = useState<ApiStep[]>([]);
+    const [stats, setStats] = useState({ comparisons: 0, swaps: 0, steps: 0 });
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
-  const generateRandomArray = useCallback(() => {
-    const newArray = Array.from({ length: arraySize }, () => 
-      Math.floor(Math.random() * 100) + 1
-    );
-    setArray(newArray);
-    setOriginalArray([...newArray]);
-    setCurrentStep(0);
-    setSteps([]);
-    setStats({ comparisons: 0, swaps: 0 });
-    setIsPlaying(false);
-  }, [arraySize]);
+    const generateRandomArray = useCallback(() => {
+        const newArray = Array.from({ length: arraySize }, () =>
+            Math.floor(Math.random() * 100) + 1
+        );
+        setOriginalArray([...newArray]);
+        setCurrentStep(0);
+        setApiSteps([]);
+        setStats({ comparisons: 0, swaps: 0, steps: 0 });
+        setIsPlaying(false);
+        setError(null);
+    }, [arraySize]);
 
-  useEffect(() => {
-    generateRandomArray();
-  }, [generateRandomArray]);
+    useEffect(() => {
+        generateRandomArray();
+    }, [generateRandomArray]);
 
-  const bubbleSort = (arr: number[]): SortingStep[] => {
-    const steps: SortingStep[] = [];
-    const array = [...arr];
-    let comparisons = 0;
-    let swaps = 0;
-    
-    steps.push({ array: [...array] });
-    
-    for (let i = 0; i < array.length - 1; i++) {
-      for (let j = 0; j < array.length - i - 1; j++) {
-        comparisons++;
-        steps.push({
-          array: [...array],
-          comparing: [j, j + 1],
+    const transformApiStepToVisualization = (apiStep: ApiStep) => {
+        const array = apiStep.metadata.current_array;
+        const highlights = apiStep.visualizationData.highlights;
+
+        const comparing: number[] = [];
+        const swapping: number[] = [];
+        const sorted: number[] = [];
+
+        highlights.forEach(highlight => {
+            const index = parseInt(highlight.elementId);
+            if (highlight.highlightType === 'comparing') {
+                comparing.push(index);
+            } else if (highlight.highlightType === 'swapping') {
+                swapping.push(index);
+            } else if (highlight.highlightType === 'sorted') {
+                sorted.push(index);
+            }
         });
-        
-        if (array[j] > array[j + 1]) {
-          [array[j], array[j + 1]] = [array[j + 1], array[j]];
-          swaps++;
-          steps.push({
-            array: [...array],
-            swapping: [j, j + 1],
-          });
-        }
-      }
-      steps.push({
-        array: [...array],
-        sorted: Array.from({ length: i + 1 }, (_, k) => array.length - 1 - k),
-      });
-    }
-    
-    steps.push({
-      array: [...array],
-      sorted: Array.from({ length: array.length }, (_, i) => i),
-    });
-    
-    setStats({ comparisons, swaps });
-    return steps;
-  };
 
-  const quickSort = (arr: number[]): SortingStep[] => {
-    const steps: SortingStep[] = [];
-    const array = [...arr];
-    let comparisons = 0;
-    let swaps = 0;
-    
-    const partition = (low: number, high: number): number => {
-      const pivot = array[high];
-      let i = low - 1;
-      
-      steps.push({
-        array: [...array],
-        pivotIndex: high,
-      });
-      
-      for (let j = low; j < high; j++) {
-        comparisons++;
-        steps.push({
-          array: [...array],
-          comparing: [j, high],
-          pivotIndex: high,
-        });
-        
-        if (array[j] < pivot) {
-          i++;
-          if (i !== j) {
-            [array[i], array[j]] = [array[j], array[i]];
-            swaps++;
-            steps.push({
-              array: [...array],
-              swapping: [i, j],
-              pivotIndex: high,
+        return {
+            array,
+            comparing,
+            swapping,
+            sorted
+        };
+    };
+
+    const executeAlgorithm = async () => {
+        if (originalArray.length === 0) return;
+
+        setLoading(true);
+        setError(null);
+
+        try {
+            const response = await fetch('http://localhost:5266/api/Algorithms/execute', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    algorithmName: algorithm,
+                    data: originalArray,
+                    parameters: {
+                        Detailed: false
+                    }
+                }),
             });
-          }
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const result: ApiResponse = await response.json();
+            console.log(result);
+
+            if (result.success) {
+                setApiSteps(result.result.steps);
+                setStats({
+                    comparisons: result.result.statistics.comparisons,
+                    swaps: result.result.statistics.swaps,
+                    steps: result.result.statistics.steps
+                });
+                setCurrentStep(0);
+            } else {
+                throw new Error(result.message);
+            }
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'An error occurred');
+            console.error('Error executing algorithm:', err);
+        } finally {
+            setLoading(false);
         }
-      }
-      
-      [array[i + 1], array[high]] = [array[high], array[i + 1]];
-      swaps++;
-      steps.push({
-        array: [...array],
-        swapping: [i + 1, high],
-      });
-      
-      return i + 1;
     };
-    
-    const quickSortHelper = (low: number, high: number) => {
-      if (low < high) {
-        const pi = partition(low, high);
-        quickSortHelper(low, pi - 1);
-        quickSortHelper(pi + 1, high);
-      }
-    };
-    
-    steps.push({ array: [...array] });
-    quickSortHelper(0, array.length - 1);
-    steps.push({
-      array: [...array],
-      sorted: Array.from({ length: array.length }, (_, i) => i),
-    });
-    
-    setStats({ comparisons, swaps });
-    return steps;
-  };
 
-  const runAlgorithm = () => {
-    let algorithmSteps: SortingStep[] = [];
-    
-    switch (algorithm) {
-      case 'bubblesort':
-        algorithmSteps = bubbleSort(originalArray);
-        break;
-      case 'quicksort':
-        algorithmSteps = quickSort(originalArray);
-        break;
-      default:
-        algorithmSteps = bubbleSort(originalArray);
-    }
-    
-    setSteps(algorithmSteps);
-    setCurrentStep(0);
-  };
+    useEffect(() => {
+        if (isPlaying && apiSteps.length > 0) {
+            const timer = setTimeout(() => {
+                if (currentStep < apiSteps.length - 1) {
+                    setCurrentStep(currentStep + 1);
+                } else {
+                    setIsPlaying(false);
+                }
+            }, 1000 / speed);
 
-  useEffect(() => {
-    if (isPlaying && steps.length > 0) {
-      const timer = setTimeout(() => {
-        if (currentStep < steps.length - 1) {
-          setCurrentStep(currentStep + 1);
-        } else {
-          setIsPlaying(false);
+            return () => clearTimeout(timer);
         }
-      }, 1000 / speed);
-      
-      return () => clearTimeout(timer);
-    }
-  }, [isPlaying, currentStep, steps.length, speed]);
+    }, [isPlaying, currentStep, apiSteps.length, speed]);
 
-  const handlePlay = () => {
-    if (steps.length === 0) {
-      runAlgorithm();
-    }
-    setIsPlaying(true);
-  };
+    const handlePlay = async () => {
+        if (apiSteps.length === 0) {
+            await executeAlgorithm();
+        }
+        setIsPlaying(true);
+    };
 
-  const handlePause = () => {
-    setIsPlaying(false);
-  };
+    const handlePause = () => {
+        setIsPlaying(false);
+    };
 
-  const handleStepForward = () => {
-    if (steps.length === 0) {
-      runAlgorithm();
-      return;
-    }
-    if (currentStep < steps.length - 1) {
-      setCurrentStep(currentStep + 1);
-    }
-  };
+    const handleStepForward = () => {
+        if (apiSteps.length === 0) {
+            executeAlgorithm();
+            return;
+        }
+        if (currentStep < apiSteps.length - 1) {
+            setCurrentStep(currentStep + 1);
+        }
+    };
 
-  const handleStepBackward = () => {
-    if (currentStep > 0) {
-      setCurrentStep(currentStep - 1);
-    }
-  };
+    const handleStepBackward = () => {
+        if (currentStep > 0) {
+            setCurrentStep(currentStep - 1);
+        }
+    };
 
-  const handleReset = () => {
-    setCurrentStep(0);
-    setIsPlaying(false);
-    setArray([...originalArray]);
-    setSteps([]);
-  };
+    const handleReset = () => {
+        setCurrentStep(0);
+        setIsPlaying(false);
+    };
 
-  const currentStepData = steps[currentStep] || { array, comparing: [], swapping: [], sorted: [] };
+    // Получаем текущие данные для визуализации
+    const currentStepData = apiSteps.length > 0
+        ? transformApiStepToVisualization(apiSteps[currentStep])
+        : { array: originalArray, comparing: [], swapping: [], sorted: [] };
 
-  return (
-    <div className="space-y-6">
-      <div className="grid lg:grid-cols-4 gap-6">
-        <Card className="lg:col-span-1">
-          <CardHeader>
-            <CardTitle>{translations['algorithm.select']}</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <Select value={algorithm} onValueChange={setAlgorithm}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="bubblesort">
-                  {translations['algorithm.bubblesort']}
-                </SelectItem>
-                <SelectItem value="quicksort">
-                  {translations['algorithm.quicksort']}
-                </SelectItem>
-                <SelectItem value="mergesort">
-                  {translations['algorithm.mergesort']}
-                </SelectItem>
-                <SelectItem value="heapsort">
-                  {translations['algorithm.heapsort']}
-                </SelectItem>
-              </SelectContent>
-            </Select>
+    return (
+        <div className="space-y-6">
+            <div className="grid lg:grid-cols-4 gap-6">
+                <Card className="lg:col-span-1">
+                    <CardHeader>
+                        <CardTitle>{translations['algorithm.select']}</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <Select value={algorithm} onValueChange={setAlgorithm}>
+                            <SelectTrigger>
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="BubbleSort">
+                                    {translations['algorithm.bubblesort']}
+                                </SelectItem>
+                                <SelectItem value="QuickSort">
+                                    {translations['algorithm.quicksort']}
+                                </SelectItem>
+                                {/* Добавьте другие алгоритмы по мере их реализации на бэкенде */}
+                            </SelectContent>
+                        </Select>
 
-            <div className="space-y-2">
-              <label className="text-sm">{translations['data.size']}: {arraySize}</label>
-              <Slider
-                value={[arraySize]}
-                onValueChange={(value) => setArraySize(value[0])}
-                max={50}
-                min={5}
-                step={1}
-              />
-            </div>
+                        <div className="space-y-2">
+                            <label className="text-sm">{translations['data.size']}: {arraySize}</label>
+                            <Slider
+                                value={[arraySize]}
+                                onValueChange={(value) => setArraySize(value[0])}
+                                max={50}
+                                min={5}
+                                step={1}
+                            />
+                        </div>
 
-            <Button
-              onClick={generateRandomArray}
-              variant="outline"
-              className="w-full"
-            >
-              {translations['data.generate']}
-            </Button>
+                        <Button
+                            onClick={generateRandomArray}
+                            variant="outline"
+                            className="w-full"
+                        >
+                            {translations['data.generate']}
+                        </Button>
 
-            <div className="space-y-2 pt-4 border-t">
-              <div className="text-sm">
-                <div className="flex justify-between">
-                  <span>{translations['profiler.comparisons']}:</span>
-                  <span className="text-primary">{stats.comparisons}</span>
+                        <Button
+                            onClick={executeAlgorithm}
+                            disabled={loading || originalArray.length === 0}
+                            className="w-full"
+                        >
+                            {loading ? 'Executing...' : 'Run Algorithm'}
+                        </Button>
+
+                        {error && (
+                            <div className="text-sm text-red-500 p-2 bg-red-50 rounded">
+                                Error: {error}
+                            </div>
+                        )}
+
+                        <div className="space-y-2 pt-4 border-t">
+                            <div className="text-sm">
+                                <div className="flex justify-between">
+                                    <span>{translations['profiler.comparisons']}:</span>
+                                    <span className="text-primary">{stats.comparisons}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span>{translations['profiler.swaps']}:</span>
+                                    <span className="text-primary">{stats.swaps}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span>Total Steps:</span>
+                                    <span className="text-primary">{stats.steps}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <div className="lg:col-span-3 space-y-6">
+                    <ArrayVisualization {...currentStepData} />
+
+                    <AnimationControls
+                        isPlaying={isPlaying}
+                        onPlay={handlePlay}
+                        onPause={handlePause}
+                        onStepForward={handleStepForward}
+                        onStepBackward={handleStepBackward}
+                        onReset={handleReset}
+                        speed={speed}
+                        onSpeedChange={setSpeed}
+                        disabled={apiSteps.length === 0}
+                    />
+
+                    {apiSteps.length > 0 && (
+                        <div className="text-center text-sm text-muted-foreground">
+                            Step {currentStep + 1} of {apiSteps.length}
+                            {apiSteps[currentStep] && (
+                                <div className="mt-1">
+                                    {apiSteps[currentStep].description}
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </div>
-                <div className="flex justify-between">
-                  <span>{translations['profiler.swaps']}:</span>
-                  <span className="text-primary">{stats.swaps}</span>
-                </div>
-              </div>
             </div>
-          </CardContent>
-        </Card>
-
-        <div className="lg:col-span-3 space-y-6">
-          <ArrayVisualization {...currentStepData} />
-          
-          <AnimationControls
-            isPlaying={isPlaying}
-            onPlay={handlePlay}
-            onPause={handlePause}
-            onStepForward={handleStepForward}
-            onStepBackward={handleStepBackward}
-            onReset={handleReset}
-            speed={speed}
-            onSpeedChange={setSpeed}
-          />
-
-          {steps.length > 0 && (
-            <div className="text-center text-sm text-muted-foreground">
-              Шаг {currentStep + 1} из {steps.length}
-            </div>
-          )}
         </div>
-      </div>
-    </div>
-  );
+    );
 }

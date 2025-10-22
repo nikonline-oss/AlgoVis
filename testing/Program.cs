@@ -84,7 +84,7 @@ namespace AlgorithmVisualization
             Console.WriteLine("\n=== Загрузка кастомного алгоритма ===");
             Console.Write("Введите путь к JSON файлу с алгоритмом: ");
 
-            var filePath = Console.ReadLine();
+            var filePath = "C:\\2025\\Project\\Программная инженерия\\AlgoVis\\testing\\InstructJson.json";
 
             if (File.Exists(filePath))
             {

@@ -3,6 +3,9 @@ using AlgoVis.Server.Hubs;
 using AlgoVis.Server.Interfaces;
 using AlgoVis.Server.Services;
 using Microsoft.EntityFrameworkCore;
+using testing.Services;
+using testing.Services.Core;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -28,6 +31,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 builder.Services.AddScoped<ISessionService, SessionService>();
 builder.Services.AddScoped<ISessionService, SessionService>();
 builder.Services.AddScoped<ICodeAnalysisService, CodeAnalysisService>();
+builder.Services.AddScoped<AlgorithmManager>();
 
 // Add SignalR
 builder.Services.AddSignalR(options =>

@@ -42,7 +42,7 @@
           "id": "inner_loop_condition",
           "type": "condition",
           "description": "Проверка условия внутреннего цикла",
-          "parameters": [ "j < n - current_i - 1" ],
+          "parameters": [ "j < ( n - current_i - 1)" ],
           "conditionCases": [
             {
               "condition": "true",
@@ -118,7 +118,7 @@
       "id": "outer_loop_condition",
       "type": "condition",
       "description": "Проверка условия внешнего цикла",
-      "parameters": [ "i < n-1" ],
+      "parameters": [ "i <( n-1)" ],
       "conditionCases": [
         {
           "condition": "true",

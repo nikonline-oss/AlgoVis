@@ -16,11 +16,11 @@ namespace testing.Services.Core
     public class AlgorithmManager
     {
         private readonly Dictionary<string, Type> _algorithms = new();
-        private readonly ICustomAlgorithmInterpreter _customInterpreter;
+        private readonly AlgorithmInterpreter algorithmInterpreter;
 
         public AlgorithmManager()
         {
-            _customInterpreter = new CustomAlgorithmInterpreter();
+            algorithmInterpreter = new AlgorithmInterpreter();
 
             RegisterAlgorithm<ArrayStructure, int[]>("BubbleSort", typeof(BubbleSortAlgorithm));
             RegisterAlgorithm<ArrayStructure, int[]>("QuickSort", typeof(QuickSortAlgorithm));
@@ -49,7 +49,7 @@ namespace testing.Services.Core
         }
         public CustomAlgorithmResult ExecuteCustomAlgorithm(CustomAlgorithmRequest request, IDataStructure structure)
         {
-            return _customInterpreter.Execute(request, structure);
+            return algorithmInterpreter.Execute(request, structure);
         }
 
         public List<string> GetAvailableAlgorithms() => _algorithms.Keys.ToList();

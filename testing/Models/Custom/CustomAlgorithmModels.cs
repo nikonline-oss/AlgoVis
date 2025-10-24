@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using testing.Models.Core;
+using testing.Models.Evaluator;
 
 namespace testing.Models.Custom
 {
@@ -13,20 +14,17 @@ namespace testing.Models.Custom
         public string description { get; set; } = string.Empty;
         public string structureType { get; set; } = "array";
         public List<AlgorithmStep> steps { get; set; } = new();
-        public Dictionary<string, object> parametrs{ get; set; } = new();
         public List<VariableDefinition> variables { get; set; } = new();
-        public List<ConditionDefinition> conditions { get; set; } = new();
-
-        public List<FunctionGroup> functions { get; set; } = new(); // Новое!
+        public List<FunctionGroup> functions { get; set; } = new();
     }
     //группа шагов
     public class FunctionGroup
     {
         public string name { get; set; } = string.Empty;
         public string description { get; set; } = string.Empty;
-        public List<string> parameters { get; set; } = new(); // Параметры функции
+        public List<string> parameters { get; set; } = new(); 
         public List<AlgorithmStep> steps { get; set; } = new();
-        public string entryPoint { get; set; } = "start"; // Шаг возврата
+        public string entryPoint { get; set; } = "start"; 
     }
 
     //Шаг алгоритма
@@ -37,26 +35,23 @@ namespace testing.Models.Custom
         public string operation { get; set; } = string.Empty;
         public string description { get; set; } = string.Empty;
         public List<string> parameters { get; set; } = new();
-        public Dictionary<string, object> metadata { get; set; } = new();
         public string nextStep { get; set; } = string.Empty;
-        public List<ConditionCase> conditionCases { get; set; } = new();
-        // Новые поля для вызова функций
         public string functionName { get; set; } = string.Empty;
         public Dictionary<string, string> functionParameters { get; set; } = new();
         public string returnToStep { get; set; } = string.Empty;
+        public List<ConditionCase> conditionCases { get; set; } = new();
+        public Dictionary<string, object> metadata { get; set; } = new();
+
+        public bool visualize { get; set; } = false; // Включить/выключить визуализацию этого шага
+        public List<string> highlightElements { get; set; } = new(); // Элементы для подсветки
+        public string highlightColor { get; set; } = "yellow"; // Цвет подсветки
+        public string visualizationType { get; set; } = "default"; // Тип визуализации
     }
     //случай условие
     public class ConditionCase
     {
         public string condition {  get; set; } = string.Empty;
         public string nextStep {  get; set; } = string.Empty;
-    }
-    //определение переменной
-    public class VariableDefinition
-    {
-        public string name { get; set; } = string.Empty ;
-        public string type { get; set; } = "int";
-        public object initialValue { get; set; } = 0;
     }
     // Определение условия
     public class ConditionDefinition
@@ -74,15 +69,5 @@ namespace testing.Models.Custom
         public string message { get; set; } = string.Empty;
         public AlgorithmResult result { get; set; } = new();
         public Dictionary<string, object> executionState { get; set; } = new();
-    }
-
-    // Новая модель контекста вызова
-    public class FunctionContext
-    {
-        public string callerStepId { get; set; } = string.Empty;
-        public Dictionary<string, object> variables { get; set; } = new Dictionary<string, object>();
-        public int depth { get; set; }
-        public string functionName { get; set; } = string.Empty;
-
     }
 }

@@ -4,6 +4,7 @@ using System.Text.Json;
 using testing.Models.Core;
 using testing.Models.Custom;
 using testing.Models.DataStructures;
+using testing.Models.Evaluator;
 using testing.Models.Visualization;
 using testing.Services.Core;
 using testing.Support;
@@ -47,16 +48,12 @@ namespace AlgorithmVisualization
             _menuManager.LastTextShowMenu = "Выйти из программы";
             _menuManager.ActionExite = () => Environment.Exit(0);
 
-            // Основные пункты меню
-            _menuManager.AddMenuItem("Настроить тестовые данные", SetupTestData);
-            _menuManager.AddMenuItem("Тестировать BubbleSort", TestBubbleSort);
-            _menuManager.AddMenuItem("Тестировать QuickSort", TestQuickSort);
-            _menuManager.AddMenuItem("Загрузить кастомный алгоритм", LoadCustomAlgorithm);
-            _menuManager.AddMenuItem("Создать кастомный алгоритм", CreateCustomAlgorithm);
-            _menuManager.AddMenuItem("Сравнить производительность", CompareAlgorithms);
-            _menuManager.AddMenuItem("Показать статистику", ShowStatistics);
-            _menuManager.AddMenuItem("Сохранить результаты", SaveResultsMenu);
-            _menuManager.AddMenuItem("Очистить данные", ClearTestData);
+            // Упрощенные пункты меню
+            _menuManager.AddMenuItem("📊 Настроить тестовые данные", SetupTestData);
+            _menuManager.AddMenuItem("🔄 Тестировать BubbleSort", TestBubbleSort);
+            _menuManager.AddMenuItem("⚡ Тестировать QuickSort", TestQuickSort);
+            _menuManager.AddMenuItem("🎯 Загрузить кастомный алгоритм", LoadCustomAlgorithm);
+            _menuManager.AddMenuItem("💾 Сохранить результаты", SaveResultsMenu);
         }
 
         public void ShowMenu() => _menuManager.ShowMenu();
@@ -71,10 +68,10 @@ namespace AlgorithmVisualization
             setupMenu.SubMenuBool = true;
             setupMenu.LastTextShowMenu = "Назад в главное меню";
 
-            setupMenu.AddMenuItem("Сгенерировать случайный массив", GenerateRandomArray);
-            setupMenu.AddMenuItem("Ввести массив вручную", InputArrayManually);
-            setupMenu.AddMenuItem("Использовать тестовые примеры", UseTestCases);
-            setupMenu.AddMenuItem("Показать текущие данные", ShowCurrentData);
+            setupMenu.AddMenuItem("🎲 Сгенерировать случайный массив", GenerateRandomArray);
+            setupMenu.AddMenuItem("⌨️ Ввести массив вручную", InputArrayManually);
+            setupMenu.AddMenuItem("📋 Использовать тестовые примеры", UseTestCases);
+            setupMenu.AddMenuItem("👁️ Показать текущие данные", ShowCurrentData);
 
             setupMenu.Run();
         }
@@ -82,9 +79,9 @@ namespace AlgorithmVisualization
         private void LoadCustomAlgorithm()
         {
             Console.WriteLine("\n=== Загрузка кастомного алгоритма ===");
-            Console.Write("Введите путь к JSON файлу с алгоритмом: ");
 
-            var filePath = "C:\\2025\\Project\\Программная инженерия\\AlgoVis\\testing\\InstructJson.json";
+            // Предопределенные пути для тестирования
+            var filePath = "C:\\2025\\Project\\Программная инженерия\\AlgoVis\\testing\\quickSort.json";
 
             if (File.Exists(filePath))
             {
@@ -111,623 +108,6 @@ namespace AlgorithmVisualization
             Console.WriteLine("Нажмите любую клавишу для продолжения...");
             Console.ReadKey();
         }
-
-        #region Создание кастомного алгоритма
-        private void CreateCustomAlgorithm()
-        {
-            Console.WriteLine("\n=== Создание кастомного алгоритма ===");
-
-            var algorithm = new CustomAlgorithmRequest
-            {
-                name = "Новый алгоритм",
-                description = "Описание алгоритма",
-                structureType = "array",
-                variables = new List<VariableDefinition>(),
-                steps = new List<AlgorithmStep>(),
-            };
-
-            var creationMenu = new MenuManager(this);
-            creationMenu.SubMenuBool = true;
-            creationMenu.LastTextShowMenu = "Сохранить и выйти";
-
-            creationMenu.AddMenuItem("📝 Название и описание", () => EditAlgorithmInfo(algorithm));
-            creationMenu.AddMenuItem("🔢 Переменные", () => ManageVariables(algorithm));
-            creationMenu.AddMenuItem("⚡ Шаги алгоритма", () => ManageSteps(algorithm));
-            creationMenu.AddMenuItem("👁️ Предпросмотр алгоритма", () => PreviewAlgorithm(algorithm));
-            creationMenu.AddMenuItem("💾 Сохранить в файл", () => SaveAlgorithmToFile(algorithm));
-            creationMenu.AddMenuItem("🚀 Протестировать алгоритм", () => TestCreatedAlgorithm(algorithm));
-
-            creationMenu.Run();
-        }
-
-        private void EditAlgorithmInfo(CustomAlgorithmRequest algorithm)
-        {
-            Console.WriteLine("\n=== Название и описание алгоритма ===");
-
-            Console.Write($"Название алгоритма [{algorithm.name}]: ");
-            var name = Console.ReadLine();
-            if (!string.IsNullOrWhiteSpace(name))
-                algorithm.name = name;
-
-            Console.Write($"Описание алгоритма [{algorithm.description}]: ");
-            var description = Console.ReadLine();
-            if (!string.IsNullOrWhiteSpace(description))
-                algorithm.description = description;
-
-            Console.WriteLine($"\n✅ Обновлено: {algorithm.name}");
-            Console.WriteLine($"📖 Описание: {algorithm.description}");
-            Console.WriteLine("\nНажмите любую клавишу для продолжения...");
-            Console.ReadKey();
-        }
-
-        private void ManageVariables(CustomAlgorithmRequest algorithm)
-        {
-            var variablesMenu = new MenuManager(this);
-            variablesMenu.SubMenuBool = true;
-            variablesMenu.LastTextShowMenu = "Назад";
-
-            variablesMenu.AddMenuItem("➕ Добавить переменную", () => AddVariable(algorithm));
-            variablesMenu.AddMenuItem("📋 Список переменных", () => ListVariables(algorithm));
-            variablesMenu.AddMenuItem("✏️ Редактировать переменную", () => EditVariable(algorithm));
-            variablesMenu.AddMenuItem("❌ Удалить переменную", () => DeleteVariable(algorithm));
-
-            variablesMenu.Run();
-        }
-
-        private void AddVariable(CustomAlgorithmRequest algorithm)
-        {
-            Console.WriteLine("\n=== Добавление переменной ===");
-
-            Console.Write("Имя переменной: ");
-            var name = Console.ReadLine();
-            if (string.IsNullOrWhiteSpace(name))
-            {
-                Console.WriteLine("❌ Имя переменной не может быть пустым");
-                return;
-            }
-
-            Console.Write("Тип переменной (int/double/string) [int]: ");
-            var type = Console.ReadLine();
-            if (string.IsNullOrWhiteSpace(type)) type = "int";
-
-            Console.Write("Начальное значение: ");
-            var initialValue = Console.ReadLine();
-            if (string.IsNullOrWhiteSpace(initialValue)) initialValue = "0";
-
-            algorithm.variables.Add(new VariableDefinition
-            {
-                name = name,
-                type = type,
-                initialValue = initialValue
-            });
-
-            Console.WriteLine($"✅ Добавлена переменная: {name} ({type}) = {initialValue}");
-            Console.WriteLine("Нажмите любую клавишу для продолжения...");
-            Console.ReadKey();
-        }
-
-        private void ListVariables(CustomAlgorithmRequest algorithm)
-        {
-            Console.WriteLine("\n=== Список переменных ===");
-
-            if (algorithm.variables.Count == 0)
-            {
-                Console.WriteLine("📭 Переменные не добавлены");
-            }
-            else
-            {
-                for (int i = 0; i < algorithm.variables.Count; i++)
-                {
-                    var variable = algorithm.variables[i];
-                    Console.WriteLine($"{i + 1}. {variable.name} ({variable.type}) = {variable.initialValue}");
-                }
-            }
-
-            Console.WriteLine("\nНажмите любую клавишу для продолжения...");
-            Console.ReadKey();
-        }
-
-        private void EditVariable(CustomAlgorithmRequest algorithm)
-        {
-            if (algorithm.variables.Count == 0)
-            {
-                Console.WriteLine("❌ Нет переменных для редактирования");
-                Console.WriteLine("Нажмите любую клавишу для продолжения...");
-                Console.ReadKey();
-                return;
-            }
-
-            ListVariables(algorithm);
-            Console.Write("\nВыберите номер переменной для редактирования: ");
-
-            if (int.TryParse(Console.ReadLine(), out int index) && index > 0 && index <= algorithm.variables.Count)
-            {
-                var variable = algorithm.variables[index - 1];
-
-                Console.Write($"Новое имя [{variable.name}]: ");
-                var newName = Console.ReadLine();
-                if (!string.IsNullOrWhiteSpace(newName))
-                    variable.name = newName;
-
-                Console.Write($"Новый тип [{variable.type}]: ");
-                var newType = Console.ReadLine();
-                if (!string.IsNullOrWhiteSpace(newType))
-                    variable.type = newType;
-
-                Console.Write($"Новое начальное значение [{variable.initialValue}]: ");
-                var newValue = Console.ReadLine();
-                if (!string.IsNullOrWhiteSpace(newValue))
-                    variable.initialValue = newValue;
-
-                Console.WriteLine($"✅ Переменная обновлена: {variable.name} ({variable.type}) = {variable.initialValue}");
-            }
-            else
-            {
-                Console.WriteLine("❌ Неверный номер переменной");
-            }
-
-            Console.WriteLine("Нажмите любую клавишу для продолжения...");
-            Console.ReadKey();
-        }
-
-        private void DeleteVariable(CustomAlgorithmRequest algorithm)
-        {
-            if (algorithm.variables.Count == 0)
-            {
-                Console.WriteLine("❌ Нет переменных для удаления");
-                Console.WriteLine("Нажмите любую клавишу для продолжения...");
-                Console.ReadKey();
-                return;
-            }
-
-            ListVariables(algorithm);
-            Console.Write("\nВыберите номер переменной для удаления: ");
-
-            if (int.TryParse(Console.ReadLine(), out int index) && index > 0 && index <= algorithm.variables.Count)
-            {
-                var variable = algorithm.variables[index - 1];
-                algorithm.variables.RemoveAt(index - 1);
-                Console.WriteLine($"✅ Переменная '{variable.name}' удалена");
-            }
-            else
-            {
-                Console.WriteLine("❌ Неверный номер переменной");
-            }
-
-            Console.WriteLine("Нажмите любую клавишу для продолжения...");
-            Console.ReadKey();
-        }
-
-        private void ManageSteps(CustomAlgorithmRequest algorithm)
-        {
-            var stepsMenu = new MenuManager(this);
-            stepsMenu.SubMenuBool = true;
-            stepsMenu.LastTextShowMenu = "Назад";
-
-            stepsMenu.AddMenuItem("➕ Добавить шаг", () => AddStep(algorithm));
-            stepsMenu.AddMenuItem("📋 Список шагов", () => ListSteps(algorithm));
-            stepsMenu.AddMenuItem("✏️ Редактировать шаг", () => EditStep(algorithm));
-            stepsMenu.AddMenuItem("🔄 Изменить порядок шагов", () => ReorderSteps(algorithm));
-            stepsMenu.AddMenuItem("❌ Удалить шаг", () => DeleteStep(algorithm));
-            stepsMenu.AddMenuItem("🔗 Настроить связи шагов", () => ConfigureStepLinks(algorithm));
-
-            stepsMenu.Run();
-        }
-
-        private void AddStep(CustomAlgorithmRequest algorithm)
-        {
-            Console.WriteLine("\n=== Добавление шага алгоритма ===");
-
-            var stepTypes = new Dictionary<string, string>
-            {
-                ["assign"] = "Присвоение значения переменной",
-                ["compare"] = "Сравнение элементов",
-                ["swap"] = "Обмен элементов",
-                ["condition"] = "Условие",
-                ["loop"] = "Цикл",
-                ["recursive_call"] = "Рекурсивный вызов",
-                ["return"] = "Возврат из рекурсии",
-                ["generic"] = "Общий шаг"
-            };
-
-            Console.WriteLine("Выберите тип шага:");
-            int i = 1;
-            foreach (var type in stepTypes)
-            {
-                Console.WriteLine($"{i}. {type.Value} ({type.Key})");
-                i++;
-            }
-
-            Console.Write("Ваш выбор: ");
-            if (int.TryParse(Console.ReadLine(), out int typeChoice) && typeChoice > 0 && typeChoice <= stepTypes.Count)
-            {
-                var selectedType = stepTypes.Keys.ElementAt(typeChoice - 1);
-
-                Console.Write("ID шага (уникальный идентификатор): ");
-                var id = Console.ReadLine();
-                if (string.IsNullOrWhiteSpace(id))
-                {
-                    Console.WriteLine("❌ ID шага не может быть пустым");
-                    return;
-                }
-
-                Console.Write("Описание шага: ");
-                var description = Console.ReadLine();
-
-                var step = new AlgorithmStep
-                {
-                    id = id,
-                    type = selectedType,
-                    description = description,
-                    parameters = new List<string>(),
-                    conditionCases = new List<ConditionCase>(),
-                    metadata = new Dictionary<string, object>()
-                };
-
-                // Запрашиваем параметры в зависимости от типа шага
-                switch (selectedType)
-                {
-                    case "assign":
-                        Console.Write("Имя переменной: ");
-                        step.parameters.Add(Console.ReadLine());
-                        Console.Write("Значение: ");
-                        step.parameters.Add(Console.ReadLine());
-                        break;
-
-                    case "compare":
-                        Console.Write("Первый элемент/индекс: ");
-                        step.parameters.Add(Console.ReadLine());
-                        Console.Write("Второй элемент/индекс: ");
-                        step.parameters.Add(Console.ReadLine());
-                        break;
-
-                    case "swap":
-                        Console.Write("Первый индекс: ");
-                        step.parameters.Add(Console.ReadLine());
-                        Console.Write("Второй индекс: ");
-                        step.parameters.Add(Console.ReadLine());
-                        break;
-
-                    case "condition":
-                        Console.Write("Условие: ");
-                        step.parameters.Add(Console.ReadLine());
-
-                        // Добавляем случаи условия
-                        Console.WriteLine("Добавление случая для true:");
-                        step.conditionCases.Add(new ConditionCase { condition = "true", nextStep = AskForNextStep() });
-
-                        Console.WriteLine("Добавление случая для false:");
-                        step.conditionCases.Add(new ConditionCase { condition = "false", nextStep = AskForNextStep() });
-                        break;
-
-                }
-
-                // Для всех шагов, кроме condition, запрашиваем следующий шаг
-                if (selectedType != "condition" && selectedType != "return")
-                {
-                    step.nextStep = AskForNextStep();
-                }
-
-                algorithm.steps.Add(step);
-                Console.WriteLine($"✅ Добавлен шаг: {id} ({selectedType})");
-            }
-            else
-            {
-                Console.WriteLine("❌ Неверный выбор типа шага");
-            }
-
-            Console.WriteLine("Нажмите любую клавишу для продолжения...");
-            Console.ReadKey();
-        }
-
-        private string AskForNextStep()
-        {
-            Console.Write("Следующий шаг (ID): ");
-            return Console.ReadLine();
-        }
-
-        private void ListSteps(CustomAlgorithmRequest algorithm)
-        {
-            Console.WriteLine("\n=== Список шагов алгоритма ===");
-
-            if (algorithm.steps.Count == 0)
-            {
-                Console.WriteLine("📭 Шаги не добавлены");
-            }
-            else
-            {
-                for (int i = 0; i < algorithm.steps.Count; i++)
-                {
-                    var step = algorithm.steps[i];
-                    Console.WriteLine($"{i + 1}. [{step.id}] {step.type}: {step.description}");
-
-                    if (step.parameters.Any())
-                        Console.WriteLine($"   Параметры: {string.Join(", ", step.parameters)}");
-
-                    if (!string.IsNullOrEmpty(step.nextStep))
-                        Console.WriteLine($"   Следующий шаг: {step.nextStep}");
-
-                    if (step.conditionCases.Any())
-                    {
-                        Console.WriteLine("   Условия:");
-                        foreach (var condition in step.conditionCases)
-                        {
-                            Console.WriteLine($"     - {condition.condition} -> {condition.nextStep}");
-                        }
-                    }
-
-                    Console.WriteLine();
-                }
-            }
-
-            Console.WriteLine("Нажмите любую клавишу для продолжения...");
-            Console.ReadKey();
-        }
-
-        private void EditStep(CustomAlgorithmRequest algorithm)
-        {
-            if (algorithm.steps.Count == 0)
-            {
-                Console.WriteLine("❌ Нет шагов для редактирования");
-                Console.WriteLine("Нажмите любую клавишу для продолжения...");
-                Console.ReadKey();
-                return;
-            }
-
-            ListSteps(algorithm);
-            Console.Write("\nВыберите номер шага для редактирования: ");
-
-            if (int.TryParse(Console.ReadLine(), out int index) && index > 0 && index <= algorithm.steps.Count)
-            {
-                var step = algorithm.steps[index - 1];
-
-                Console.Write($"Новое описание [{step.description}]: ");
-                var newDescription = Console.ReadLine();
-                if (!string.IsNullOrWhiteSpace(newDescription))
-                    step.description = newDescription;
-
-                // Здесь можно добавить редактирование других полей шага
-
-                Console.WriteLine($"✅ Шаг '{step.id}' обновлен");
-            }
-            else
-            {
-                Console.WriteLine("❌ Неверный номер шага");
-            }
-
-            Console.WriteLine("Нажмите любую клавишу для продолжения...");
-            Console.ReadKey();
-        }
-
-        private void DeleteStep(CustomAlgorithmRequest algorithm)
-        {
-            if (algorithm.steps.Count == 0)
-            {
-                Console.WriteLine("❌ Нет шагов для удаления");
-                Console.WriteLine("Нажмите любую клавишу для продолжения...");
-                Console.ReadKey();
-                return;
-            }
-
-            ListSteps(algorithm);
-            Console.Write("\nВыберите номер шага для удаления: ");
-
-            if (int.TryParse(Console.ReadLine(), out int index) && index > 0 && index <= algorithm.steps.Count)
-            {
-                var step = algorithm.steps[index - 1];
-                algorithm.steps.RemoveAt(index - 1);
-                Console.WriteLine($"✅ Шаг '{step.id}' удален");
-            }
-            else
-            {
-                Console.WriteLine("❌ Неверный номер шага");
-            }
-
-            Console.WriteLine("Нажмите любую клавишу для продолжения...");
-            Console.ReadKey();
-        }
-
-        private void ConfigureStepLinks(CustomAlgorithmRequest algorithm)
-        {
-            Console.WriteLine("\n=== Настройка связей между шагами ===");
-
-            ListSteps(algorithm);
-            Console.Write("\nВыберите номер шага для настройки связей: ");
-
-            if (int.TryParse(Console.ReadLine(), out int index) && index > 0 && index <= algorithm.steps.Count)
-            {
-                var step = algorithm.steps[index - 1];
-
-                if (step.type == "condition")
-                {
-                    Console.WriteLine("Настройка условий:");
-                    foreach (var condition in step.conditionCases)
-                    {
-                        Console.Write($"Следующий шаг для '{condition.condition}' [{condition.nextStep}]: ");
-                        var newNextStep = Console.ReadLine();
-                        if (!string.IsNullOrWhiteSpace(newNextStep))
-                            condition.nextStep = newNextStep;
-                    }
-                }
-                else if (step.type != "return")
-                {
-                    Console.Write($"Следующий шаг [{step.nextStep}]: ");
-                    var newNextStep = Console.ReadLine();
-                    if (!string.IsNullOrWhiteSpace(newNextStep))
-                        step.nextStep = newNextStep;
-                }
-
-                Console.WriteLine($"✅ Связи для шага '{step.id}' обновлены");
-            }
-            else
-            {
-                Console.WriteLine("❌ Неверный номер шага");
-            }
-
-            Console.WriteLine("Нажмите любую клавишу для продолжения...");
-            Console.ReadKey();
-        }
-
-
-        private void PreviewAlgorithm(CustomAlgorithmRequest algorithm)
-        {
-            Console.WriteLine("\n=== Предпросмотр алгоритма ===");
-            Console.WriteLine($"📝 Название: {algorithm.name}");
-            Console.WriteLine($"📖 Описание: {algorithm.description}");
-            Console.WriteLine($"🏗️ Тип структуры: {algorithm.structureType}");
-
-            Console.WriteLine($"\n🔢 Переменные ({algorithm.variables.Count}):");
-            foreach (var variable in algorithm.variables)
-            {
-                Console.WriteLine($"   {variable.name} ({variable.type}) = {variable.initialValue}");
-            }
-
-            Console.WriteLine($"\n⚡ Шаги ({algorithm.steps.Count}):");
-            foreach (var step in algorithm.steps)
-            {
-                Console.WriteLine($"   [{step.id}] {step.type}: {step.description}");
-                if (step.parameters.Any())
-                    Console.WriteLine($"      Параметры: {string.Join(", ", step.parameters)}");
-            }
-
-            Console.WriteLine("\nНажмите любую клавишу для продолжения...");
-            Console.ReadKey();
-        }
-
-        private void SaveAlgorithmToFile(CustomAlgorithmRequest algorithm)
-        {
-            Console.WriteLine("\n=== Сохранение алгоритма ===");
-            Console.Write("Введите путь для сохранения JSON файла: ");
-
-            var filePath = Console.ReadLine();
-            if (string.IsNullOrWhiteSpace(filePath))
-            {
-                Console.WriteLine("❌ Путь не может быть пустым");
-                return;
-            }
-
-            try
-            {
-                var options = new JsonSerializerOptions
-                {
-                    WriteIndented = true,
-                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-                };
-
-                var json = JsonSerializer.Serialize(algorithm, options);
-                File.WriteAllText(filePath, json);
-
-                Console.WriteLine($"✅ Алгоритм сохранен в: {filePath}");
-                Console.WriteLine($"📊 Статистика:");
-                Console.WriteLine($"   - Переменные: {algorithm.variables.Count}");
-                Console.WriteLine($"   - Шаги: {algorithm.steps.Count}");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"❌ Ошибка сохранения: {ex.Message}");
-            }
-
-            Console.WriteLine("Нажмите любую клавишу для продолжения...");
-            Console.ReadKey();
-        }
-
-        private void TestCreatedAlgorithm(CustomAlgorithmRequest algorithm)
-        {
-            if (!ValidateTestData())
-            {
-                Console.WriteLine("❌ Сначала настройте тестовые данные");
-                Console.WriteLine("Нажмите любую клавишу для продолжения...");
-                Console.ReadKey();
-                return;
-            }
-
-            try
-            {
-                Console.WriteLine("\n=== Тестирование созданного алгоритма ===");
-
-                var array = (int[])_testData["current_array"];
-                var arrayStructure = StructureFactory.CreateStructure("array", array);
-
-                Console.WriteLine($"Запуск алгоритма: {algorithm.name}");
-                Console.WriteLine($"Тестовый массив: [{string.Join(", ", array)}]");
-
-                var result = _algorithmManager.ExecuteCustomAlgorithm(algorithm, arrayStructure);
-
-                if (result.success)
-                {
-                    Console.WriteLine("✅ Алгоритм выполнен успешно!");
-                    DisplayAlgorithmResult(result.result, array);
-                    _testData["last_result"] = result.result;
-                }
-                else
-                {
-                    Console.WriteLine($"❌ Ошибка выполнения: {result.message}");
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"❌ Ошибка тестирования: {ex.Message}");
-            }
-
-            Console.WriteLine("Нажмите любую клавишу для продолжения...");
-            Console.ReadKey();
-        }
-
-        private void ReorderSteps(CustomAlgorithmRequest algorithm)
-        {
-            if (algorithm.steps.Count == 0)
-            {
-                Console.WriteLine("❌ Нет шагов для изменения порядка");
-                Console.WriteLine("Нажмите любую клавишу для продолжения...");
-                Console.ReadKey();
-                return;
-            }
-
-            Console.WriteLine("\n=== Изменение порядка шагов ===");
-            ListSteps(algorithm);
-
-            Console.WriteLine("Введите номера шагов в новом порядке (через запятую):");
-            var orderInput = Console.ReadLine();
-
-            if (string.IsNullOrWhiteSpace(orderInput))
-            {
-                Console.WriteLine("❌ Неверный ввод");
-                return;
-            }
-
-            try
-            {
-                var newOrder = orderInput.Split(',')
-                    .Select(s => s.Trim())
-                    .Where(s => !string.IsNullOrWhiteSpace(s))
-                    .Select(int.Parse)
-                    .ToList();
-
-                // Проверяем корректность ввода
-                if (newOrder.Count != algorithm.steps.Count ||
-                    newOrder.Any(n => n < 1 || n > algorithm.steps.Count) ||
-                    newOrder.Distinct().Count() != newOrder.Count)
-                {
-                    Console.WriteLine("❌ Неверный порядок шагов");
-                    return;
-                }
-
-                var reorderedSteps = newOrder.Select(i => algorithm.steps[i - 1]).ToList();
-                algorithm.steps.Clear();
-                algorithm.steps.AddRange(reorderedSteps);
-
-                Console.WriteLine("✅ Порядок шагов изменен");
-                ListSteps(algorithm);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"❌ Ошибка: {ex.Message}");
-            }
-
-            Console.WriteLine("Нажмите любую клавишу для продолжения...");
-            Console.ReadKey();
-        }
-        #endregion
 
         private void ExecuteCustomAlgorithm(CustomAlgorithmRequest customAlgorithm)
         {
@@ -839,7 +219,6 @@ namespace AlgorithmVisualization
                 ["Обратно отсортированный"] = new[] { 10, 9, 8, 7, 6, 5, 4, 3, 2, 1 },
                 ["Случайный небольшой"] = new[] { 64, 34, 25, 12, 22, 11, 90 },
                 ["С повторяющимися элементами"] = new[] { 5, 2, 5, 1, 2, 3, 5, 2, 1, 4 },
-                ["Большой массив (20 элементов)"] = GenerateLargeArray(20),
                 ["Почти отсортированный"] = new[] { 1, 2, 3, 5, 4, 6, 7, 9, 8, 10 }
             };
 
@@ -871,7 +250,6 @@ namespace AlgorithmVisualization
                 Console.WriteLine($"Размер: {array.Length} элементов");
                 Console.WriteLine($"Массив: [{string.Join(", ", array)}]");
 
-                // Проверяем отсортирован ли массив
                 bool isSorted = IsSorted(array);
                 Console.WriteLine($"Статус: {(isSorted ? "✓ Отсортирован" : "✗ Не отсортирован")}");
             }
@@ -912,26 +290,6 @@ namespace AlgorithmVisualization
             var array = (int[])_testData["current_array"];
             var arrayStructure = StructureFactory.CreateStructure("array", array);
 
-            // Выбор стратегии опорного элемента
-            Console.WriteLine("\n=== Выбор стратегии для QuickSort ===");
-            Console.WriteLine("1 - Последний элемент (по умолчанию)");
-            Console.WriteLine("2 - Первый элемент");
-            Console.WriteLine("3 - Средний элемент");
-            Console.WriteLine("4 - Случайный элемент");
-            Console.WriteLine("5 - Медиана трех");
-            Console.Write("Ваш выбор: ");
-
-            var strategyChoice = Console.ReadLine();
-            var strategy = strategyChoice switch
-            {
-                "1" => "last",
-                "2" => "first",
-                "3" => "middle",
-                "4" => "random",
-                "5" => "median",
-                _ => "last"
-            };
-
             var config = new AlgorithmConfig
             {
                 Name = "QuickSort",
@@ -939,97 +297,11 @@ namespace AlgorithmVisualization
                 Parameters = new Dictionary<string, object>
                 {
                     ["Detailed"] = true,
-                    ["PivotStrategy"] = strategy
+                    ["PivotStrategy"] = "last"
                 }
             };
 
             RunAlgorithm("QuickSort", config, arrayStructure, array);
-        }
-
-        private void CompareAlgorithms()
-        {
-            if (!ValidateTestData()) return;
-
-            var array = (int[])_testData["current_array"];
-            var algorithms = new[] { "BubbleSort", "QuickSort" };
-            var results = new List<AlgorithmResult>();
-
-            Console.WriteLine("\n=== Сравнение производительности ===");
-            Console.WriteLine($"Массив: {_testData["array_name"]}");
-            Console.WriteLine($"Размер: {array.Length} элементов\n");
-
-            foreach (var algorithmName in algorithms)
-            {
-                var arrayStructure = StructureFactory.CreateStructure("array", (int[])array.Clone());
-                var config = new AlgorithmConfig
-                {
-                    Name = algorithmName,
-                    SessionId = Guid.NewGuid().ToString(),
-                    Parameters = new Dictionary<string, object> { ["Detailed"] = false }
-                };
-
-                var result = _algorithmManager.ExecuteAlgorithm(config, arrayStructure);
-                results.Add(result);
-
-                Console.WriteLine($"📊 {algorithmName}:");
-                Console.WriteLine($"   Время: {result.ExecutionTime.TotalMilliseconds:F4} мс");
-                Console.WriteLine($"   Сравнений: {result.Statistics.Comparisons}");
-                Console.WriteLine($"   Обменов: {result.Statistics.Swaps}");
-                Console.WriteLine($"   Шагов: {result.Statistics.Steps}");
-                Console.WriteLine();
-            }
-
-            // Сохранение результатов для отображения в статистике
-            _testData["comparison_results"] = results;
-
-            Console.WriteLine("Нажмите любую клавишу для продолжения...");
-            Console.ReadKey();
-        }
-
-        private void ShowStatistics()
-        {
-            Console.WriteLine("\n=== Статистика тестирования ===");
-
-            if (_testData.ContainsKey("comparison_results") &&
-                _testData["comparison_results"] is List<AlgorithmResult> results)
-            {
-                Console.WriteLine("📈 Сравнительная статистика:\n");
-
-                foreach (var result in results)
-                {
-                    Console.WriteLine($"🔹 {result.AlgorithmName}:");
-                    Console.WriteLine($"   ⏱️  Время: {result.ExecutionTime.TotalMilliseconds:F4} мс");
-                    Console.WriteLine($"   🔄 Сравнений: {result.Statistics.Comparisons}");
-                    Console.WriteLine($"   🔁 Обменов: {result.Statistics.Swaps}");
-                    Console.WriteLine($"   📝 Шагов: {result.Statistics.Steps}");
-                    Console.WriteLine($"   📊 Эффективность: {CalculateEfficiency(result):F2} сравнений/обмен");
-                    Console.WriteLine();
-                }
-            }
-            else
-            {
-                Console.WriteLine("❌ Нет данных для сравнения. Сначала выполните сравнение алгоритмов.");
-            }
-
-            if (_testData.ContainsKey("current_array") && _testData["current_array"] is int[] array)
-            {
-                Console.WriteLine("📋 Информация о массиве:");
-                Console.WriteLine($"   Размер: {array.Length} элементов");
-                Console.WriteLine($"   Диапазон значений: {array.Min()} - {array.Max()}");
-                Console.WriteLine($"   Уникальных значений: {array.Distinct().Count()}");
-                Console.WriteLine($"   Отсортирован: {(IsSorted(array) ? "✓ Да" : "✗ Нет")}");
-            }
-
-            Console.WriteLine("Нажмите любую клавишу для продолжения...");
-            Console.ReadKey();
-        }
-
-        private void ClearTestData()
-        {
-            _testData.Clear();
-            Console.WriteLine("✅ Все тестовые данные очищены.");
-            Console.WriteLine("Нажмите любую клавишу для продолжения...");
-            Console.ReadKey();
         }
 
         private void RunAlgorithm(string algorithmName, AlgorithmConfig config, IDataStructure structure, int[] originalArray)
@@ -1040,9 +312,7 @@ namespace AlgorithmVisualization
                 Console.WriteLine($"Массив: [{string.Join(", ", originalArray)}]");
                 Console.WriteLine("Выполнение...\n");
 
-                var stopwatch = System.Diagnostics.Stopwatch.StartNew();
                 var result = _algorithmManager.ExecuteAlgorithm(config, structure);
-                stopwatch.Stop();
 
                 DisplayAlgorithmResult(result, originalArray);
 
@@ -1079,27 +349,16 @@ namespace AlgorithmVisualization
             Console.WriteLine($"   Эффективность: {CalculateEfficiency(result):F2} сравнений/обмен");
             Console.WriteLine();
 
-            // Теоретическая сложность
-            double expectedComplexity = result.AlgorithmName == "BubbleSort"
-                ? Math.Pow(originalArray.Length, 2)
-                : originalArray.Length * Math.Log(originalArray.Length);
-
-            double actualVsExpected = result.Statistics.Comparisons / expectedComplexity;
-
-            Console.WriteLine("📈 АНАЛИЗ СЛОЖНОСТИ:");
-            Console.WriteLine($"   O({(result.AlgorithmName == "BubbleSort" ? "n²" : "n log n")}) ожидалось: {expectedComplexity:F2}");
-            Console.WriteLine($"   Факт/Ожидание: {actualVsExpected:P2}");
-
-            if (result.OutputData.ContainsKey("sorted_array") && result.OutputData["sorted_array"] is int[] sortedArray)
+            if (result.OutputData.ContainsKey("final_structure") && result.OutputData["final_structure"] is int[] sortedArray)
             {
-                Console.WriteLine();
                 Console.WriteLine("📋 РЕЗУЛЬТАТ:");
                 Console.WriteLine($"   Исходный: [{string.Join(", ", originalArray)}]");
                 Console.WriteLine($"   Отсортированный: [{string.Join(", ", sortedArray)}]");
                 Console.WriteLine($"   Корректность: {(IsSorted(sortedArray) ? "✓ Успешно" : "✗ Ошибка")}");
             }
-        }
 
+            Console.WriteLine($"   Шагов визуализации: {result.Steps.Count}");
+        }
 
         private bool ValidateTestData()
         {
@@ -1111,17 +370,6 @@ namespace AlgorithmVisualization
                 return false;
             }
             return true;
-        }
-
-        private static int[] GenerateLargeArray(int size)
-        {
-            var random = new Random();
-            var array = new int[size];
-            for (int i = 0; i < size; i++)
-            {
-                array[i] = random.Next(1, 1000);
-            }
-            return array;
         }
 
         private static bool IsSorted(int[] array)
@@ -1139,258 +387,78 @@ namespace AlgorithmVisualization
             return result.Statistics.Swaps > 0 ? (double)result.Statistics.Comparisons / result.Statistics.Swaps : result.Statistics.Comparisons;
         }
 
-
         private void SaveResultsMenu()
         {
             var saveMenu = new MenuManager(this);
             saveMenu.SubMenuBool = true;
             saveMenu.LastTextShowMenu = "Назад в главное меню";
 
-            saveMenu.AddMenuItem("Сохранить последний результат", SaveLastResult);
-            saveMenu.AddMenuItem("Сохранить сравнение алгоритмов", SaveComparisonResults);
-            saveMenu.AddMenuItem("Сохранить все данные в JSON", SaveAllDataAsJson);
-            saveMenu.AddMenuItem("Сохранить статистику в TXT", SaveStatisticsAsTxt);
-            saveMenu.AddMenuItem("Сохранить в CSV формат", SaveAsCsv);
-            saveMenu.AddMenuItem("Сохранить шаги алгоритма", SaveAlgorithmSteps);
-            saveMenu.AddMenuItem("Показать историю сохранений", ShowSaveHistory);
+            saveMenu.AddMenuItem("💾 Сохранить последний результат", SaveLastResult);
+            saveMenu.AddMenuItem("📊 Сохранить статистику", SaveStatistics);
+            saveMenu.AddMenuItem("🔄 Сохранить шаги алгоритма", SaveAlgorithmSteps);
+            saveMenu.AddMenuItem("🌐 Экспорт в HTML", ExportToHtml);
+            saveMenu.AddMenuItem("📋 Показать историю сохранений", ShowSaveHistory);
 
             saveMenu.Run();
         }
-        private void SaveComparisonResults()
+
+        private void SaveLastResult()
         {
-            if (!_testData.ContainsKey("comparison_results") ||
-                _testData["comparison_results"] is not List<AlgorithmResult> results ||
-                results.Count == 0)
+            if (!_testData.ContainsKey("last_result"))
             {
-                Console.WriteLine("❌ Нет данных для сравнения. Сначала выполните сравнение алгоритмов.");
+                Console.WriteLine("❌ Нет результатов для сохранения. Сначала выполните тестирование алгоритма.");
                 Console.WriteLine("Нажмите любую клавишу для продолжения...");
                 Console.ReadKey();
                 return;
             }
 
+            var result = _testData["last_result"] as AlgorithmResult;
             var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
-            var fileName = $"Comparison_{timestamp}";
+            var fileName = $"{result.AlgorithmName}_{timestamp}";
 
-            // Сохраняем в разных форматах
-            SaveComparisonAsJson(results, fileName);
-            SaveComparisonAsTxt(results, fileName);
-            SaveComparisonAsCsv(results, fileName);
+            SaveResultAsJson(result, fileName);
+            SaveResultAsTxt(result, fileName);
 
-            Console.WriteLine($"✅ Результаты сравнения сохранены в файлы:");
+            Console.WriteLine($"✅ Результаты сохранены:");
             Console.WriteLine($"   📄 {fileName}.json");
             Console.WriteLine($"   📄 {fileName}.txt");
-            Console.WriteLine($"   📊 {fileName}.csv");
             Console.WriteLine("Нажмите любую клавишу для продолжения...");
             Console.ReadKey();
         }
 
-        private void SaveAllDataAsJson()
+        private void SaveStatistics()
         {
-            var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
-            var fileName = $"FullData_{timestamp}.json";
-            var filePath = Path.Combine(_resultsDirectory, fileName);
-
-            try
+            if (!_testData.ContainsKey("last_result"))
             {
-                var saveData = new
-                {
-                    Timestamp = DateTime.Now,
-                    TestData = _testData.ContainsKey("current_array") ? new
-                    {
-                        ArrayName = _testData["array_name"],
-                        Array = _testData["current_array"],
-                        ArraySize = _testData["current_array"] is int[] arr ? arr.Length : 0
-                    } : null,
-                    LastResult = _testData.ContainsKey("last_result") ?
-                        SerializeAlgorithmResult(_testData["last_result"] as AlgorithmResult) : null,
-                    ComparisonResults = _testData.ContainsKey("comparison_results") ?
-                        (_testData["comparison_results"] as List<AlgorithmResult>)?.Select(SerializeAlgorithmResult)
-                                                                                   .ToList() : null
-                };
-
-                var options = new JsonSerializerOptions { WriteIndented = true };
-                var json = JsonSerializer.Serialize(saveData, options);
-                File.WriteAllText(filePath, json);
-
-                Console.WriteLine($"✅ Все данные сохранены в: {fileName}");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"❌ Ошибка сохранения: {ex.Message}");
+                Console.WriteLine("❌ Нет результатов для сохранения.");
+                Console.WriteLine("Нажмите любую клавишу для продолжения...");
+                Console.ReadKey();
+                return;
             }
 
-            Console.WriteLine("Нажмите любую клавишу для продолжения...");
-            Console.ReadKey();
-        }
-        // Вспомогательные методы
-        private object SerializeAlgorithmResult(AlgorithmResult result)
-        {
-            return new
-            {
-                result.AlgorithmName,
-                result.SessionId,
-                result.StructureType,
-                result.ExecutionTime,
-                Statistics = new
-                {
-                    result.Statistics.Comparisons,
-                    result.Statistics.Swaps,
-                    result.Statistics.Steps,
-                    result.Statistics.RecursiveCalls,
-                    result.Statistics.MemoryOperations,
-                    Efficiency = CalculateEfficiency(result)
-                },
-                result.OutputData,
-                StepsCount = result.Steps.Count
-                // Не сохраняем сами шаги для экономии места
-            };
-        }
-
-        private void SaveComparisonAsJson(List<AlgorithmResult> results, string baseFileName)
-        {
-            var filePath = Path.Combine(_resultsDirectory, baseFileName + ".json");
-            var comparisonData = new
-            {
-                Timestamp = DateTime.Now,
-                TestData = _testData.ContainsKey("current_array") ? new
-                {
-                    ArrayName = _testData["array_name"],
-                    ArraySize = _testData["current_array"] is int[] arr ? arr.Length : 0
-                } : null,
-                Results = results.Select(SerializeAlgorithmResult).ToList()
-            };
-
-            var options = new JsonSerializerOptions { WriteIndented = true };
-            var json = JsonSerializer.Serialize(comparisonData, options);
-            File.WriteAllText(filePath, json);
-        }
-
-        private void SaveComparisonAsTxt(List<AlgorithmResult> results, string baseFileName)
-        {
-            var filePath = Path.Combine(_resultsDirectory, baseFileName + ".txt");
-
-            using var writer = new StreamWriter(filePath, false, Encoding.UTF8);
-            writer.WriteLine("=== СРАВНЕНИЕ АЛГОРИТМОВ СОРТИРОВКИ ===");
-            writer.WriteLine($"Дата сравнения: {DateTime.Now:dd.MM.yyyy HH:mm:ss}");
-            writer.WriteLine();
-
-            if (_testData.ContainsKey("current_array") && _testData["current_array"] is int[] array)
-            {
-                writer.WriteLine($"Тестовые данные: {_testData["array_name"]}");
-                writer.WriteLine($"Размер массива: {array.Length} элементов");
-                writer.WriteLine();
-            }
-
-            writer.WriteLine(new string('═', 100));
-            writer.WriteLine($"{"Алгоритм",-15} {"Время (мс)",-12} {"Сравнения",-12} {"Обмены",-12} {"Шаги",-12} {"Рекурсия",-10} {"Эффективность",-15}");
-            writer.WriteLine(new string('═', 100));
-
-            foreach (var result in results)
-            {
-                writer.WriteLine($"{result.AlgorithmName,-15} {result.ExecutionTime.TotalMilliseconds,-12:F4} " +
-                               $"{result.Statistics.Comparisons,-12} {result.Statistics.Swaps,-12} " +
-                               $"{result.Statistics.Steps,-12} {result.Statistics.RecursiveCalls,-10} " +
-                               $"{CalculateEfficiency(result),-15:F2}");
-            }
-
-            // Определяем победителя
-            var fastest = results.OrderBy(r => r.ExecutionTime).First();
-            var mostEfficient = results.OrderByDescending(r => CalculateEfficiency(r)).First();
-
-            writer.WriteLine();
-            writer.WriteLine("АНАЛИЗ РЕЗУЛЬТАТОВ:");
-            writer.WriteLine($"  🏆 Самый быстрый: {fastest.AlgorithmName} ({fastest.ExecutionTime.TotalMilliseconds:F4} мс)");
-            writer.WriteLine($"  📊 Самый эффективный: {mostEfficient.AlgorithmName} ({CalculateEfficiency(mostEfficient):F2} сравнений/обмен)");
-        }
-
-        private void SaveComparisonAsCsv(List<AlgorithmResult> results, string baseFileName)
-        {
-            var filePath = Path.Combine(_resultsDirectory, baseFileName + ".csv");
-
-            using var writer = new StreamWriter(filePath, false, Encoding.UTF8);
-            // Заголовок CSV
-            writer.WriteLine("Algorithm;TimeMs;Comparisons;Swaps;Steps;RecursiveCalls;Efficiency;ArraySize;Timestamp");
-
-            // Данные
-            foreach (var result in results)
-            {
-                var arraySize = _testData.ContainsKey("current_array") && _testData["current_array"] is int[] arr
-                    ? arr.Length : 0;
-
-                writer.WriteLine(
-                    $"{result.AlgorithmName};" +
-                    $"{result.ExecutionTime.TotalMilliseconds:F4};" +
-                    $"{result.Statistics.Comparisons};" +
-                    $"{result.Statistics.Swaps};" +
-                    $"{result.Statistics.Steps};" +
-                    $"{result.Statistics.RecursiveCalls};" +
-                    $"{CalculateEfficiency(result):F2};" +
-                    $"{arraySize};" +
-                    $"{DateTime.Now:yyyy-MM-dd HH:mm:ss}"
-                );
-            }
-        }
-
-        private void SaveStatisticsAsTxt()
-        {
+            var result = _testData["last_result"] as AlgorithmResult;
             var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
             var fileName = $"Statistics_{timestamp}.txt";
-            var filePath = Path.Combine(_resultsDirectory, fileName);
 
             try
             {
-                using var writer = new StreamWriter(filePath, false, Encoding.UTF8);
+                using var writer = new StreamWriter(Path.Combine(_resultsDirectory, fileName), false, Encoding.UTF8);
 
-                writer.WriteLine("=== СТАТИСТИКА ТЕСТИРОВАНИЯ АЛГОРИТМОВ ===");
-                writer.WriteLine($"Дата создания: {DateTime.Now:dd.MM.yyyy HH:mm:ss}");
+                writer.WriteLine("=== СТАТИСТИКА АЛГОРИТМА ===");
+                writer.WriteLine($"Дата: {DateTime.Now:dd.MM.yyyy HH:mm:ss}");
+                writer.WriteLine($"Алгоритм: {result.AlgorithmName}");
+                writer.WriteLine($"Время выполнения: {result.ExecutionTime.TotalMilliseconds:F4} мс");
                 writer.WriteLine();
+                writer.WriteLine("СТАТИСТИКА:");
+                writer.WriteLine($"  Сравнений: {result.Statistics.Comparisons}");
+                writer.WriteLine($"  Обменов: {result.Statistics.Swaps}");
+                writer.WriteLine($"  Шагов: {result.Statistics.Steps}");
+                if (result.Statistics.RecursiveCalls > 0)
+                    writer.WriteLine($"  Рекурсивных вызовов: {result.Statistics.RecursiveCalls}");
+                writer.WriteLine($"  Эффективность: {CalculateEfficiency(result):F2} сравнений/обмен");
+                writer.WriteLine();
+                writer.WriteLine($"Шагов визуализации: {result.Steps.Count}");
 
-                // Информация о тестовых данных
-                if (_testData.ContainsKey("current_array") && _testData["current_array"] is int[] array)
-                {
-                    writer.WriteLine("ТЕСТОВЫЕ ДАННЫЕ:");
-                    writer.WriteLine($"  Название: {_testData["array_name"]}");
-                    writer.WriteLine($"  Размер массива: {array.Length}");
-                    writer.WriteLine($"  Диапазон значений: {array.Min()} - {array.Max()}");
-                    writer.WriteLine($"  Уникальных значений: {array.Distinct().Count()}");
-                    writer.WriteLine($"  Отсортирован: {(IsSorted(array) ? "Да" : "Нет")}");
-                    writer.WriteLine($"  Массив: [{string.Join(", ", array)}]");
-                    writer.WriteLine();
-                }
-
-                // Результаты сравнения
-                if (_testData.ContainsKey("comparison_results") &&
-                    _testData["comparison_results"] is List<AlgorithmResult> results)
-                {
-                    writer.WriteLine("СРАВНИТЕЛЬНАЯ СТАТИСТИКА:");
-                    writer.WriteLine(new string('─', 80));
-                    writer.WriteLine($"{"Алгоритм",-15} {"Время (мс)",-12} {"Сравнения",-12} {"Обмены",-12} {"Шаги",-12} {"Эффективность",-15}");
-                    writer.WriteLine(new string('─', 80));
-
-                    foreach (var result in results)
-                    {
-                        writer.WriteLine($"{result.AlgorithmName,-15} {result.ExecutionTime.TotalMilliseconds,-12:F4} " +
-                                       $"{result.Statistics.Comparisons,-12} {result.Statistics.Swaps,-12} " +
-                                       $"{result.Statistics.Steps,-12} {CalculateEfficiency(result),-15:F2}");
-                    }
-                    writer.WriteLine();
-                }
-
-                // Последний результат
-                if (_testData.ContainsKey("last_result") && _testData["last_result"] is AlgorithmResult lastResult)
-                {
-                    writer.WriteLine("ПОСЛЕДНИЙ РЕЗУЛЬТАТ:");
-                    writer.WriteLine($"  Алгоритм: {lastResult.AlgorithmName}");
-                    writer.WriteLine($"  Время выполнения: {lastResult.ExecutionTime.TotalMilliseconds:F4} мс");
-                    writer.WriteLine($"  Сравнений: {lastResult.Statistics.Comparisons}");
-                    writer.WriteLine($"  Обменов: {lastResult.Statistics.Swaps}");
-                    writer.WriteLine($"  Шагов: {lastResult.Statistics.Steps}");
-                    if (lastResult.Statistics.RecursiveCalls > 0)
-                        writer.WriteLine($"  Рекурсивных вызовов: {lastResult.Statistics.RecursiveCalls}");
-                    writer.WriteLine();
-                }
-
-                writer.WriteLine("Конец отчета");
                 Console.WriteLine($"✅ Статистика сохранена в: {fileName}");
             }
             catch (Exception ex)
@@ -1402,57 +470,490 @@ namespace AlgorithmVisualization
             Console.ReadKey();
         }
 
-        private void SaveAsCsv()
+        private void SaveAlgorithmSteps()
         {
-            if (!_testData.ContainsKey("comparison_results") ||
-                _testData["comparison_results"] is not List<AlgorithmResult> results ||
-                results.Count == 0)
+            if (!_testData.ContainsKey("last_result"))
             {
-                Console.WriteLine("❌ Нет данных для сохранения в CSV. Сначала выполните сравнение алгоритмов.");
+                Console.WriteLine("❌ Нет результатов для сохранения.");
                 Console.WriteLine("Нажмите любую клавишу для продолжения...");
                 Console.ReadKey();
                 return;
             }
 
+            var result = _testData["last_result"] as AlgorithmResult;
             var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
-            var fileName = $"Comparison_{timestamp}.csv";
-            var filePath = Path.Combine(_resultsDirectory, fileName);
+            var fileName = $"{result.AlgorithmName}_Steps_{timestamp}.json";
 
             try
             {
-                using var writer = new StreamWriter(filePath, false, Encoding.UTF8);
-
-                // Заголовок CSV
-                writer.WriteLine("Algorithm,TimeMs,Comparisons,Swaps,Steps,RecursiveCalls,Efficiency,ArraySize,Timestamp");
-
-                // Данные
-                foreach (var result in results)
+                var stepsData = new
                 {
-                    var arraySize = _testData.ContainsKey("current_array") && _testData["current_array"] is int[] arr
-                        ? arr.Length : 0;
+                    AlgorithmName = result.AlgorithmName,
+                    Timestamp = DateTime.Now,
+                    TotalSteps = result.Steps.Count,
+                    Steps = result.Steps.Select(step => new
+                    {
+                        step.stepNumber,
+                        step.operation,
+                        step.description,
+                        ArrayState = GetArrayFromVisualizationData(step.visualizationData),
+                        Highlights = step.visualizationData.highlights.Select(h => new
+                        {
+                            h.ElementId,
+                            h.HighlightType,
+                            h.Color,
+                            h.Label
+                        }).ToList(),
+                        step.metadata
+                    }).ToList()
+                };
 
-                    writer.WriteLine(
-                        $"{EscapeCsv(result.AlgorithmName)}," +
-                        $"{result.ExecutionTime.TotalMilliseconds:F4}," +
-                        $"{result.Statistics.Comparisons}," +
-                        $"{result.Statistics.Swaps}," +
-                        $"{result.Statistics.Steps}," +
-                        $"{result.Statistics.RecursiveCalls}," +
-                        $"{CalculateEfficiency(result):F2}," +
-                        $"{arraySize}," +
-                        $"{DateTime.Now:yyyy-MM-dd HH:mm:ss}"
-                    );
-                }
+                var options = new JsonSerializerOptions { WriteIndented = true };
+                var json = JsonSerializer.Serialize(stepsData, options);
+                File.WriteAllText(Path.Combine(_resultsDirectory, fileName), json);
 
-                Console.WriteLine($"✅ Данные сохранены в CSV: {fileName}");
+                Console.WriteLine($"✅ Шаги алгоритма сохранены в: {fileName}");
+                Console.WriteLine($"📊 Сохранено шагов: {result.Steps.Count}");
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"❌ Ошибка сохранения CSV: {ex.Message}");
+                Console.WriteLine($"❌ Ошибка сохранения шагов: {ex.Message}");
             }
 
             Console.WriteLine("Нажмите любую клавишу для продолжения...");
             Console.ReadKey();
+        }
+
+        private void ExportToHtml()
+        {
+            if (!_testData.ContainsKey("last_result"))
+            {
+                Console.WriteLine("❌ Нет результатов для экспорта.");
+                Console.WriteLine("Нажмите любую клавишу для продолжения...");
+                Console.ReadKey();
+                return;
+            }
+
+            var result = _testData["last_result"] as AlgorithmResult;
+            var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+            var fileName = $"{result.AlgorithmName}_Visualization_{timestamp}.html";
+
+            try
+            {
+                var htmlContent = GenerateInteractiveHtml(result);
+                File.WriteAllText(Path.Combine(_resultsDirectory, fileName), htmlContent);
+
+                Console.WriteLine($"✅ Интерактивная визуализация сохранена в: {fileName}");
+                Console.WriteLine($"📂 Файл: {Path.Combine(_resultsDirectory, fileName)}");
+                Console.WriteLine("🌐 Откройте файл в браузере для просмотра анимации");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Ошибка экспорта в HTML: {ex.Message}");
+            }
+
+            Console.WriteLine("Нажмите любую клавишу для продолжения...");
+            Console.ReadKey();
+        }
+
+        private string GenerateInteractiveHtml(AlgorithmResult result)
+        {
+            var stepsJson = JsonSerializer.Serialize(result.Steps.Select(step => new
+            {
+                step.stepNumber,
+                step.operation,
+                step.description,
+                Array = GetArrayFromVisualizationData(step.visualizationData),
+                Highlights = step.visualizationData.highlights,
+                Metadata = step.metadata
+            }).ToList(), new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+
+            return $@"
+<!DOCTYPE html>
+<html lang='ru'>
+<head>
+    <meta charset='UTF-8'>
+    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+    <title>Визуализация {result.AlgorithmName}</title>
+    <style>
+        body {{ 
+            font-family: 'Segoe UI', Arial, sans-serif; 
+            margin: 0; 
+            padding: 20px; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }}
+        .container {{ 
+            max-width: 1200px; 
+            margin: 0 auto; 
+            background: white; 
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }}
+        .header {{ 
+            background: linear-gradient(135deg, #2c3e50, #34495e);
+            color: white; 
+            padding: 30px; 
+            text-align: center;
+        }}
+        .header h1 {{ 
+            margin: 0; 
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }}
+        .stats {{ 
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            padding: 25px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+        }}
+        .stat-card {{
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border-left: 4px solid #667eea;
+        }}
+        .stat-value {{
+            font-size: 2em;
+            font-weight: bold;
+            color: #2c3e50;
+        }}
+        .stat-label {{
+            color: #7f8c8d;
+            font-size: 0.9em;
+            margin-top: 5px;
+        }}
+        .visualization {{ 
+            padding: 30px; 
+            min-height: 400px;
+        }}
+        .array-container {{
+            display: flex;
+            justify-content: center;
+            align-items: end;
+            gap: 8px;
+            margin: 30px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            min-height: 200px;
+        }}
+        .array-element {{
+            width: 50px;
+            background: #3498db;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            border-radius: 5px 5px 0 0;
+            transition: all 0.3s ease;
+            position: relative;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }}
+        .array-element.comparing {{
+            background: #f39c12;
+            transform: scale(1.1);
+            box-shadow: 0 4px 15px rgba(243, 156, 18, 0.4);
+        }}
+        .array-element.swapping {{
+            background: #e74c3c;
+            transform: scale(1.1);
+            box-shadow: 0 4px 15px rgba(231, 76, 60, 0.4);
+        }}
+        .array-element.sorted {{
+            background: #27ae60;
+        }}
+        .array-element.pivot {{
+            background: #9b59b6;
+        }}
+        .element-value {{
+            position: absolute;
+            top: -25px;
+            font-size: 0.9em;
+            color: #2c3e50;
+        }}
+        .element-index {{
+            position: absolute;
+            bottom: -20px;
+            font-size: 0.8em;
+            color: #7f8c8d;
+        }}
+        .controls {{
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            padding: 20px;
+            background: #34495e;
+        }}
+        .control-btn {{
+            padding: 12px 25px;
+            border: none;
+            border-radius: 25px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }}
+        .control-btn:hover {{
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }}
+        .control-btn:disabled {{
+            background: #bdc3c7;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }}
+        .step-info {{
+            text-align: center;
+            padding: 20px;
+            background: #2c3e50;
+            color: white;
+            font-size: 1.2em;
+        }}
+        .progress-container {{
+            width: 100%;
+            background: #ecf0f1;
+            border-radius: 10px;
+            margin: 20px 0;
+            overflow: hidden;
+        }}
+        .progress-bar {{
+            height: 10px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            width: 0%;
+            transition: width 0.3s ease;
+        }}
+        .highlight-legend {{
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }}
+        .legend-item {{
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }}
+        .legend-color {{
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+        }}
+        .comparing-legend {{ background: #f39c12; }}
+        .swapping-legend {{ background: #e74c3c; }}
+        .sorted-legend {{ background: #27ae60; }}
+        .pivot-legend {{ background: #9b59b6; }}
+    </style>
+</head>
+<body>
+    <div class='container'>
+        <div class='header'>
+            <h1>🎯 {result.AlgorithmName}</h1>
+            <p>Интерактивная визуализация алгоритма сортировки</p>
+        </div>
+        
+        <div class='stats'>
+            <div class='stat-card'>
+                <div class='stat-value'>{result.Statistics.Comparisons}</div>
+                <div class='stat-label'>Сравнений</div>
+            </div>
+            <div class='stat-card'>
+                <div class='stat-value'>{result.Statistics.Swaps}</div>
+                <div class='stat-label'>Обменов</div>
+            </div>
+            <div class='stat-card'>
+                <div class='stat-value'>{result.Statistics.Steps}</div>
+                <div class='stat-label'>Шагов</div>
+            </div>
+            <div class='stat-card'>
+                <div class='stat-value'>{result.ExecutionTime.TotalMilliseconds:F2}мс</div>
+                <div class='stat-label'>Время выполнения</div>
+            </div>
+        </div>
+
+        <div class='highlight-legend'>
+            <div class='legend-item'>
+                <div class='legend-color comparing-legend'></div>
+                <span>Сравнение</span>
+            </div>
+            <div class='legend-item'>
+                <div class='legend-color swapping-legend'></div>
+                <span>Обмен</span>
+            </div>
+            <div class='legend-item'>
+                <div class='legend-color sorted-legend'></div>
+                <span>Отсортирован</span>
+            </div>
+            <div class='legend-item'>
+                <div class='legend-color pivot-legend'></div>
+                <span>Опорный элемент</span>
+            </div>
+        </div>
+
+        <div class='step-info'>
+            <div id='stepDescription'>Готов к запуску...</div>
+            <div class='progress-container'>
+                <div class='progress-bar' id='progressBar'></div>
+            </div>
+            <div>Шаг <span id='currentStep'>0</span> из <span id='totalSteps'>{result.Steps.Count}</span></div>
+        </div>
+
+        <div class='visualization'>
+            <div class='array-container' id='arrayContainer'>
+                <!-- Массив будет отрисован здесь -->
+            </div>
+        </div>
+
+        <div class='controls'>
+            <button class='control-btn' onclick='previousStep()' id='prevBtn'>⏮️ Предыдущий</button>
+            <button class='control-btn' onclick='playPause()' id='playBtn'>▶️ Воспроизвести</button>
+            <button class='control-btn' onclick='nextStep()' id='nextBtn'>Следующий ⏭️</button>
+            <button class='control-btn' onclick='resetAnimation()'>🔄 Сбросить</button>
+            <button class='control-btn' onclick='changeSpeed(0.5)'>🐢 Медленно</button>
+            <button class='control-btn' onclick='changeSpeed(1)'>🚀 Нормально</button>
+            <button class='control-btn' onclick='changeSpeed(2)'>⚡ Быстро</button>
+        </div>
+    </div>
+
+    <script>
+        const steps = {stepsJson};
+        let currentStepIndex = 0;
+        let isPlaying = false;
+        let playInterval;
+        let speed = 1000;
+
+        function renderArray(step) {{
+            const container = document.getElementById('arrayContainer');
+            container.innerHTML = '';
+            
+            if (!step || !step.array) return;
+            
+            const maxValue = Math.max(...step.array);
+            const containerHeight = 200;
+            
+            step.array.forEach((value, index) => {{
+                const element = document.createElement('div');
+                element.className = 'array-element';
+                element.style.height = `auto`;
+                
+                const valueSpan = document.createElement('div');
+                valueSpan.className = 'element-value';
+                valueSpan.textContent = value;
+                
+                const indexSpan = document.createElement('div');
+                indexSpan.className = 'element-index';
+                indexSpan.textContent = index;
+                
+                element.appendChild(valueSpan);
+                element.appendChild(indexSpan);
+                
+                // Применяем подсветку
+                if (step.highlights) {{
+                    step.highlights.forEach(highlight => {{
+                        if (highlight.elementId === index.toString()) {{
+                            element.classList.add(highlight.highlightType.toLowerCase());
+                        }}
+                    }});
+                }}
+                
+                container.appendChild(element);
+            }});
+        }}
+
+        function updateStepInfo() {{
+            const step = steps[currentStepIndex];
+            document.getElementById('stepDescription').textContent = 
+                step ? `Шаг ${result.Steps[0].stepNumber}: ${result.Steps[0].description}` : 'Завершено';
+            document.getElementById('currentStep').textContent = currentStepIndex + 1;
+            document.getElementById('totalSteps').textContent = steps.length;
+            document.getElementById('progressBar').style.width = 
+                `100%`;
+            
+            // Обновляем состояние кнопок
+            document.getElementById('prevBtn').disabled = currentStepIndex === 0;
+            document.getElementById('nextBtn').disabled = currentStepIndex === steps.length - 1;
+        }}
+
+        function nextStep() {{
+            if (currentStepIndex < steps.length - 1) {{
+                currentStepIndex++;
+                renderArray(steps[currentStepIndex]);
+                updateStepInfo();
+            }}
+        }}
+
+        function previousStep() {{
+            if (currentStepIndex > 0) {{
+                currentStepIndex--;
+                renderArray(steps[currentStepIndex]);
+                updateStepInfo();
+            }}
+        }}
+
+        function playPause() {{
+            isPlaying = !isPlaying;
+            const playBtn = document.getElementById('playBtn');
+            
+            if (isPlaying) {{
+                playBtn.textContent = '⏸️ Пауза';
+                playInterval = setInterval(() => {{
+                    if (currentStepIndex < steps.length - 1) {{
+                        nextStep();
+                    }} else {{
+                        playPause();
+                    }}
+                }}, speed);
+            }} else {{
+                playBtn.textContent = '▶️ Воспроизвести';
+                clearInterval(playInterval);
+            }}
+        }}
+
+        function resetAnimation() {{
+            isPlaying = false;
+            clearInterval(playInterval);
+            document.getElementById('playBtn').textContent = '▶️ Воспроизвести';
+            currentStepIndex = 0;
+            renderArray(steps[currentStepIndex]);
+            updateStepInfo();
+        }}
+
+        function changeSpeed(newSpeed) {{
+            speed = 1000 / newSpeed;
+            if (isPlaying) {{
+                playPause();
+                playPause();
+            }}
+        }}
+
+        // Инициализация
+        document.addEventListener('DOMContentLoaded', () => {{
+            renderArray(steps[0]);
+            updateStepInfo();
+        }});
+
+        // Горячие клавиши
+        document.addEventListener('keydown', (e) => {{
+            switch(e.key) {{
+                case 'ArrowLeft': previousStep(); break;
+                case 'ArrowRight': nextStep(); break;
+                case ' ': playPause(); break;
+                case 'Home': resetAnimation(); break;
+            }}
+        }});
+    </script>
+</body>
+</html>";
         }
 
         private void ShowSaveHistory()
@@ -1464,7 +965,7 @@ namespace AlgorithmVisualization
                 var files = Directory.GetFiles(_resultsDirectory)
                     .Select(f => new FileInfo(f))
                     .OrderByDescending(f => f.CreationTime)
-                    .Take(10) // Показываем последние 10 файлов
+                    .Take(10)
                     .ToList();
 
                 if (files.Count == 0)
@@ -1473,14 +974,20 @@ namespace AlgorithmVisualization
                 }
                 else
                 {
-                    Console.WriteLine($"Последние {files.Count} файлов в папке Results:");
-                    Console.WriteLine(new string('─', 80));
-                    Console.WriteLine($"{"Имя файла",-30} {"Размер",-10} {"Дата создания"}");
+                    Console.WriteLine($"Последние {files.Count} файлов:");
                     Console.WriteLine(new string('─', 80));
 
                     foreach (var file in files)
                     {
-                        Console.WriteLine($"{file.Name,-30} {FormatFileSize(file.Length),-10} {file.CreationTime:dd.MM.yy HH:mm}");
+                        var icon = file.Extension.ToLower() switch
+                        {
+                            ".html" => "🌐",
+                            ".json" => "📊",
+                            ".txt" => "📄",
+                            _ => "📁"
+                        };
+
+                        Console.WriteLine($"{icon} {file.Name,-35} {FormatFileSize(file.Length),-8} {file.CreationTime:dd.MM.yy HH:mm}");
                     }
                 }
             }
@@ -1493,329 +1000,54 @@ namespace AlgorithmVisualization
             Console.ReadKey();
         }
 
-        // Новый метод для сохранения шагов алгоритма
-        private void SaveAlgorithmSteps()
+        // Вспомогательные методы
+        private int[] GetArrayFromVisualizationData(VisualizationData data)
         {
-            if (!_testData.ContainsKey("last_result"))
+            if (!data.elements.Any()) return Array.Empty<int>();
+
+            var array = new List<int>();
+            for (int i = 0; data.elements.ContainsKey(i.ToString()); i++)
             {
-                Console.WriteLine("❌ Нет результатов для сохранения. Сначала выполните тестирование алгоритма.");
-                Console.WriteLine("Нажмите любую клавишу для продолжения...");
-                Console.ReadKey();
-                return;
-            }
-
-            var result = _testData["last_result"] as AlgorithmResult;
-            if (result == null || result.Steps.Count == 0)
-            {
-                Console.WriteLine("❌ Нет шагов алгоритма для сохранения.");
-                Console.WriteLine("Нажмите любую клавишу для продолжения...");
-                Console.ReadKey();
-                return;
-            }
-
-            var stepsMenu = new MenuManager(this);
-            stepsMenu.SubMenuBool = true;
-            stepsMenu.LastTextShowMenu = "Назад";
-
-            stepsMenu.AddMenuItem("Сохранить все шаги в JSON", () => SaveStepsAsJson(result, true));
-            stepsMenu.AddMenuItem("Сохранить все шаги в TXT", () => SaveStepsAsTxt(result, true));
-            stepsMenu.AddMenuItem("Сохранить ключевые шаги в JSON", () => SaveStepsAsJson(result, false));
-            stepsMenu.AddMenuItem("Сохранить ключевые шаги в TXT", () => SaveStepsAsTxt(result, false));
-            stepsMenu.AddMenuItem("Сохранить шаги для визуализации", SaveStepsForVisualization);
-
-            stepsMenu.Run();
-        }
-
-        private void SaveStepsAsJson(AlgorithmResult result, bool allSteps)
-        {
-            var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
-            var fileName = allSteps ?
-                $"{result.AlgorithmName}_AllSteps_{timestamp}.json" :
-                $"{result.AlgorithmName}_KeySteps_{timestamp}.json";
-
-            var stepsToSave = allSteps ?
-                result.Steps :
-                result.Steps.Where(s => IsKeyStep(s)).ToList();
-
-            var stepsData = new
-            {
-                AlgorithmName = result.AlgorithmName,
-                Timestamp = DateTime.Now,
-                TotalSteps = result.Steps.Count,
-                SavedSteps = stepsToSave.Count,
-                Steps = stepsToSave.Select(step => new
+                if (data.elements[i.ToString()] is JsonElement element &&
+                    element.TryGetProperty("value", out var valueElement) &&
+                    valueElement.ValueKind == JsonValueKind.Number)
                 {
-                    step.stepNumber,
-                    step.operation,
-                    step.description,
-                    ArrayState = step.visualizationData.elements.ContainsKey("0") ?
-                        GetArrayFromVisualizationData(step.visualizationData) : null,
-                    Comparing = step.visualizationData.highlights
-                        .Where(h => h.HighlightType == "comparing")
-                        .Select(h => h.ElementId).ToArray(),
-                    Swapping = step.visualizationData.highlights
-                        .Where(h => h.HighlightType == "swapping")
-                        .Select(h => h.ElementId).ToArray(),
-                    Sorted = step.visualizationData.highlights
-                        .Where(h => h.HighlightType == "sorted")
-                        .Select(h => h.ElementId).ToArray(),
-                    PivotIndex = step.visualizationData.highlights
-                        .Where(h => h.HighlightType == "pivot")
-                        .Select(h => h.ElementId).FirstOrDefault(),
-                    step.metadata
-                }).ToList()
-            };
-
-            try
-            {
-                var options = new JsonSerializerOptions { WriteIndented = true };
-                var json = JsonSerializer.Serialize(stepsData, options);
-                var filePath = Path.Combine(_resultsDirectory, fileName);
-                File.WriteAllText(filePath, json);
-
-                Console.WriteLine($"✅ Шаги алгоритма сохранены в: {fileName}");
-                Console.WriteLine($"📊 Сохранено шагов: {stepsToSave.Count} из {result.Steps.Count}");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"❌ Ошибка сохранения шагов: {ex.Message}");
-            }
-
-            Console.WriteLine("Нажмите любую клавишу для продолжения...");
-            Console.ReadKey();
-        }
-
-        private void SaveStepsAsTxt(AlgorithmResult result, bool allSteps)
-        {
-            var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
-            var fileName = allSteps ?
-                $"{result.AlgorithmName}_AllSteps_{timestamp}.txt" :
-                $"{result.AlgorithmName}_KeySteps_{timestamp}.txt";
-
-            var stepsToSave = allSteps ?
-                result.Steps :
-                result.Steps.Where(s => IsKeyStep(s)).ToList();
-
-            var filePath = Path.Combine(_resultsDirectory, fileName);
-
-            try
-            {
-                using var writer = new StreamWriter(filePath, false, Encoding.UTF8);
-
-                writer.WriteLine("=== ШАГИ АЛГОРИТМА ===");
-                writer.WriteLine($"Алгоритм: {result.AlgorithmName}");
-                writer.WriteLine($"Дата: {DateTime.Now:dd.MM.yyyy HH:mm:ss}");
-                writer.WriteLine($"Всего шагов: {result.Steps.Count}");
-                writer.WriteLine($"Сохранено шагов: {stepsToSave.Count}");
-                writer.WriteLine();
-
-                foreach (var step in stepsToSave)
-                {
-                    writer.WriteLine($"Шаг {step.stepNumber}: {step.operation}");
-                    writer.WriteLine($"  Описание: {step.description}");
-
-                    // Состояние массива
-                    if (step.visualizationData.elements.ContainsKey("0"))
+                    if (valueElement.TryGetInt32(out int value))
                     {
-                        var array = GetArrayFromVisualizationData(step.visualizationData);
-                        writer.WriteLine($"  Массив: [{string.Join(", ", array)}]");
+                        array.Add(value);
                     }
-
-                    // Подсвеченные элементы
-                    var highlights = step.visualizationData.highlights
-                        .GroupBy(h => h.HighlightType)
-                        .Select(g => $"{g.Key}: {string.Join(", ", g.Select(h => h.ElementId))}");
-
-                    if (highlights.Any())
-                    {
-                        writer.WriteLine($"  Подсветка: {string.Join("; ", highlights)}");
-                    }
-
-                    // Метаданные
-                    if (step.metadata.Any())
-                    {
-                        writer.WriteLine($"  Метаданные: {string.Join(", ", step.metadata.Select(kv => $"{kv.Key}={kv.Value}"))}");
-                    }
-
-                    writer.WriteLine();
                 }
-
-                Console.WriteLine($"✅ Шаги алгоритма сохранены в: {fileName}");
-                Console.WriteLine($"📊 Сохранено шагов: {stepsToSave.Count} из {result.Steps.Count}");
             }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"❌ Ошибка сохранения шагов: {ex.Message}");
-            }
-
-            Console.WriteLine("Нажмите любую клавишу для продолжения...");
-            Console.ReadKey();
+            return array.ToArray();
         }
 
-        private void SaveStepsForVisualization()
-        {
-            if (!_testData.ContainsKey("last_result"))
-            {
-                Console.WriteLine("❌ Нет результатов для сохранения.");
-                Console.WriteLine("Нажмите любую клавишу для продолжения...");
-                Console.ReadKey();
-                return;
-            }
-
-            var result = _testData["last_result"] as AlgorithmResult;
-            if (result == null) return;
-
-            var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
-            var fileName = $"{result.AlgorithmName}_Visualization_{timestamp}.json";
-
-            try
-            {
-                var visualizationData = new
-                {
-                    AlgorithmName = result.AlgorithmName,
-                    OriginalArray = _testData.ContainsKey("current_array") ? _testData["current_array"] : null,
-                    Statistics = new
-                    {
-                        result.Statistics.Comparisons,
-                        result.Statistics.Swaps,
-                        result.Statistics.Steps,
-                        result.Statistics.RecursiveCalls,
-                        ExecutionTime = result.ExecutionTime.TotalMilliseconds
-                    },
-                    Steps = result.Steps.Select(step => new
-                    {
-                        step.stepNumber,
-                        step.operation,
-                        step.description,
-                        Array = GetArrayFromVisualizationData(step.visualizationData),
-                        Highlights = step.visualizationData.highlights.Select(h => new
-                        {
-                            h.ElementId,
-                            h.HighlightType,
-                            h.Color,
-                            h.Label
-                        }).ToList(),
-                        Connections = step.visualizationData.connections.Select(c => new
-                        {
-                            c.FromId,
-                            c.ToId,
-                            c.Type,
-                            c.Weight,
-                            c.IsHighlighted
-                        }).ToList(),
-                        step.metadata
-                    }).ToList()
-                };
-
-                var options = new JsonSerializerOptions { WriteIndented = true };
-                var json = JsonSerializer.Serialize(visualizationData, options);
-                var filePath = Path.Combine(_resultsDirectory, fileName);
-                File.WriteAllText(filePath, json);
-
-                Console.WriteLine($"✅ Данные для визуализации сохранены в: {fileName}");
-                Console.WriteLine($"📊 Шагов: {result.Steps.Count}");
-
-                // Сохраняем также HTML файл для простой визуализации
-                SaveVisualizationHtml(result, fileName.Replace(".json", ".html"));
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"❌ Ошибка сохранения данных визуализации: {ex.Message}");
-            }
-
-            Console.WriteLine("Нажмите любую клавишу для продолжения...");
-            Console.ReadKey();
-        }
-
-        private void SaveVisualizationHtml(AlgorithmResult result, string htmlFileName)
-        {
-            var filePath = Path.Combine(_resultsDirectory, htmlFileName);
-
-            var htmlContent = $@"
-            <!DOCTYPE html>
-            <html lang='ru'>
-            <head>
-                <meta charset='UTF-8'>
-                <meta name='viewport' content='width=device-width, initial-scale=1.0'>
-                <title>Визуализация {result.AlgorithmName}</title>
-                <style>
-                    body {{ font-family: Arial, sans-serif; margin: 20px; }}
-                    .step {{ margin-bottom: 20px; padding: 10px; border: 1px solid #ccc; border-radius: 5px; }}
-                    .array {{ display: flex; gap: 5px; margin: 10px 0; }}
-                    .element {{ width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; 
-                               border: 1px solid #333; border-radius: 3px; font-weight: bold; }}
-                    .comparing {{ background-color: yellow; }}
-                    .swapping {{ background-color: red; color: white; }}
-                    .sorted {{ background-color: green; color: white; }}
-                    .pivot {{ background-color: orange; }}
-                    .stats {{ background-color: #f0f0f0; padding: 10px; border-radius: 5px; margin: 10px 0; }}
-                    .metadata {{ color: #666; font-size: 0.9em; }}
-                </style>
-            </head>
-            <body>
-                <h1>Визуализация алгоритма: {result.AlgorithmName}</h1>
-                <div class='stats'>
-                    <strong>Статистика:</strong><br>
-                    Сравнений: {result.Statistics.Comparisons}<br>
-                    Обменов: {result.Statistics.Swaps}<br>
-                    Шагов: {result.Statistics.Steps}<br>
-                    Время: {result.ExecutionTime.TotalMilliseconds:F2} мс
-                </div>
-                <div id='steps'>
-                    <p>Данные для визуализации сохранены в JSON файле.</p>
-                    <p>Для полной визуализации используйте React-приложение с загрузкой этого файла.</p>
-                </div>
-                <script>
-                    // Здесь может быть код для загрузки и отображения шагов из JSON файла
-                    console.log('Загрузите JSON файл для визуализации шагов алгоритма');
-                </script>
-            </body>
-            </html>";
-
-            File.WriteAllText(filePath, htmlContent);
-            Console.WriteLine($"📄 HTML шаблон для визуализации сохранен в: {htmlFileName}");
-        }
-
-        // Обновим метод SaveLastResult для включения шагов
-        private void SaveLastResult()
-        {
-            if (!_testData.ContainsKey("last_result"))
-            {
-                Console.WriteLine("❌ Нет результатов для сохранения. Сначала выполните тестирование алгоритма.");
-                Console.WriteLine("Нажмите любую клавишу для продолжения...");
-                Console.ReadKey();
-                return;
-            }
-
-            var result = _testData["last_result"] as AlgorithmResult;
-            if (result == null) return;
-
-            var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
-            var fileName = $"{result.AlgorithmName}_{timestamp}";
-
-            // Сохраняем в разных форматах
-            SaveResultAsJson(result, fileName);
-            SaveResultAsTxt(result, fileName);
-            SaveStepsAsJson(result, false); // Сохраняем ключевые шаги
-
-            Console.WriteLine($"✅ Результаты сохранены в файлы:");
-            Console.WriteLine($"   📄 {fileName}.json");
-            Console.WriteLine($"   📄 {fileName}.txt");
-            Console.WriteLine($"   📊 {result.AlgorithmName}_KeySteps_{timestamp}.json");
-            Console.WriteLine("Нажмите любую клавишу для продолжения...");
-            Console.ReadKey();
-        }
-
-        // Обновим метод SaveResultAsJson для включения шагов
         private void SaveResultAsJson(AlgorithmResult result, string baseFileName)
         {
             var filePath = Path.Combine(_resultsDirectory, baseFileName + ".json");
-            var serializedResult = (object)result; // Включаем шаги
+
+            var resultData = new
+            {
+                result.AlgorithmName,
+                result.SessionId,
+                result.StructureType,
+                result.ExecutionTime,
+                Statistics = new
+                {
+                    result.Statistics.Comparisons,
+                    result.Statistics.Swaps,
+                    result.Statistics.Steps,
+                    result.Statistics.RecursiveCalls
+                },
+                result.OutputData,
+                StepsCount = result.Steps.Count,
+                result.Steps
+            };
 
             var options = new JsonSerializerOptions { WriteIndented = true };
-            var json = JsonSerializer.Serialize(serializedResult, options);
+            var json = JsonSerializer.Serialize(resultData, options);
             File.WriteAllText(filePath, json);
         }
+
         private void SaveResultAsTxt(AlgorithmResult result, string baseFileName)
         {
             var filePath = Path.Combine(_resultsDirectory, baseFileName + ".txt");
@@ -1833,84 +1065,7 @@ namespace AlgorithmVisualization
                 writer.WriteLine($"  Рекурсивных вызовов: {result.Statistics.RecursiveCalls}");
             writer.WriteLine($"  Эффективность: {CalculateEfficiency(result):F2} сравнений/обмен");
             writer.WriteLine();
-
-            if (result.OutputData.ContainsKey("sorted_array") && result.OutputData["sorted_array"] is int[] sortedArray)
-            {
-                writer.WriteLine("РЕЗУЛЬТАТ СОРТИРОВКИ:");
-                writer.WriteLine($"  Отсортированный массив: [{string.Join(", ", sortedArray)}]");
-            }
-        }
-
-        // Обновим метод SerializeAlgorithmResult для поддержки шагов
-        private object SerializeAlgorithmResult(AlgorithmResult result, bool includeSteps = false)
-        {
-            var serialized = new
-            {
-                result.AlgorithmName,
-                result.SessionId,
-                result.StructureType,
-                result.ExecutionTime,
-                Statistics = new
-                {
-                    result.Statistics.Comparisons,
-                    result.Statistics.Swaps,
-                    result.Statistics.Steps,
-                    result.Statistics.RecursiveCalls,
-                    result.Statistics.MemoryOperations
-                },
-                result.OutputData,
-                StepsCount = result.Steps.Count,
-                Steps = includeSteps ? result.Steps.Select(step => new
-                {
-                    step.stepNumber,
-                    step.operation,
-                    step.description,
-                    Array = GetArrayFromVisualizationData(step.visualizationData),
-                    Highlights = step.visualizationData.highlights,
-                    Connections = step.visualizationData.connections,
-                    step.metadata
-                }).ToList() : null
-            };
-            return serialized;
-        }
-
-        // Вспомогательные методы
-        private int[] GetArrayFromVisualizationData(VisualizationData data)
-        {
-            if (!data.elements.Any()) return Array.Empty<int>();
-
-            // Предполагаем, что элементы массива имеют ключи "0", "1", "2", ...
-            var array = new List<int>();
-            for (int i = 0; data.elements.ContainsKey(i.ToString()); i++)
-            {
-                if (data.elements[i.ToString()] is JsonElement element && element.TryGetProperty("value", out var valueElement))
-                {
-                    if (valueElement.ValueKind == JsonValueKind.Number && valueElement.TryGetInt32(out int value))
-                    {
-                        array.Add(value);
-                    }
-                }
-            }
-            return array.ToArray();
-        }
-
-        private bool IsKeyStep(VisualizationStep step)
-        {
-            // Определяем ключевые шаги для сохранения
-            var keyOperations = new[] { "swap", "compare", "select_pivot", "partition_complete", "recursive_call", "complete" };
-            return keyOperations.Contains(step.operation) ||
-                   step.visualizationData.highlights.Any(h =>
-                       h.HighlightType == "swapping" || h.HighlightType == "comparing");
-        }
-
-        private static string EscapeCsv(string value)
-        {
-            if (string.IsNullOrEmpty(value)) return "\"\"";
-            if (value.Contains(',') || value.Contains('"') || value.Contains('\n') || value.Contains('\r'))
-            {
-                return $"\"{value.Replace("\"", "\"\"")}\"";
-            }
-            return value;
+            writer.WriteLine($"Шагов визуализации: {result.Steps.Count}");
         }
 
         private static string FormatFileSize(long bytes)
@@ -1926,6 +1081,4 @@ namespace AlgorithmVisualization
             return $"{number:n1} {suffixes[counter]}";
         }
     }
-
-
 }

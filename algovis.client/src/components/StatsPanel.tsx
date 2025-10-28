@@ -4,7 +4,7 @@ import { Badge } from './ui/badge';
 import { useApp } from '../contexts/AppContext';
 
 interface StatsPanelProps {
-  dataStructure: 'array' | 'tree' | 'graph';
+  dataStructure: 'array' | 'tree' | 'graph' | 'list' | 'stack' | 'queue' | 'heap' | 'hashtable';
   algorithm: string;
   stats: {
     comparisons?: number;

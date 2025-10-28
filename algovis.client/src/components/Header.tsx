@@ -2,7 +2,6 @@ import React from 'react';
 import { Moon, Sun, Globe } from 'lucide-react';
 import { Button } from './ui/button';
 import { useApp } from '../contexts/AppContext';
-import GooeyNav from './ui/GooeyNav';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,7 +13,6 @@ interface HeaderProps {
   currentPage: string;
   onPageChange: (page: string) => void;
 }
-     
 
 export function Header({ currentPage, onPageChange }: HeaderProps) {
   const { language, setLanguage, theme, setTheme, translations } = useApp();

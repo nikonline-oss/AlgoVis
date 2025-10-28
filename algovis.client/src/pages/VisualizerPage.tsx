@@ -4,13 +4,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Slider } from '../components/ui/slider';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Input } from '../components/ui/input';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { AnimationControls } from '../components/AnimationControls';
 import { ArrayVisualization } from '../components/ArrayVisualization';
-import { TreeVisualization, TreeNode } from '../components/TreeVisualization';
-import { GraphVisualization, GraphNode, GraphEdge } from '../components/GraphVisualization';
+import { TreeVisualization,type TreeNode } from '../components/TreeVisualization';
+import { GraphVisualization,type GraphNode,type GraphEdge } from '../components/GraphVisualization';
+import { ListVisualization,type ListNode } from '../components/ListVisualization';
+import { StackVisualization } from '../components/StackVisualization';
+import { QueueVisualization } from '../components/QueueVisualization';
+import { HeapVisualization, type HeapNode } from '../components/HeapVisualization';
+import { HashTableVisualization,type HashBucket } from '../components/HashTableVisualization';
 import { StatsPanel } from '../components/StatsPanel';
 import { useApp } from '../contexts/AppContext';
+
 
 interface SortingStep {
   array: number[];
@@ -36,11 +41,52 @@ interface GraphStep {
   highlightedEdges?: Array<[number, number]>;
 }
 
-type VisualizationStep = SortingStep | TreeStep | GraphStep;
+interface ListStep {
+  nodes: ListNode[];
+  head?: number | null;
+  tail?: number | null;
+  currentIndex?: number;
+  highlightedIndices?: number[];
+  comparedIndices?: number[];
+  type?: 'singly' | 'doubly';
+}
+
+interface StackStep {
+  items: number[];
+  top?: number;
+  highlightedIndex?: number;
+  operation?: 'push' | 'pop' | null;
+}
+
+interface QueueStep {
+  items: number[];
+  front?: number;
+  rear?: number;
+  highlightedIndex?: number;
+  operation?: 'enqueue' | 'dequeue' | null;
+}
+
+interface HeapStep {
+  nodes: HeapNode[];
+  currentIndex?: number;
+  highlightedIndices?: number[];
+  comparedIndices?: number[];
+  type?: 'max' | 'min';
+}
+
+interface HashTableStep {
+  buckets: (HashBucket | null)[];
+  size: number;
+  currentBucket?: number;
+  highlightedBuckets?: number[];
+  collisionBuckets?: number[];
+}
+
+type VisualizationStep = SortingStep | TreeStep | GraphStep | ListStep | StackStep | QueueStep | HeapStep | HashTableStep;
 
 export function VisualizerPage() {
   const { translations, sharedData, setSharedData } = useApp();
-  const [dataStructure, setDataStructure] = useState<'array' | 'tree' | 'graph'>('array');
+  const [dataStructure, setDataStructure] = useState<'array' | 'tree' | 'graph' | 'list' | 'stack' | 'queue' | 'heap' | 'hashtable'>('array');
   const [algorithm, setAlgorithm] = useState('bubblesort');
   
   // Array state
@@ -59,6 +105,29 @@ export function VisualizerPage() {
   const [originalGraphNodes, setOriginalGraphNodes] = useState<GraphNode[]>([]);
   const [originalGraphEdges, setOriginalGraphEdges] = useState<GraphEdge[]>([]);
   const [nodeCount, setNodeCount] = useState(6);
+  
+  // List state
+  const [listNodes, setListNodes] = useState<ListNode[]>([]);
+  const [originalListNodes, setOriginalListNodes] = useState<ListNode[]>([]);
+  const [listType, setListType] = useState<'singly' | 'doubly'>('singly');
+  
+  // Stack state
+  const [stackItems, setStackItems] = useState<number[]>([]);
+  const [originalStackItems, setOriginalStackItems] = useState<number[]>([]);
+  
+  // Queue state
+  const [queueItems, setQueueItems] = useState<number[]>([]);
+  const [originalQueueItems, setOriginalQueueItems] = useState<number[]>([]);
+  
+  // Heap state
+  const [heapNodes, setHeapNodes] = useState<HeapNode[]>([]);
+  const [originalHeapNodes, setOriginalHeapNodes] = useState<HeapNode[]>([]);
+  const [heapType, setHeapType] = useState<'max' | 'min'>('max');
+  
+  // Hash Table state
+  const [hashBuckets, setHashBuckets] = useState<(HashBucket | null)[]>([]);
+  const [originalHashBuckets, setOriginalHashBuckets] = useState<(HashBucket | null)[]>([]);
+  const [hashTableSize, setHashTableSize] = useState(10);
   
   // Animation state
   const [isPlaying, setIsPlaying] = useState(false);
@@ -173,15 +242,127 @@ export function VisualizerPage() {
     setIsPlaying(false);
   }, [nodeCount]);
 
+  const generateRandomList = useCallback(() => {
+    const size = 5;
+    const nodes: ListNode[] = [];
+    
+    for (let i = 0; i < size; i++) {
+      nodes.push({
+        value: Math.floor(Math.random() * 100) + 1,
+        next: i < size - 1 ? i + 1 : null,
+        prev: listType === 'doubly' ? (i > 0 ? i - 1 : null) : undefined,
+      });
+    }
+    
+    setListNodes(nodes);
+    setOriginalListNodes(JSON.parse(JSON.stringify(nodes)));
+    setCurrentStep(0);
+    setSteps([]);
+    setStats({ comparisons: 0, swaps: 0, operations: 0 });
+    setIsPlaying(false);
+  }, [listType]);
+
+  const generateRandomStack = useCallback(() => {
+    const items = Array.from({ length: 5 }, () => Math.floor(Math.random() * 100) + 1);
+    setStackItems(items);
+    setOriginalStackItems([...items]);
+    setCurrentStep(0);
+    setSteps([]);
+    setStats({ comparisons: 0, swaps: 0, operations: 0 });
+    setIsPlaying(false);
+  }, []);
+
+  const generateRandomQueue = useCallback(() => {
+    const items = Array.from({ length: 5 }, () => Math.floor(Math.random() * 100) + 1);
+    setQueueItems(items);
+    setOriginalQueueItems([...items]);
+    setCurrentStep(0);
+    setSteps([]);
+    setStats({ comparisons: 0, swaps: 0, operations: 0 });
+    setIsPlaying(false);
+  }, []);
+
+  const generateRandomHeap = useCallback(() => {
+    const values = Array.from({ length: 10 }, () => Math.floor(Math.random() * 100) + 1);
+    const nodes = values.map((value, index) => ({ value, index }));
+    setHeapNodes(nodes);
+    setOriginalHeapNodes(JSON.parse(JSON.stringify(nodes)));
+    setCurrentStep(0);
+    setSteps([]);
+    setStats({ comparisons: 0, swaps: 0, operations: 0 });
+    setIsPlaying(false);
+  }, []);
+
+  const generateRandomHashTable = useCallback(() => {
+    const buckets: (HashBucket | null)[] = Array(hashTableSize).fill(null);
+    const keys = ['key1', 'key2', 'key3', 'key4', 'key5'];
+    
+    keys.forEach((key, idx) => {
+      const hash = key.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % hashTableSize;
+      if (!buckets[hash]) {
+        buckets[hash] = {
+          key,
+          value: Math.floor(Math.random() * 100) + 1,
+          hash,
+        };
+      }
+    });
+    
+    setHashBuckets(buckets);
+    setOriginalHashBuckets(JSON.parse(JSON.stringify(buckets)));
+    setCurrentStep(0);
+    setSteps([]);
+    setStats({ comparisons: 0, swaps: 0, operations: 0 });
+    setIsPlaying(false);
+  }, [hashTableSize]);
+
   useEffect(() => {
     if (dataStructure === 'array') {
       generateRandomArray();
+      setAlgorithm('bubblesort');
     } else if (dataStructure === 'tree') {
       generateRandomTree();
+      setAlgorithm('bst.inorder');
     } else if (dataStructure === 'graph') {
       generateRandomGraph();
+      setAlgorithm('bfs');
+    } else if (dataStructure === 'list') {
+      generateRandomList();
+      setAlgorithm('list.insert');
+    } else if (dataStructure === 'stack') {
+      generateRandomStack();
+      setAlgorithm('stack.push');
+    } else if (dataStructure === 'queue') {
+      generateRandomQueue();
+      setAlgorithm('queue.enqueue');
+    } else if (dataStructure === 'heap') {
+      generateRandomHeap();
+      setAlgorithm('heap.insert');
+    } else if (dataStructure === 'hashtable') {
+      generateRandomHashTable();
+      setAlgorithm('hashtable.insert');
     }
-  }, [dataStructure, generateRandomArray, generateRandomTree, generateRandomGraph]);
+  }, [dataStructure, generateRandomArray, generateRandomTree, generateRandomGraph, 
+      generateRandomList, generateRandomStack, generateRandomQueue, generateRandomHeap, generateRandomHashTable]);
+
+  // Regenerate data when type or size changes
+  useEffect(() => {
+    if (dataStructure === 'list') {
+      generateRandomList();
+    }
+  }, [listType, dataStructure, generateRandomList]);
+
+  useEffect(() => {
+    if (dataStructure === 'heap') {
+      generateRandomHeap();
+    }
+  }, [heapType, dataStructure, generateRandomHeap]);
+
+  useEffect(() => {
+    if (dataStructure === 'hashtable') {
+      generateRandomHashTable();
+    }
+  }, [hashTableSize, dataStructure, generateRandomHashTable]);
 
   // Sorting algorithms
   const bubbleSort = (arr: number[]): SortingStep[] => {
@@ -665,6 +846,248 @@ export function VisualizerPage() {
     return steps;
   };
 
+  // List algorithms
+  const listInsert = (nodes: ListNode[], value: number, position: number): ListStep[] => {
+    const steps: ListStep[] = [];
+    const newNodes = JSON.parse(JSON.stringify(nodes));
+    let operations = 0;
+    
+    steps.push({ nodes: newNodes, type: listType });
+    
+    const newNode: ListNode = { 
+      value, 
+      next: null,
+      prev: listType === 'doubly' ? null : undefined 
+    };
+    
+    if (position === 0) {
+      operations++;
+      newNode.next = 0;
+      if (listType === 'doubly' && newNodes.length > 0) {
+        newNodes[0].prev = newNodes.length;
+      }
+      newNodes.push(newNode);
+      steps.push({ 
+        nodes: newNodes, 
+        highlightedIndices: [newNodes.length - 1],
+        head: newNodes.length - 1,
+        type: listType 
+      });
+    } else if (position >= newNodes.length) {
+      operations++;
+      if (newNodes.length > 0) {
+        newNodes[newNodes.length - 1].next = newNodes.length;
+        if (listType === 'doubly') {
+          newNode.prev = newNodes.length - 1;
+        }
+      }
+      newNodes.push(newNode);
+      steps.push({ 
+        nodes: newNodes, 
+        highlightedIndices: [newNodes.length - 1],
+        tail: newNodes.length - 1,
+        type: listType 
+      });
+    } else {
+      operations++;
+      newNode.next = position;
+      if (listType === 'doubly') {
+        newNode.prev = position - 1;
+        newNodes[position].prev = newNodes.length;
+      }
+      if (position > 0) {
+        newNodes[position - 1].next = newNodes.length;
+      }
+      newNodes.push(newNode);
+      steps.push({ 
+        nodes: newNodes, 
+        highlightedIndices: [newNodes.length - 1],
+        comparedIndices: [position - 1, position],
+        type: listType 
+      });
+    }
+    
+    setListNodes(newNodes);
+    setOriginalListNodes(JSON.parse(JSON.stringify(newNodes)));
+    setStats({ comparisons: 0, swaps: 0, operations });
+    return steps;
+  };
+
+  // Stack algorithms
+  const stackPush = (items: number[], value: number): StackStep[] => {
+    const steps: StackStep[] = [];
+    const newItems = [...items, value];
+    let operations = 1;
+    
+    steps.push({ items: [...items], top: items.length - 1 });
+    steps.push({ 
+      items: newItems, 
+      top: newItems.length - 1,
+      highlightedIndex: newItems.length - 1,
+      operation: 'push'
+    });
+    
+    setStackItems(newItems);
+    setOriginalStackItems([...newItems]);
+    setStats({ comparisons: 0, swaps: 0, operations });
+    return steps;
+  };
+
+  const stackPop = (items: number[]): StackStep[] => {
+    const steps: StackStep[] = [];
+    let operations = 1;
+    
+    if (items.length === 0) return steps;
+    
+    steps.push({ items: [...items], top: items.length - 1 });
+    steps.push({ 
+      items: [...items], 
+      top: items.length - 1,
+      highlightedIndex: items.length - 1,
+      operation: 'pop'
+    });
+    
+    const newItems = items.slice(0, -1);
+    steps.push({ items: newItems, top: newItems.length - 1 });
+    
+    setStackItems(newItems);
+    setOriginalStackItems([...newItems]);
+    setStats({ comparisons: 0, swaps: 0, operations });
+    return steps;
+  };
+
+  // Queue algorithms
+  const queueEnqueue = (items: number[], value: number): QueueStep[] => {
+    const steps: QueueStep[] = [];
+    const newItems = [...items, value];
+    let operations = 1;
+    
+    steps.push({ items: [...items], front: 0, rear: items.length - 1 });
+    steps.push({ 
+      items: newItems, 
+      front: 0,
+      rear: newItems.length - 1,
+      highlightedIndex: newItems.length - 1,
+      operation: 'enqueue'
+    });
+    
+    setQueueItems(newItems);
+    setOriginalQueueItems([...newItems]);
+    setStats({ comparisons: 0, swaps: 0, operations });
+    return steps;
+  };
+
+  const queueDequeue = (items: number[]): QueueStep[] => {
+    const steps: QueueStep[] = [];
+    let operations = 1;
+    
+    if (items.length === 0) return steps;
+    
+    steps.push({ items: [...items], front: 0, rear: items.length - 1 });
+    steps.push({ 
+      items: [...items], 
+      front: 0,
+      rear: items.length - 1,
+      highlightedIndex: 0,
+      operation: 'dequeue'
+    });
+    
+    const newItems = items.slice(1);
+    steps.push({ items: newItems, front: 0, rear: newItems.length - 1 });
+    
+    setQueueItems(newItems);
+    setOriginalQueueItems([...newItems]);
+    setStats({ comparisons: 0, swaps: 0, operations });
+    return steps;
+  };
+
+  // Heap algorithms
+  const heapInsert = (nodes: HeapNode[], value: number): HeapStep[] => {
+    const steps: HeapStep[] = [];
+    const newNodes = [...nodes, { value, index: nodes.length }];
+    let operations = 0;
+    
+    steps.push({ nodes: [...nodes], type: heapType });
+    steps.push({ 
+      nodes: newNodes, 
+      highlightedIndices: [newNodes.length - 1],
+      type: heapType 
+    });
+    
+    // Bubble up
+    let currentIndex = newNodes.length - 1;
+    while (currentIndex > 0) {
+      const parentIndex = Math.floor((currentIndex - 1) / 2);
+      operations++;
+      
+      steps.push({
+        nodes: newNodes,
+        currentIndex,
+        comparedIndices: [parentIndex],
+        type: heapType
+      });
+      
+      const shouldSwap = heapType === 'max' 
+        ? newNodes[currentIndex].value > newNodes[parentIndex].value
+        : newNodes[currentIndex].value < newNodes[parentIndex].value;
+      
+      if (shouldSwap) {
+        [newNodes[currentIndex], newNodes[parentIndex]] = [newNodes[parentIndex], newNodes[currentIndex]];
+        steps.push({
+          nodes: newNodes,
+          highlightedIndices: [parentIndex, currentIndex],
+          type: heapType
+        });
+        currentIndex = parentIndex;
+      } else {
+        break;
+      }
+    }
+    
+    steps.push({ nodes: newNodes, type: heapType });
+    
+    setHeapNodes(newNodes);
+    setOriginalHeapNodes(JSON.parse(JSON.stringify(newNodes)));
+    setStats({ comparisons: 0, swaps: 0, operations });
+    return steps;
+  };
+
+  // Hash Table algorithms
+  const hashTableInsert = (buckets: (HashBucket | null)[], key: string, value: number): HashTableStep[] => {
+    const steps: HashTableStep[] = [];
+    const newBuckets = [...buckets];
+    let operations = 1;
+    
+    const hash = key.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % hashTableSize;
+    
+    steps.push({ buckets: newBuckets, size: hashTableSize });
+    steps.push({ 
+      buckets: newBuckets, 
+      size: hashTableSize,
+      currentBucket: hash 
+    });
+    
+    if (newBuckets[hash]) {
+      steps.push({ 
+        buckets: newBuckets, 
+        size: hashTableSize,
+        collisionBuckets: [hash]
+      });
+    }
+    
+    newBuckets[hash] = { key, value, hash };
+    steps.push({ 
+      buckets: newBuckets, 
+      size: hashTableSize,
+      highlightedBuckets: [hash]
+    });
+    
+    setHashBuckets(newBuckets);
+    setOriginalHashBuckets(JSON.parse(JSON.stringify(newBuckets)));
+    setStats({ comparisons: 0, swaps: 0, operations });
+    return steps;
+  };
+
   const runAlgorithm = () => {
     let algorithmSteps: VisualizationStep[] = [];
     
@@ -707,6 +1130,31 @@ export function VisualizerPage() {
         default:
           algorithmSteps = graphBFS(originalGraphNodes, originalGraphEdges);
       }
+    } else if (dataStructure === 'list') {
+      const randomValue = Math.floor(Math.random() * 100) + 1;
+      const randomPosition = Math.floor(Math.random() * (originalListNodes.length + 1));
+      algorithmSteps = listInsert(originalListNodes, randomValue, randomPosition);
+    } else if (dataStructure === 'stack') {
+      if (algorithm === 'stack.push') {
+        const randomValue = Math.floor(Math.random() * 100) + 1;
+        algorithmSteps = stackPush(originalStackItems, randomValue);
+      } else if (algorithm === 'stack.pop') {
+        algorithmSteps = stackPop(originalStackItems);
+      }
+    } else if (dataStructure === 'queue') {
+      if (algorithm === 'queue.enqueue') {
+        const randomValue = Math.floor(Math.random() * 100) + 1;
+        algorithmSteps = queueEnqueue(originalQueueItems, randomValue);
+      } else if (algorithm === 'queue.dequeue') {
+        algorithmSteps = queueDequeue(originalQueueItems);
+      }
+    } else if (dataStructure === 'heap') {
+      const randomValue = Math.floor(Math.random() * 100) + 1;
+      algorithmSteps = heapInsert(originalHeapNodes, randomValue);
+    } else if (dataStructure === 'hashtable') {
+      const randomKey = `key${Math.floor(Math.random() * 100)}`;
+      const randomValue = Math.floor(Math.random() * 100) + 1;
+      algorithmSteps = hashTableInsert(originalHashBuckets, randomKey, randomValue);
     }
     
     setSteps(algorithmSteps);
@@ -776,6 +1224,16 @@ export function VisualizerPage() {
     } else if (dataStructure === 'graph') {
       setGraphNodes([...originalGraphNodes]);
       setGraphEdges([...originalGraphEdges]);
+    } else if (dataStructure === 'list') {
+      setListNodes(JSON.parse(JSON.stringify(originalListNodes)));
+    } else if (dataStructure === 'stack') {
+      setStackItems([...originalStackItems]);
+    } else if (dataStructure === 'queue') {
+      setQueueItems([...originalQueueItems]);
+    } else if (dataStructure === 'heap') {
+      setHeapNodes(JSON.parse(JSON.stringify(originalHeapNodes)));
+    } else if (dataStructure === 'hashtable') {
+      setHashBuckets(JSON.parse(JSON.stringify(originalHashBuckets)));
     }
     
     setSteps([]);
@@ -837,6 +1295,39 @@ export function VisualizerPage() {
         highlightedEdges: [],
       };
       return <GraphVisualization {...stepData} />;
+    } else if (dataStructure === 'list') {
+      const stepData = (currentStepData as ListStep) || {
+        nodes: listNodes,
+        head: 0,
+        tail: listNodes.length > 0 ? listNodes.length - 1 : null,
+        type: listType,
+      };
+      return <ListVisualization {...stepData} />;
+    } else if (dataStructure === 'stack') {
+      const stepData = (currentStepData as StackStep) || {
+        items: stackItems,
+        top: stackItems.length > 0 ? stackItems.length - 1 : undefined,
+      };
+      return <StackVisualization {...stepData} />;
+    } else if (dataStructure === 'queue') {
+      const stepData = (currentStepData as QueueStep) || {
+        items: queueItems,
+        front: 0,
+        rear: queueItems.length > 0 ? queueItems.length - 1 : undefined,
+      };
+      return <QueueVisualization {...stepData} />;
+    } else if (dataStructure === 'heap') {
+      const stepData = (currentStepData as HeapStep) || {
+        nodes: heapNodes,
+        type: heapType,
+      };
+      return <HeapVisualization {...stepData} />;
+    } else if (dataStructure === 'hashtable') {
+      const stepData = (currentStepData as HashTableStep) || {
+        buckets: hashBuckets,
+        size: hashTableSize,
+      };
+      return <HashTableVisualization {...stepData} />;
     }
   };
 
@@ -867,6 +1358,44 @@ export function VisualizerPage() {
           <SelectItem value="dijkstra">{translations['algorithm.dijkstra']}</SelectItem>
         </>
       );
+    } else if (dataStructure === 'list') {
+      return (
+        <>
+          <SelectItem value="list.insert">{translations['algorithm.list.insert']}</SelectItem>
+          <SelectItem value="list.delete">{translations['algorithm.list.delete']}</SelectItem>
+          <SelectItem value="list.search">{translations['algorithm.list.search']}</SelectItem>
+        </>
+      );
+    } else if (dataStructure === 'stack') {
+      return (
+        <>
+          <SelectItem value="stack.push">{translations['algorithm.stack.push']}</SelectItem>
+          <SelectItem value="stack.pop">{translations['algorithm.stack.pop']}</SelectItem>
+        </>
+      );
+    } else if (dataStructure === 'queue') {
+      return (
+        <>
+          <SelectItem value="queue.enqueue">{translations['algorithm.queue.enqueue']}</SelectItem>
+          <SelectItem value="queue.dequeue">{translations['algorithm.queue.dequeue']}</SelectItem>
+        </>
+      );
+    } else if (dataStructure === 'heap') {
+      return (
+        <>
+          <SelectItem value="heap.insert">{translations['algorithm.heap.insert']}</SelectItem>
+          <SelectItem value="heap.extractMax">{translations['algorithm.heap.extractMax']}</SelectItem>
+          <SelectItem value="heap.heapify">{translations['algorithm.heap.heapify']}</SelectItem>
+        </>
+      );
+    } else if (dataStructure === 'hashtable') {
+      return (
+        <>
+          <SelectItem value="hashtable.insert">{translations['algorithm.hashtable.insert']}</SelectItem>
+          <SelectItem value="hashtable.search">{translations['algorithm.hashtable.search']}</SelectItem>
+          <SelectItem value="hashtable.delete">{translations['algorithm.hashtable.delete']}</SelectItem>
+        </>
+      );
     }
   };
 
@@ -884,13 +1413,24 @@ export function VisualizerPage() {
             <CardTitle>{translations['structure.select']}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <Tabs value={dataStructure} onValueChange={(v) => setDataStructure(v as any)}>
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="array">{translations['structure.array']}</TabsTrigger>
-                <TabsTrigger value="tree">{translations['structure.tree']}</TabsTrigger>
-                <TabsTrigger value="graph">{translations['structure.graph']}</TabsTrigger>
-              </TabsList>
-            </Tabs>
+            <div className="space-y-2">
+              <label className="text-sm">{translations['structure.select']}</label>
+              <Select value={dataStructure} onValueChange={(v) => setDataStructure(v as any)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="array">{translations['structure.array']}</SelectItem>
+                  <SelectItem value="tree">{translations['structure.tree']}</SelectItem>
+                  <SelectItem value="graph">{translations['structure.graph']}</SelectItem>
+                  <SelectItem value="list">{translations['structure.list']}</SelectItem>
+                  <SelectItem value="stack">{translations['structure.stack']}</SelectItem>
+                  <SelectItem value="queue">{translations['structure.queue']}</SelectItem>
+                  <SelectItem value="heap">{translations['structure.heap']}</SelectItem>
+                  <SelectItem value="hashtable">{translations['structure.hashtable']}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
             <Select value={algorithm} onValueChange={setAlgorithm}>
               <SelectTrigger>
@@ -956,6 +1496,75 @@ export function VisualizerPage() {
               </>
             )}
 
+            {dataStructure === 'list' && (
+              <>
+                <div className="space-y-2">
+                  <label className="text-sm">{translations['list.type'] || 'Type'}</label>
+                  <Select value={listType} onValueChange={(v) => setListType(v as 'singly' | 'doubly')}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="singly">{translations['list.singly'] || 'Singly Linked'}</SelectItem>
+                      <SelectItem value="doubly">{translations['list.doubly'] || 'Doubly Linked'}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button onClick={generateRandomList} variant="outline" className="w-full">
+                  {translations['data.generate']}
+                </Button>
+              </>
+            )}
+
+            {dataStructure === 'stack' && (
+              <Button onClick={generateRandomStack} variant="outline" className="w-full">
+                {translations['data.generate']}
+              </Button>
+            )}
+
+            {dataStructure === 'queue' && (
+              <Button onClick={generateRandomQueue} variant="outline" className="w-full">
+                {translations['data.generate']}
+              </Button>
+            )}
+
+            {dataStructure === 'heap' && (
+              <>
+                <div className="space-y-2">
+                  <label className="text-sm">{translations['heap.type'] || 'Heap Type'}</label>
+                  <Select value={heapType} onValueChange={(v) => setHeapType(v as 'max' | 'min')}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="max">{translations['heap.max'] || 'Max Heap'}</SelectItem>
+                      <SelectItem value="min">{translations['heap.min'] || 'Min Heap'}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button onClick={generateRandomHeap} variant="outline" className="w-full">
+                  {translations['data.generate']}
+                </Button>
+              </>
+            )}
+
+            {dataStructure === 'hashtable' && (
+              <>
+                <div className="space-y-2">
+                  <label className="text-sm">{translations['hashtable.size'] || 'Table Size'}: {hashTableSize}</label>
+                  <Slider
+                    value={[hashTableSize]}
+                    onValueChange={(value) => setHashTableSize(value[0])}
+                    max={20}
+                    min={5}
+                    step={1}
+                  />
+                </div>
+                <Button onClick={generateRandomHashTable} variant="outline" className="w-full">
+                  {translations['data.generate']}
+                </Button>
+              </>
+            )}
 
           </CardContent>
         </Card>

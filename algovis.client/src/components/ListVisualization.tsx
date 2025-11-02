@@ -134,11 +134,11 @@ export function ListVisualization({
               [{index}]
             </text>
 
-            {/* Head/Tail markers */}
+            {/* Head/Tail markers - теперь на одном уровне */}
             {head === index && (
               <text
                 x={startX + index * horizontalSpacing + nodeWidth / 2}
-                y={startY + nodeHeight + 20}
+                y={startY + nodeHeight + 25}
                 textAnchor="middle"
                 className="fill-green-500 text-sm select-none"
               >
@@ -148,7 +148,7 @@ export function ListVisualization({
             {tail === index && (
               <text
                 x={startX + index * horizontalSpacing + nodeWidth / 2}
-                y={startY + nodeHeight + 35}
+                y={startY + nodeHeight + 25}
                 textAnchor="middle"
                 className="fill-purple-500 text-sm select-none"
               >
@@ -166,7 +166,6 @@ export function ListVisualization({
               y={startY + 35}
               className="fill-muted-foreground select-none"
             >
-              NULL
             </text>
           </g>
         )}

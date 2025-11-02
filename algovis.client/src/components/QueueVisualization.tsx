@@ -34,7 +34,7 @@ export function QueueVisualization({
 
   return (
     <div className="w-full overflow-x-auto bg-card rounded-lg border p-6">
-      <svg width={Math.max(items.length * (itemWidth + spacing) + 100, 800)} height="400">
+      <svg width={Math.max(items.length * (itemWidth + spacing) + 100, 800)} height="450">
         {/* Queue container */}
         {items.length > 0 && (
           <rect
@@ -109,18 +109,18 @@ export function QueueVisualization({
                 <g>
                   <text
                     x={xPos + itemWidth / 2}
-                    y={startY + itemHeight + 25}
+                    y={startY + itemHeight + 35}
                     textAnchor="middle"
                     className="fill-blue-500 select-none"
                   >
                     FRONT
                   </text>
-                  <motion.polygon
-                    points={`${xPos + itemWidth / 2},${startY + itemHeight + 10} ${xPos + itemWidth / 2 - 6},${startY + itemHeight + 18} ${xPos + itemWidth / 2 + 6},${startY + itemHeight + 18}`}
+                  {/* <motion.polygon
+                    points={`${xPos + itemWidth / 2},${startY + itemHeight + 20} ${xPos + itemWidth / 2 - 6},${startY + itemHeight + 28} ${xPos + itemWidth / 2 + 6},${startY + itemHeight + 28}`}
                     fill="rgb(59, 130, 246)"
                     animate={{ y: [0, 5, 0] }}
                     transition={{ duration: 1, repeat: Infinity }}
-                  />
+                  /> */}
                 </g>
               )}
               
@@ -129,18 +129,18 @@ export function QueueVisualization({
                 <g>
                   <text
                     x={xPos + itemWidth / 2}
-                    y={startY + itemHeight + 45}
+                    y={startY + itemHeight + 35}
                     textAnchor="middle"
                     className="fill-purple-500 select-none"
                   >
                     REAR
                   </text>
-                  <motion.polygon
-                    points={`${xPos + itemWidth / 2},${startY + itemHeight + 30} ${xPos + itemWidth / 2 - 6},${startY + itemHeight + 38} ${xPos + itemWidth / 2 + 6},${startY + itemHeight + 38}`}
+                  {/* <motion.polygon
+                    points={`${xPos + itemWidth / 2},${startY + itemHeight + 20} ${xPos + itemWidth / 2 - 6},${startY + itemHeight + 28} ${xPos + itemWidth / 2 + 6},${startY + itemHeight + 28}`}
                     fill="rgb(147, 51, 234)"
                     animate={{ y: [0, 5, 0] }}
                     transition={{ duration: 1, repeat: Infinity }}
-                  />
+                  /> */}
                 </g>
               )}
             </motion.g>
@@ -164,14 +164,14 @@ export function QueueVisualization({
           <g>
             <text
               x={startX}
-              y={startY - 35}
+              y={startY - 30}
               className="fill-muted-foreground text-sm select-none"
             >
               Dequeue ←
             </text>
             <text
               x={startX + items.length * (itemWidth + spacing) - 50}
-              y={startY - 35}
+              y={startY - 30}
               className="fill-muted-foreground text-sm select-none"
             >
               → Enqueue

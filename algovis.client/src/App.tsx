@@ -4,6 +4,7 @@ import { Header } from './components/Header';
 import { HomePage } from './pages/HomePage';
 import { VisualizerPage } from './pages/VisualizerPage';
 import { ProfilerPage } from './pages/ProfilerPage';
+import { CodeAnalyzerPage } from './pages/CodeAnalyzerPage';
 import { HelpPage } from './pages/HelpPage';
 
 export default function App() {
@@ -17,6 +18,8 @@ export default function App() {
         return <VisualizerPage />;
       case 'profiler':
         return <ProfilerPage onNavigate={setCurrentPage} />;
+      case 'analyzer':
+        return <CodeAnalyzerPage />;
       case 'help':
         return <HelpPage />;
       default:

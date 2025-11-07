@@ -82,6 +82,7 @@ namespace AlgorithmVisualization
 
             // Предопределенные пути для тестирования
             var filePath = "C:\\2025\\Project\\Программная инженерия\\AlgoVis\\testing\\quickSort.json";
+            //var filePath = "C:\\2025\\Project\\Программная инженерия\\AlgoVis\\testing\\InstructJson.json";
 
             if (File.Exists(filePath))
             {

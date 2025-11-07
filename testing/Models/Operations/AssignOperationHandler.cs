@@ -27,6 +27,10 @@ namespace testing.Models.Operations
             {
                 SetArrayElement(leftSide, extractedValue, context);
             }
+            else if (IsPropertyAccess(leftSide))
+            {
+                SetProperty(leftSide, extractedValue, context);
+            }
             else
             {
                 context.Variables.Set(leftSide, extractedValue);
@@ -48,6 +52,11 @@ namespace testing.Models.Operations
         {
             return expression.Contains("[") && expression.Contains("]");
         }
+        private bool IsPropertyAccess(string expression)
+        {
+            return expression.Contains(".") && !expression.Contains("[");
+        }
+
         private void SetArrayElement(string arrayAccess, object value, ExecutionContext context)
         {
             // Парсим выражение доступа к массиву: array[index]
@@ -66,6 +75,20 @@ namespace testing.Models.Operations
 
             // Устанавливаем элемент массива
             context.Variables.SetElement(arrayName, index, value);
+        }
+        private void SetProperty(string propertyAccess, object value, ExecutionContext context)
+        {
+            // Простой случай: obj.property
+            var parts = propertyAccess.Split('.');
+            if (parts.Length == 2)
+            {
+                context.Variables.SetProperty(parts[0], parts[1], value);
+            }
+            else
+            {
+                // Сложный случай: obj.subobj.property - используем обычный Set
+                context.Variables.Set(propertyAccess, value);
+            }
         }
     }
 }

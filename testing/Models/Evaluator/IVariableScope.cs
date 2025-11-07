@@ -14,6 +14,8 @@ namespace testing.Models.Evaluator
         Dictionary<string, object> GetAllVariables();
         object GetElement(string arrayName, int index);
         void SetElement(string arrayName, int index, object value);
+        object GetProperty(string objectName, string propertyName);
+        void SetProperty(string objectName, string propertyName, object value);
     }
 
 }

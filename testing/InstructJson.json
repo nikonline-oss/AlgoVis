@@ -1,181 +1,195 @@
 ﻿{
-  "name": "ModularBubbleSort",
-  "description": "Модульная пузырьковая сортировка с функциями",
-  "structureType": "array",
+  "name": "BinaryTreeDFS",
+  "description": "Обход бинарного дерева в глубину (префиксный порядок)",
+  "structureType": "tree",
   "variables": [
     {
-      "name": "i",
-      "type": "int",
-      "initialValue": "0"
+      "name": "tree",
+      "type": "object",
+      "initialValue": "{\"value\": 10, \"left\": {\"value\": 5, \"left\": {\"value\": 2, \"left\": null, \"right\": null}, \"right\": {\"value\": 7, \"left\": null, \"right\": null}}, \"right\": {\"value\": 15, \"left\": {\"value\": 12, \"left\": null, \"right\": null}, \"right\": {\"value\": 20, \"left\": null, \"right\": null}}}"
     },
     {
-      "name": "j",
-      "type": "int",
-      "initialValue": "0"
+      "name": "stack",
+      "type": "array",
+      "initialValue": "[]"
     },
     {
-      "name": "n",
-      "type": "int",
-      "initialValue": "array_length"
+      "name": "current",
+      "type": "object"
     },
     {
-      "name": "swapped",
-      "type": "bool",
-      "initialValue": "false"
-    }
-  ],
-  "functions": [
+      "name": "result",
+      "type": "array",
+      "initialValue": "[]"
+    },
     {
-      "name": "bubble_pass",
-      "description": "Один проход пузырьковой сортировки",
-      "parameters": [ "current_i" ],
-      "entryPoint": "init_j",
-      "steps": [
-        {
-          "id": "init_j",
-          "type": "assign",
-          "description": "Инициализация внутреннего цикла",
-          "parameters": [ "j", "0" ],
-          "nextStep": "inner_loop_condition"
-        },
-        {
-          "id": "inner_loop_condition",
-          "type": "condition",
-          "description": "Проверка условия внутреннего цикла",
-          "parameters": [ "j < ( n - current_i - 1)" ],
-          "conditionCases": [
-            {
-              "condition": "true",
-              "nextStep": "compare_neighbors"
-            },
-            {
-              "condition": "false",
-              "nextStep": "return_from_pass"
-            }
-          ]
-        },
-        {
-          "id": "compare_neighbors",
-          "type": "compare",
-          "description": "Сравнение соседних элементов",
-          "parameters": [ "j", "j+1" ],
-          "nextStep": "check_swap"
-        },
-        {
-          "id": "check_swap",
-          "type": "condition",
-          "description": "Проверка необходимости обмена",
-          "parameters": [ "last_comparison > 0" ],
-          "conditionCases": [
-            {
-              "condition": "true",
-              "nextStep": "swap_elements"
-            },
-            {
-              "condition": "false",
-              "nextStep": "increment_j"
-            }
-          ]
-        },
-        {
-          "id": "swap_elements",
-          "type": "swap",
-          "description": "Обмен элементов",
-          "parameters": [ "j", "j+1" ],
-          "nextStep": "set_swapped"
-        },
-        {
-          "id": "set_swapped",
-          "type": "assign",
-          "description": "Установка флага обмена",
-          "parameters": [ "swapped", "true" ],
-          "nextStep": "increment_j"
-        },
-        {
-          "id": "increment_j",
-          "type": "assign",
-          "description": "Увеличение счетчика",
-          "parameters": [ "j", "j+1" ],
-          "nextStep": "inner_loop_condition"
-        },
-        {
-          "id": "return_from_pass",
-          "type": "return",
-          "description": "Возврат из прохода"
-        }
-      ]
+      "name": "stack_ptr",
+      "type": "int",
+      "initialValue": 0
+    },
+    {
+      "name": "result_ptr",
+      "type": "int",
+      "initialValue": 0
     }
   ],
   "steps": [
     {
       "id": "start",
       "type": "assign",
-      "description": "Инициализация переменных",
-      "parameters": [ "i", "0" ],
-      "nextStep": "outer_loop_condition"
+      "description": "Инициализация стека корневым узлом",
+      "parameters": [ "stack[0]", "tree" ],
+      "nextStep": "set_stack_ptr",
+      "visualize": true,
+      "highlightElements": [ "tree" ],
+      "visualizationType": "tree_traverse_start"
     },
     {
-      "id": "outer_loop_condition",
+      "id": "set_stack_ptr",
+      "type": "assign",
+      "description": "Установка указателя стека",
+      "parameters": [ "stack_ptr", "1" ],
+      "nextStep": "check_stack",
+      "visualize": false
+    },
+    {
+      "id": "check_stack",
       "type": "condition",
-      "description": "Проверка условия внешнего цикла",
-      "parameters": [ "i <( n-1)" ],
+      "description": "Проверка пустоты стека",
+      "parameters": [ "stack_ptr > 0" ],
       "conditionCases": [
         {
           "condition": "true",
-          "nextStep": "reset_swapped"
+          "nextStep": "pop_node"
         },
         {
           "condition": "false",
           "nextStep": "end"
         }
-      ]
+      ],
+      "visualize": true,
+      "highlightElements": [ "stack" ],
+      "visualizationType": "tree_check_stack"
     },
     {
-      "id": "reset_swapped",
+      "id": "pop_node",
       "type": "assign",
-      "description": "Сброс флага обмена",
-      "parameters": [ "swapped", "false" ],
-      "nextStep": "call_bubble_pass"
+      "description": "Извлечение узла из стека",
+      "parameters": [ "stack_ptr", "stack_ptr - 1" ],
+      "nextStep": "get_current",
+      "visualize": true,
+      "highlightElements": [ "stack_ptr" ],
+      "visualizationType": "tree_pop_node"
     },
     {
-      "id": "call_bubble_pass",
-      "type": "call_function",
-      "description": "Выполнение одного прохода сортировки",
-      "functionName": "bubble_pass",
-      "functionParameters": {
-        "current_i": "i"
-      },
-      "returnToStep": "check_early_exit",
-      "nextStep": ""
+      "id": "get_current",
+      "type": "assign",
+      "description": "Получение текущего узла",
+      "parameters": [ "current", "stack[stack_ptr]" ],
+      "nextStep": "process_node",
+      "visualize": true,
+      "highlightElements": [ "current" ],
+      "visualizationType": "tree_current_node"
     },
     {
-      "id": "check_early_exit",
+      "id": "process_node",
+      "type": "assign",
+      "description": "Добавление значения узла в результат",
+      "parameters": [ "result[result_ptr]", "current.value" ],
+      "nextStep": "increment_result",
+      "visualize": true,
+      "highlightElements": [ "current", "result" ],
+      "visualizationType": "tree_process_node"
+    },
+    {
+      "id": "increment_result",
+      "type": "assign",
+      "description": "Увеличение указателя результата",
+      "parameters": [ "result_ptr", "result_ptr + 1" ],
+      "nextStep": "check_right",
+      "visualize": false
+    },
+    {
+      "id": "check_right",
       "type": "condition",
-      "description": "Проверка досрочного завершения",
-      "parameters": [ "swapped == false" ],
+      "description": "Проверка правого потомка",
+      "parameters": [ "current.right != null" ],
       "conditionCases": [
         {
           "condition": "true",
-          "nextStep": "end"
+          "nextStep": "push_right"
         },
         {
           "condition": "false",
-          "nextStep": "increment_i"
+          "nextStep": "check_left"
         }
-      ]
+      ],
+      "visualize": true,
+      "highlightElements": [ "current.right" ],
+      "visualizationType": "tree_check_right"
     },
     {
-      "id": "increment_i",
+      "id": "push_right",
       "type": "assign",
-      "description": "Увеличение счетчика внешнего цикла",
-      "parameters": [ "i", "i+1" ],
-      "nextStep": "outer_loop_condition"
+      "description": "Добавление правого потомка в стек",
+      "parameters": [ "stack[stack_ptr]", "current.right" ],
+      "nextStep": "increment_stack_right",
+      "visualize": true,
+      "highlightElements": [ "current.right", "stack" ],
+      "visualizationType": "tree_push_right"
+    },
+    {
+      "id": "increment_stack_right",
+      "type": "assign",
+      "description": "Увеличение указателя стека для правого потомка",
+      "parameters": [ "stack_ptr", "stack_ptr + 1" ],
+      "nextStep": "check_left",
+      "visualize": false
+    },
+    {
+      "id": "check_left",
+      "type": "condition",
+      "description": "Проверка левого потомка",
+      "parameters": [ "current.left != null" ],
+      "conditionCases": [
+        {
+          "condition": "true",
+          "nextStep": "push_left"
+        },
+        {
+          "condition": "false",
+          "nextStep": "check_stack"
+        }
+      ],
+      "visualize": true,
+      "highlightElements": [ "current.left" ],
+      "visualizationType": "tree_check_left"
+    },
+    {
+      "id": "push_left",
+      "type": "assign",
+      "description": "Добавление левого потомка в стек",
+      "parameters": [ "stack[stack_ptr]", "current.left" ],
+      "nextStep": "increment_stack_left",
+      "visualize": true,
+      "highlightElements": [ "current.left", "stack" ],
+      "visualizationType": "tree_push_left"
+    },
+    {
+      "id": "increment_stack_left",
+      "type": "assign",
+      "description": "Увеличение указателя стека для левого потомка",
+      "parameters": [ "stack_ptr", "stack_ptr + 1" ],
+      "nextStep": "check_stack",
+      "visualize": false
     },
     {
       "id": "end",
-      "type": "generic",
-      "operation": "complete",
-      "description": "Сортировка завершена"
+      "type": "return",
+      "description": "Завершение обхода дерева",
+      "visualize": true,
+      "highlightElements": [ "result" ],
+      "visualizationType": "tree_traverse_end"
     }
   ]
 }

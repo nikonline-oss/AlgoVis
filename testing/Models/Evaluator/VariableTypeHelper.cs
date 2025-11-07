@@ -20,7 +20,8 @@ namespace testing.Models.Evaluator
                 "bool" => VariableType.Bool,
                 "string" => VariableType.String,
                 "array" => VariableType.Array,
-                _ => VariableType.Int
+                "object" => VariableType.Object,
+                _ => VariableType.Object // По умолчанию объект для гибкости
             };
         }
 
@@ -32,11 +33,23 @@ namespace testing.Models.Evaluator
                 VariableType.Double => 0.0,
                 VariableType.Bool => false,
                 VariableType.String => string.Empty,
-                VariableType.Array => CreateArray(type, arraySize),
-                _ => 0
+                VariableType.Array => CreateDynamicArray(),
+                VariableType.Object => CreateDynamicObject(),
+                _ => CreateDynamicObject()
             };
         }
 
+        private static List<VariableValue> CreateDynamicArray()
+        {
+            return new List<VariableValue>();
+        }
+
+        private static Dictionary<string, VariableValue> CreateDynamicObject()
+        {
+            return new Dictionary<string, VariableValue>();
+        }
+
+        // Устаревший метод для обратной совместимости
         private static Array CreateArray(VariableType elementType, int size)
         {
             if (size <= 0) size = 10;

@@ -12,10 +12,38 @@ namespace testing.Models.Evaluator
         public VariableType Type { get; set; }
         public object Value { get; set; }
 
+        // Динамический массив/список
+        public List<VariableValue> ArrayValue => Value as List<VariableValue>
+            ?? throw new InvalidOperationException("Переменная не является массивом");
+
+        // Объект (словарь свойств)
+        public Dictionary<string, VariableValue> ObjectValue => Value as Dictionary<string, VariableValue>
+            ?? throw new InvalidOperationException("Переменная не является объектом");
+
         public VariableValue(VariableType type, object value)
         {
             Type = type;
             Value = value;
+        }
+
+        public VariableValue(object value)
+        {
+            Value = value;
+            Type = DetectType(value);
+        }
+
+        private VariableType DetectType(object value)
+        {
+            return value switch
+            {
+                int _ => VariableType.Int,
+                double _ => VariableType.Double,
+                bool _ => VariableType.Bool,
+                string _ => VariableType.String,
+                List<VariableValue> _ => VariableType.Array,
+                Dictionary<string, VariableValue> _ => VariableType.Object,
+                _ => VariableType.Object
+            };
         }
 
         // Реализация IConvertible для поддержки преобразований
@@ -45,14 +73,13 @@ namespace testing.Models.Evaluator
             if (Type != VariableType.Array)
                 throw new InvalidOperationException("Переменная не является массивом");
 
-            if (Value is Array array)
-            {
-                if (index >= 0 && index < array.Length)
-                    return array.GetValue(index);
-                throw new IndexOutOfRangeException($"Индекс {index} вне границ массива");
-            }
+            if (index < 0)
+                throw new IndexOutOfRangeException($"Отрицательный индекс {index} не допустим");
 
-            throw new InvalidOperationException("Некорректное значение массива");
+            while (index >= ArrayValue.Count)
+                ArrayValue.Add(new VariableValue(0));
+
+            return ArrayValue[index].Value;
         }
 
         public void SetElement(int index, object value)
@@ -60,13 +87,33 @@ namespace testing.Models.Evaluator
             if (Type != VariableType.Array)
                 throw new InvalidOperationException("Переменная не является массивом");
 
-            if (Value is Array array)
-            {
-                if (index >= 0 && index < array.Length)
-                    array.SetValue(value, index);
-                else
-                    throw new IndexOutOfRangeException($"Индекс {index} вне границ массива");
-            }
+            if (index < 0)
+                throw new IndexOutOfRangeException($"Отрицательный индекс {index} не допустим");
+
+            // Автоматическое расширение массива
+            while (index >= ArrayValue.Count)
+                ArrayValue.Add(new VariableValue(0));
+
+            ArrayValue[index] = new VariableValue(value);
+        }
+
+        // Доступ к свойствам объекта
+        public object GetProperty(string propertyName)
+        {
+            if (Type != VariableType.Object)
+                throw new InvalidOperationException("Переменная не является объектом");
+
+            return ObjectValue.TryGetValue(propertyName, out var value)
+                ? value.Value
+                : new VariableValue(0); // Возвращаем 0 для несуществующих свойств
+        }
+
+        public void SetProperty(string propertyName, object value)
+        {
+            if (Type != VariableType.Object)
+                throw new InvalidOperationException("Переменная не является объектом");
+
+            ObjectValue[propertyName] = new VariableValue(value);
         }
     }
 }

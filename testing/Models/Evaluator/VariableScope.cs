@@ -32,44 +32,90 @@ namespace testing.Models.Evaluator
             return _parent?.GetElement(arrayName, index);
         }
 
+        public object GetProperty(string objectName, string propertyName)
+        {
+            if (_variables.ContainsKey(objectName))
+            {
+                return _variables[objectName].GetProperty(propertyName);
+            }
+
+            return _parent?.GetProperty(objectName, propertyName);
+        }
+
         public object Get(string name)
         {
-            // Сначала ищем в текущей области
+            // Проверяем доступ к свойствам объекта: obj.property
+            if (name.Contains("."))
+            {
+                var parts = name.Split('.');
+                var objName = parts[0];
+                var propName = parts[1];
+
+                if (_variables.ContainsKey(objName))
+                {
+                    return _variables[objName].GetProperty(propName);
+                }
+
+                return _parent?.GetProperty(objName, propName);
+            }
+
+            // Обычная переменная
             if (_variables.ContainsKey(name))
             {
                 return _variables[name].Value;
             }
 
-            // Затем в родительской области
             if (_parent != null && _parent.Contains(name))
             {
                 return _parent.Get(name);
             }
 
-            // Если переменная не найдена, возвращаем значение по умолчанию
             return GetDefaultValue(name);
         }
 
         public void Set(string name, object value)
         {
+            var variableValue = value as VariableValue ?? new VariableValue(value);
 
-            var result = value as VariableValue;
-            // Если переменная уже существует в текущей области, обновляем ее
+            // Проверяем установку свойства объекта: obj.property
+            if (name.Contains("."))
+            {
+                var parts = name.Split('.');
+                var objName = parts[0];
+                var propName = parts[1];
+
+                if (_variables.ContainsKey(objName))
+                {
+                    _variables[objName].SetProperty(propName, variableValue.Value);
+                    return;
+                }
+
+                if (_parent != null && _parent.Contains(objName))
+                {
+                    // Для родительской области нужно специальное решение
+                    throw new InvalidOperationException($"Нельзя устанавливать свойства объектов в родительской области: {objName}");
+                }
+
+                // Создаем новый объект
+                var newObj = new Dictionary<string, VariableValue> { [propName] = variableValue };
+                _variables[objName] = new VariableValue(newObj);
+                return;
+            }
+
+            // Обычная переменная
             if (_variables.ContainsKey(name))
             {
-                _variables[name].Value = result is null ? value : result;
+                _variables[name] = variableValue;
                 return;
             }
 
-            // Если переменная существует в родительской области, обновляем там
             if (_parent != null && _parent.Contains(name))
             {
-                _parent.Set(name, result is null ? value : result);
+                _parent.Set(name, variableValue.Value);
                 return;
             }
 
-            // Иначе создаем новую переменную в текущей области
-            _variables[name] = new VariableValue(result is null ? DetectType(value) : result.Type, result is null ? value : result.Value);
+            _variables[name] = variableValue;
         }
 
         // Новый метод для установки элемента массива
@@ -87,16 +133,47 @@ namespace testing.Models.Evaluator
                 return;
             }
 
-            throw new ArgumentException($"Массив '{arrayName}' не найден");
+            // Создаем новый массив, если не существует
+            var newArray = new List<VariableValue>();
+            _variables[arrayName] = new VariableValue(newArray);
+            _variables[arrayName].SetElement(index, value);
         }
 
-        public bool Contains(string name) => _variables.ContainsKey(name) || _parent?.Contains(name) == true;
+        public void SetProperty(string objectName, string propertyName, object value)
+        {
+            if (_variables.ContainsKey(objectName))
+            {
+                _variables[objectName].SetProperty(propertyName, value);
+                return;
+            }
+
+            if (_parent != null && _parent.Contains(objectName))
+            {
+                _parent.SetProperty(objectName, propertyName, value);
+                return;
+            }
+
+            // Создаем новый объект
+            var newObj = new Dictionary<string, VariableValue> { [propertyName] = new VariableValue(value) };
+            _variables[objectName] = new VariableValue(newObj);
+        }
+
+        public bool Contains(string name)
+        {
+            if (name.Contains("."))
+            {
+                var parts = name.Split('.');
+                var objName = parts[0];
+                return _variables.ContainsKey(objName) || _parent?.Contains(objName) == true;
+            }
+
+            return _variables.ContainsKey(name) || _parent?.Contains(name) == true;
+        }
 
         public Dictionary<string, object> GetAllVariables()
         {
             var result = new Dictionary<string, object>();
 
-            // Сначала добавляем переменные из родительской области
             if (_parent != null)
             {
                 foreach (var variable in _parent.GetAllVariables())
@@ -105,10 +182,9 @@ namespace testing.Models.Evaluator
                 }
             }
 
-            // Затем перезаписываем переменными из текущей области
             foreach (var variable in _variables)
             {
-                result[variable.Key] = variable.Value;
+                result[variable.Key] = variable.Value.Value;
             }
 
             return result;

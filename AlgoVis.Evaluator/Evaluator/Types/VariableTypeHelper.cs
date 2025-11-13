@@ -48,20 +48,5 @@ namespace AlgoVis.Evaluator.Evaluator.Types
         {
             return new Dictionary<string, VariableValue>();
         }
-
-        // Устаревший метод для обратной совместимости
-        private static Array CreateArray(VariableType elementType, int size)
-        {
-            if (size <= 0) size = 10;
-
-            return elementType switch
-            {
-                VariableType.Int => new int[size],
-                VariableType.Double => new double[size],
-                VariableType.Bool => new bool[size],
-                VariableType.String => new string[size],
-                _ => new object[size]
-            };
-        }
     }
 }

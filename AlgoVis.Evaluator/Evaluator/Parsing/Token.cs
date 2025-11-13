@@ -15,7 +15,11 @@ namespace AlgoVis.Evaluator.Evaluator.Parsing
         LeftParenthesis,
         RightParenthesis,
         Comma,
-        EndOfExpression
+        EndOfExpression,
+        LeftBracket,
+        RightBracket,
+        Dot,
+        String
     }
     public class Token
     {

@@ -74,7 +74,30 @@ namespace AlgoVis.Models.Models.Operations.Base
 
         protected object ExtractValue(object value)
         {
-            return value is VariableValue variableValue ? variableValue.Value : value;
+            Console.WriteLine($"🔍 ExtractValue: входное значение = {value}, тип = {value?.GetType()}");
+
+            if (value is VariableValue variableValue)
+            {
+                Console.WriteLine($"🔍 ExtractValue: из VariableValue типа {variableValue.Type}");
+
+                // Для объектов возвращаем сам VariableValue, чтобы сохранить возможность доступа к свойствам
+                if (variableValue.Type == VariableType.Object)
+                {
+                    return variableValue;
+                }
+
+                var result = variableValue.Value;
+                Console.WriteLine($"🔍 ExtractValue: извлечено значение = {result}");
+                return result;
+            }
+            else if (value is Dictionary<string, VariableValue> dict)
+            {
+                Console.WriteLine($"🔍 ExtractValue: получен словарь, преобразуем в VariableValue");
+                return new VariableValue(dict);
+            }
+
+            Console.WriteLine($"🔍 ExtractValue: возвращаем как есть = {value}");
+            return value;
         }
 
         protected void AddVisualizationStep(AlgorithmStep step, ExecutionContext context,

@@ -13,9 +13,14 @@ namespace AlgoVis.Evaluator.Evaluator.Nodes
         private readonly string _name;
 
         public VariableNode(string name) => _name = name;
-
+        public string Name => _name;
         public object Evaluate(IVariableScope variables)
         {
+            if(_name == "null")
+            {
+                return (object)null;
+            }
+
             var result = variables.Get(_name);
 
             // Если результат - VariableValue, извлекаем его значение

@@ -19,10 +19,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\algovis.client\algovis.client.esproj">
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-    </ProjectReference>
-	  <ProjectReference Include="..\AlgoVis.Core\AlgoVis.Core.csproj"/>
+	  <ProjectReference Include="..\algovis.client\algovis.client.esproj">
+		  <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+	  </ProjectReference>
+	  <ProjectReference Include="..\Core\AlgoVis.Core.csproj" />
   </ItemGroup>
 
 </Project>

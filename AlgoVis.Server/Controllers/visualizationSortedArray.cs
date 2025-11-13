@@ -1,8 +1,8 @@
-﻿using AlgoVis.Server.Models;
-using AlgoVis.
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
+using AlgoVis.Core.Core;
+using AlgoVis.Models.Models.Core;
 
 namespace testing.Controllers
 {

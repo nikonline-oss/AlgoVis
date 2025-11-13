@@ -8,7 +8,6 @@ using System.Threading.Tasks;
 
 namespace AlgoVis.Evaluator.Evaluator.Nodes
 {
-
     public class FunctionNode : IExpressionNode
     {
         private readonly string _functionName;
@@ -22,18 +21,30 @@ namespace AlgoVis.Evaluator.Evaluator.Nodes
 
         public object Evaluate(IVariableScope variables)
         {
-            var args = _arguments.Select(arg => Convert.ToDouble(ExtractValue(arg.Evaluate(variables)))).ToArray();
+            var args = _arguments.Select(arg => ExtractValue(arg.Evaluate(variables))).ToArray();
 
             return _functionName.ToLower() switch
             {
-                "sin" => Math.Sin(args[0]),
-                "cos" => Math.Cos(args[0]),
-                "tan" => Math.Tan(args[0]),
-                "sqrt" => args[0] >= 0 ? Math.Sqrt(args[0]) : throw new ArgumentException("Квадратный корень из отрицательного числа"),
-                "abs" => Math.Abs(args[0]),
-                "min" => Math.Min(args[0], args[1]),
-                "max" => Math.Max(args[0], args[1]),
-                "pow" => Math.Pow(args[0], args[1]),
+                // Математические функции
+                "sin" => Math.Sin(Convert.ToDouble(args[0])),
+                "cos" => Math.Cos(Convert.ToDouble(args[0])),
+                "tan" => Math.Tan(Convert.ToDouble(args[0])),
+                "sqrt" => args[0] is double d && d >= 0 ? Math.Sqrt(d) : throw new ArgumentException("Квадратный корень из отрицательного числа"),
+                "abs" => Math.Abs(Convert.ToDouble(args[0])),
+                "min" => Math.Min(Convert.ToDouble(args[0]), Convert.ToDouble(args[1])),
+                "max" => Math.Max(Convert.ToDouble(args[0]), Convert.ToDouble(args[1])),
+                "pow" => Math.Pow(Convert.ToDouble(args[0]), Convert.ToDouble(args[1])),
+
+                // ДОБАВЛЕНО: Строковые функции
+                "length" => args[0] is string str ? str.Length : throw new ArgumentException("Функция length ожидает строку"),
+                "substring" => args[0] is string s ? s.Substring(
+                    Convert.ToInt32(args[1]),
+                    args.Length > 2 ? Convert.ToInt32(args[2]) : s.Length - Convert.ToInt32(args[1])
+                ) : throw new ArgumentException("Функция substring ожидает строку"),
+                "concat" => string.Concat(args.Select(arg => arg?.ToString() ?? "")),
+                "toupper" => args[0] is string upperStr ? upperStr.ToUpper() : throw new ArgumentException("Функция toupper ожидает строку"),
+                "tolower" => args[0] is string lowerStr ? lowerStr.ToLower() : throw new ArgumentException("Функция tolower ожидает строку"),
+
                 _ => throw new ArgumentException($"Неизвестная функция: {_functionName}")
             };
         }

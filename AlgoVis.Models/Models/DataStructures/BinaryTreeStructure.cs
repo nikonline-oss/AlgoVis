@@ -15,6 +15,17 @@ namespace AlgoVis.Models.Models.DataStructures
         public string Id { get; } = Guid.NewGuid().ToString();
         public TreeNode Root { get; set; }
 
+        private readonly TreeNode _originRoot;
+        public BinaryTreeStructure(TreeNode root)
+        {
+            Root = root;
+            _originRoot = CloneTree(root);
+        }
+
+        public BinaryTreeStructure()
+        {
+        }
+
         public TreeNode GetState() => CloneTree(Root);
 
         public void ApplyState(TreeNode state) => Root = CloneTree(state);
@@ -81,9 +92,7 @@ namespace AlgoVis.Models.Models.DataStructures
             };
         }
 
-        public TreeNode GetOriginState()
-        {
-            throw new NotImplementedException();
-        }
+        public TreeNode GetOriginState() => CloneTree(_originRoot ?? Root);
+        
     }
 }

@@ -6,7 +6,19 @@
     {
       "name": "tree",
       "type": "object",
-      "initialValue": "{\"value\": 10, \"left\": {\"value\": 5, \"left\": {\"value\": 2, \"left\": null, \"right\": null}, \"right\": {\"value\": 7, \"left\": null, \"right\": null}}, \"right\": {\"value\": 15, \"left\": {\"value\": 12, \"left\": null, \"right\": null}, \"right\": {\"value\": 20, \"left\": null, \"right\": null}}}"
+      "initialValue": {
+        "value": 10,
+        "left": {
+          "value": 5,
+          "left": { "value": 2, "left": null, "right": null },
+          "right": { "value": 7, "left": null, "right": null }
+        },
+        "right": {
+          "value": 15,
+          "left": { "value": 12, "left": null, "right": null },
+          "right": { "value": 20, "left": null, "right": null }
+        }
+      }
     },
     {
       "name": "stack",
@@ -38,17 +50,17 @@
       "id": "start",
       "type": "assign",
       "description": "Инициализация стека корневым узлом",
-      "parameters": [ "stack[0]", "tree" ],
+      "parameters": ["stack[0]", "tree"],
       "nextStep": "set_stack_ptr",
       "visualize": true,
-      "highlightElements": [ "tree" ],
+      "highlightElements": ["tree"],
       "visualizationType": "tree_traverse_start"
     },
     {
       "id": "set_stack_ptr",
       "type": "assign",
       "description": "Установка указателя стека",
-      "parameters": [ "stack_ptr", "1" ],
+      "parameters": ["stack_ptr", "1"],
       "nextStep": "check_stack",
       "visualize": false
     },
@@ -56,7 +68,7 @@
       "id": "check_stack",
       "type": "condition",
       "description": "Проверка пустоты стека",
-      "parameters": [ "stack_ptr > 0" ],
+      "parameters": ["stack_ptr > 0"],
       "conditionCases": [
         {
           "condition": "true",
@@ -68,44 +80,44 @@
         }
       ],
       "visualize": true,
-      "highlightElements": [ "stack" ],
+      "highlightElements": ["stack"],
       "visualizationType": "tree_check_stack"
     },
     {
       "id": "pop_node",
       "type": "assign",
       "description": "Извлечение узла из стека",
-      "parameters": [ "stack_ptr", "stack_ptr - 1" ],
+      "parameters": ["stack_ptr", "stack_ptr - 1"],
       "nextStep": "get_current",
       "visualize": true,
-      "highlightElements": [ "stack_ptr" ],
+      "highlightElements": ["stack_ptr"],
       "visualizationType": "tree_pop_node"
     },
     {
       "id": "get_current",
       "type": "assign",
       "description": "Получение текущего узла",
-      "parameters": [ "current", "stack[stack_ptr]" ],
+      "parameters": ["current", "stack[stack_ptr]"],
       "nextStep": "process_node",
       "visualize": true,
-      "highlightElements": [ "current" ],
+      "highlightElements": ["current"],
       "visualizationType": "tree_current_node"
     },
     {
       "id": "process_node",
       "type": "assign",
       "description": "Добавление значения узла в результат",
-      "parameters": [ "result[result_ptr]", "current.value" ],
+      "parameters": ["result[result_ptr]", "current.value"],
       "nextStep": "increment_result",
       "visualize": true,
-      "highlightElements": [ "current", "result" ],
+      "highlightElements": ["current", "result"],
       "visualizationType": "tree_process_node"
     },
     {
       "id": "increment_result",
       "type": "assign",
       "description": "Увеличение указателя результата",
-      "parameters": [ "result_ptr", "result_ptr + 1" ],
+      "parameters": ["result_ptr", "result_ptr + 1"],
       "nextStep": "check_right",
       "visualize": false
     },
@@ -113,7 +125,7 @@
       "id": "check_right",
       "type": "condition",
       "description": "Проверка правого потомка",
-      "parameters": [ "current.right != null" ],
+      "parameters": ["current.right != null"],
       "conditionCases": [
         {
           "condition": "true",
@@ -125,24 +137,24 @@
         }
       ],
       "visualize": true,
-      "highlightElements": [ "current.right" ],
+      "highlightElements": ["current.right"],
       "visualizationType": "tree_check_right"
     },
     {
       "id": "push_right",
       "type": "assign",
       "description": "Добавление правого потомка в стек",
-      "parameters": [ "stack[stack_ptr]", "current.right" ],
+      "parameters": ["stack[stack_ptr]", "current.right"],
       "nextStep": "increment_stack_right",
       "visualize": true,
-      "highlightElements": [ "current.right", "stack" ],
+      "highlightElements": ["current.right", "stack"],
       "visualizationType": "tree_push_right"
     },
     {
       "id": "increment_stack_right",
       "type": "assign",
       "description": "Увеличение указателя стека для правого потомка",
-      "parameters": [ "stack_ptr", "stack_ptr + 1" ],
+      "parameters": ["stack_ptr", "stack_ptr + 1"],
       "nextStep": "check_left",
       "visualize": false
     },
@@ -150,7 +162,7 @@
       "id": "check_left",
       "type": "condition",
       "description": "Проверка левого потомка",
-      "parameters": [ "current.left != null" ],
+      "parameters": ["current.left != null"],
       "conditionCases": [
         {
           "condition": "true",
@@ -162,24 +174,24 @@
         }
       ],
       "visualize": true,
-      "highlightElements": [ "current.left" ],
+      "highlightElements": ["current.left"],
       "visualizationType": "tree_check_left"
     },
     {
       "id": "push_left",
       "type": "assign",
       "description": "Добавление левого потомка в стек",
-      "parameters": [ "stack[stack_ptr]", "current.left" ],
+      "parameters": ["stack[stack_ptr]", "current.left"],
       "nextStep": "increment_stack_left",
       "visualize": true,
-      "highlightElements": [ "current.left", "stack" ],
+      "highlightElements": ["current.left", "stack"],
       "visualizationType": "tree_push_left"
     },
     {
       "id": "increment_stack_left",
       "type": "assign",
       "description": "Увеличение указателя стека для левого потомка",
-      "parameters": [ "stack_ptr", "stack_ptr + 1" ],
+      "parameters": ["stack_ptr", "stack_ptr + 1"],
       "nextStep": "check_stack",
       "visualize": false
     },
@@ -188,7 +200,7 @@
       "type": "return",
       "description": "Завершение обхода дерева",
       "visualize": true,
-      "highlightElements": [ "result" ],
+      "highlightElements": ["result"],
       "visualizationType": "tree_traverse_end"
     }
   ]

@@ -30,9 +30,10 @@ namespace AlgoVis.Evaluator.Evaluator.Parsing
         };
 
         private static readonly HashSet<string> Functions = new HashSet<string>
-    {
-        "sin", "cos", "tan", "sqrt", "abs", "min", "max", "pow"
-    };
+        {
+            "sin", "cos", "tan", "sqrt", "abs", "min", "max", "pow",
+            "length", "substring", "concat", "toupper", "tolower"  // Добавляем строковые функции
+        };
 
         public List<Token> Tokenize(string expression)
         {
@@ -50,7 +51,25 @@ namespace AlgoVis.Evaluator.Evaluator.Parsing
                     continue;
                 }
 
-                if (char.IsDigit(current) || current == '.')
+                // ДОБАВЛЕНО: Обработка строковых литералов
+                if (current == '"' || current == '\'')
+                {
+                    tokens.Add(ReadString(expression, ref position, current));
+                    expectUnary = false;
+                    continue;
+                }
+
+                // ИЗМЕНЕНИЕ: Сначала проверяем точку как отдельный токен
+                if (current == '.')
+                {
+                    tokens.Add(new Token(TokenType.Dot, ".", position));
+                    position++;
+                    expectUnary = true;
+                    continue;
+                }
+
+                // ИЗМЕНЕНИЕ: Число должно начинаться с цифры, точка в числе обрабатывается в ReadNumber
+                if (char.IsDigit(current))
                 {
                     tokens.Add(ReadNumber(expression, ref position));
                     expectUnary = false;
@@ -70,6 +89,18 @@ namespace AlgoVis.Evaluator.Evaluator.Parsing
                 else if (current == ')')
                 {
                     tokens.Add(new Token(TokenType.RightParenthesis, ")", position));
+                    position++;
+                    expectUnary = false;
+                }
+                else if (current == '[')
+                {
+                    tokens.Add(new Token(TokenType.LeftBracket, "[", position));
+                    position++;
+                    expectUnary = true;
+                }
+                else if (current == ']')
+                {
+                    tokens.Add(new Token(TokenType.RightBracket, "]", position));
                     position++;
                     expectUnary = false;
                 }
@@ -94,6 +125,58 @@ namespace AlgoVis.Evaluator.Evaluator.Parsing
             return tokens;
         }
 
+        // ДОБАВЛЕНО: Метод для чтения строковых литералов
+        private Token ReadString(string expression, ref int position, char quoteChar)
+        {
+            int start = position;
+            position++; // Пропускаем открывающую кавычку
+
+            var sb = new StringBuilder();
+            bool escapeNext = false;
+
+            while (position < expression.Length)
+            {
+                char current = expression[position];
+
+                if (escapeNext)
+                {
+                    // Обработка escape-последовательностей
+                    switch (current)
+                    {
+                        case 'n': sb.Append('\n'); break;
+                        case 't': sb.Append('\t'); break;
+                        case 'r': sb.Append('\r'); break;
+                        case '\\': sb.Append('\\'); break;
+                        case '"': sb.Append('"'); break;
+                        case '\'': sb.Append('\''); break;
+                        default: sb.Append(current); break;
+                    }
+                    escapeNext = false;
+                    position++;
+                }
+                else if (current == '\\')
+                {
+                    // Начало escape-последовательности
+                    escapeNext = true;
+                    position++;
+                }
+                else if (current == quoteChar)
+                {
+                    // Закрывающая кавычка - конец строки
+                    position++;
+                    return new Token(TokenType.String, sb.ToString(), start);
+                }
+                else
+                {
+                    // Обычный символ строки
+                    sb.Append(current);
+                    position++;
+                }
+            }
+
+            throw new ArgumentException($"Незакрытая строковая константа, начинающаяся с позиции {start}");
+        }
+
         private Token ReadNumber(string expression, ref int position)
         {
             int start = position;
@@ -110,6 +193,12 @@ namespace AlgoVis.Evaluator.Evaluator.Parsing
                 {
                     hasDecimal = true;
                     position++;
+
+                    // Проверяем, что после точки есть цифра
+                    if (position >= expression.Length || !char.IsDigit(expression[position]))
+                    {
+                        throw new ArgumentException($"Некорректное число: ожидалась цифра после точки в позиции {position}");
+                    }
                 }
                 else
                 {

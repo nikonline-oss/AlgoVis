@@ -54,6 +54,7 @@ namespace AlgoVis.Evaluator.Evaluator.Parsing
         private IExpressionNode ParsePrimary()
         {
             var token = CurrentToken();
+            IExpressionNode node;
 
             switch (token.Type)
             {
@@ -61,9 +62,15 @@ namespace AlgoVis.Evaluator.Evaluator.Parsing
                     _position++;
                     return new NumberNode(double.Parse(token.Value, CultureInfo.InvariantCulture));
 
+                // ДОБАВЛЕНО: Обработка строковых литералов
+                case TokenType.String:
+                    _position++;
+                    return new StringNode(token.Value);
+
                 case TokenType.Variable:
                     _position++;
-                    return new VariableNode(token.Value);
+                    node = new VariableNode(token.Value);
+                    return ParseMemberAccess(node);
 
                 case TokenType.Function:
                     return ParseFunctionCall();
@@ -79,6 +86,46 @@ namespace AlgoVis.Evaluator.Evaluator.Parsing
                 default:
                     throw new ArgumentException($"Неожиданный токен: {token.Type} '{token.Value}' в позиции {token.Position}");
             }
+        }
+
+        private IExpressionNode ParseMemberAccess(IExpressionNode leftNode)
+        {
+            IExpressionNode node = leftNode;
+
+            while (_position < _tokens.Count)
+            {
+                var current = CurrentToken();
+
+                // Обработка доступа к свойству: obj.property
+                if (current.Type == TokenType.Dot)
+                {
+                    _position++; // Пропускаем точку
+
+                    var propertyToken = CurrentToken();
+                    if (propertyToken.Type != TokenType.Variable)
+                        throw new ArgumentException($"Ожидался идентификатор после точки в позиции {propertyToken.Position}");
+
+                    _position++;
+                    node = new MemberAccessNode(node, propertyToken.Value);
+                }
+                // Обработка доступа к массиву: array[index]
+                else if (current.Type == TokenType.LeftBracket)
+                {
+                    _position++; // Пропускаем '['
+
+                    var indexExpression = ParseExpression();
+
+                    Expect(TokenType.RightBracket);
+
+                    node = new ArrayAccessNode(node, indexExpression);
+                }
+                else
+                {
+                    break;
+                }
+            }
+
+            return node;
         }
 
         private IExpressionNode ParseParenthesizedExpression()

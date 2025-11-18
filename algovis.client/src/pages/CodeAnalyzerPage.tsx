@@ -5,6 +5,7 @@ import { Textarea } from '../components/ui/textarea';
 import { useApp } from '../contexts/AppContext';
 import { PlayCircle, Code, AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
 import { Alert, AlertDescription } from '../components/ui/alert';
+import { CodeVisualization } from '../components/CodeVisualization';
 
 export function CodeAnalyzerPage() {
   const { translations } = useApp();
@@ -31,7 +32,7 @@ export function CodeAnalyzerPage() {
     // Симуляция вызова бэкенда
     // В реальном приложении здесь будет вызов API
     setTimeout(() => {
-      // Пример результата анализа
+      // Пример результата анализа с визуализацией
       setAnalysisResult({
         success: true,
         message: translations['analyzer.success'] || 'Анализ завершен успешно',
@@ -39,6 +40,25 @@ export function CodeAnalyzerPage() {
           complexity: 'O(n²)',
           warnings: 2,
           suggestions: 3,
+          functionGraph: {
+            functions: [
+              { name: 'bubble_sort', complexity: 'O(n²)' },
+              { name: 'swap', complexity: 'O(1)' },
+              { name: 'compare', complexity: 'O(1)' },
+              { name: 'main', complexity: 'O(n²)' },
+            ],
+            calls: [
+              { from: 'main', to: 'bubble_sort' },
+              { from: 'bubble_sort', to: 'swap' },
+              { from: 'bubble_sort', to: 'compare' },
+            ],
+          },
+          metrics: {
+            lines: 15,
+            comments: 2,
+            functions: 3,
+            classes: 0,
+          },
         },
       });
       setIsAnalyzing(false);
@@ -243,6 +263,21 @@ print(sorted_numbers)`;
           </CardContent>
         </Card>
       </div>
+
+      {/* Визуализация результатов */}
+      {analysisResult && analysisResult.details && (
+        <Card className="border-2 border-primary/20">
+          <CardHeader>
+            <CardTitle>{translations['analyzer.visualization'] || 'Визуализация'}</CardTitle>
+            <CardDescription>
+              {translations['analyzer.visualizationDesc'] || 'Графическое представление результатов анализа'}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <CodeVisualization analysisData={analysisResult.details} />
+          </CardContent>
+        </Card>
+      )}
 
       {/* Информационная секция */}
       <Card className="bg-muted/30">

@@ -23,18 +23,20 @@ interface GraphVisualizationProps {
   directed?: boolean;
   width?: number;
   height?: number;
+  graphType?: 'circular' | 'grid' | 'complete' | 'random';
 }
 
-export function GraphVisualization({ 
-  nodes, 
-  edges, 
-  highlightedNodes = [], 
+export function GraphVisualization({
+  nodes,
+  edges,
+  highlightedNodes = [],
   highlightedEdges = [],
   visitedNodes = [],
   currentNode,
   directed = false,
   width = 800,
-  height = 500
+  height = 500,
+  graphType = 'circular'
 }: GraphVisualizationProps) {
   const svgRef = useRef<SVGSVGElement>(null);
 
@@ -48,7 +50,7 @@ export function GraphVisualization({
 
   // Функция для проверки выделенности ребра
   const isEdgeHighlighted = (from: number, to: number): boolean => {
-    return highlightedEdges.some(([f, t]) => 
+    return highlightedEdges.some(([f, t]) =>
       (f === from && t === to) || (!directed && f === to && t === from)
     );
   };
@@ -57,11 +59,16 @@ export function GraphVisualization({
   const renderEdge = (edge: GraphEdge, index: number) => {
     const fromNode = nodes.find(n => n.id === edge.from);
     const toNode = nodes.find(n => n.id === edge.to);
-    
+
     if (!fromNode || !toNode) return null;
 
     const isHighlighted = isEdgeHighlighted(edge.from, edge.to);
-    const strokeColor = isHighlighted ? '#ef4444' : '#6b7280'; // red-500 vs gray-500
+    const isVisited = visitedNodes.includes(edge.from) && visitedNodes.includes(edge.to);
+
+    let strokeColor = '#6b7280'; // gray-500
+    if (isHighlighted) strokeColor = '#ef4444'; // red-500
+    else if (isVisited) strokeColor = '#3b82f6'; // blue-500
+
     const strokeWidth = isHighlighted ? 3 : 2;
 
     // Вычисляем середину для отображения веса
@@ -70,8 +77,8 @@ export function GraphVisualization({
 
     // Вычисляем угол для направления
     const angle = Math.atan2(toNode.y - fromNode.y, toNode.x - fromNode.x);
-    const nodeRadius = 25;
-    
+    const nodeRadius = 20;
+
     // Начальная и конечная точки с учетом радиуса узлов
     const startX = fromNode.x + nodeRadius * Math.cos(angle);
     const startY = fromNode.y + nodeRadius * Math.sin(angle);
@@ -80,8 +87,9 @@ export function GraphVisualization({
 
     if (directed) {
       // Длина стрелки
-      const arrowLength = 12;
-      
+      const arrowLength = 10;
+      const arrowWidth = 6;
+
       // Точки стрелки
       const arrowX1 = endX - arrowLength * Math.cos(angle - Math.PI / 6);
       const arrowY1 = endY - arrowLength * Math.sin(angle - Math.PI / 6);
@@ -108,16 +116,28 @@ export function GraphVisualization({
           />
           {/* Вес ребра */}
           {edge.weight !== undefined && (
-            <text
-              x={midX}
-              y={midY - 8}
-              textAnchor="middle"
-              dominantBaseline="middle"
-              className="fill-foreground text-sm font-medium"
-              style={{ fontSize: '12px', userSelect: 'none' }}
-            >
-              {edge.weight}
-            </text>
+            <g>
+              <rect
+                x={midX - 12}
+                y={midY - 10}
+                width={24}
+                height={16}
+                fill="white"
+                stroke="#374151"
+                strokeWidth={1}
+                rx={3}
+              />
+              <text
+                x={midX}
+                y={midY}
+                textAnchor="middle"
+                dominantBaseline="middle"
+                className="text-xs font-bold fill-gray-800"
+                style={{ userSelect: 'none' }}
+              >
+                {edge.weight}
+              </text>
+            </g>
           )}
         </g>
       );
@@ -134,16 +154,28 @@ export function GraphVisualization({
             className="transition-all duration-300"
           />
           {edge.weight !== undefined && (
-            <text
-              x={midX}
-              y={midY - 8}
-              textAnchor="middle"
-              dominantBaseline="middle"
-              className="fill-foreground text-sm font-medium"
-              style={{ fontSize: '12px', userSelect: 'none' }}
-            >
-              {edge.weight}
-            </text>
+            <g>
+              <rect
+                x={midX - 12}
+                y={midY - 10}
+                width={24}
+                height={16}
+                fill="white"
+                stroke="#374151"
+                strokeWidth={1}
+                rx={3}
+              />
+              <text
+                x={midX}
+                y={midY}
+                textAnchor="middle"
+                dominantBaseline="middle"
+                className="text-xs font-bold fill-gray-800"
+                style={{ userSelect: 'none' }}
+              >
+                {edge.weight}
+              </text>
+            </g>
           )}
         </g>
       );
@@ -155,19 +187,25 @@ export function GraphVisualization({
     const isHighlighted = highlightedNodes.includes(node.id);
     const isVisited = visitedNodes.includes(node.id);
     const isCurrent = currentNode === node.id;
-    
-    let fillColor = '#d1d5db'; // gray-300
+
+    let fillColor = '#ffffff'; // БЕЛЫЙ - НЕ ПОСЕЩЁН
     let textColor = '#1f2937'; // gray-800
-    
+    let strokeColor = '#374151'; // gray-700
+    let strokeWidth = 2;
+
     if (isCurrent) {
-      fillColor = '#ef4444'; // red-500
+      fillColor = '#ef4444'; // red-500 - ТЕКУЩИЙ
       textColor = '#ffffff';
+      strokeColor = '#dc2626'; // red-600
+      strokeWidth = 3;
     } else if (isHighlighted) {
-      fillColor = '#f59e0b'; // amber-500
+      fillColor = '#f59e0b'; // amber-500 - ВЫДЕЛЕННЫЙ
       textColor = '#ffffff';
+      strokeColor = '#d97706'; // amber-600
     } else if (isVisited) {
-      fillColor = '#3b82f6'; // blue-500
+      fillColor = '#3b82f6'; // blue-500 - ПОСЕЩЁННЫЙ
       textColor = '#ffffff';
+      strokeColor = '#2563eb'; // blue-600
     }
 
     return (
@@ -175,19 +213,24 @@ export function GraphVisualization({
         <circle
           cx={node.x}
           cy={node.y}
-          r="25"
+          r="20"
           fill={fillColor}
-          stroke="#374151" // gray-700
-          strokeWidth="2"
-          className="transition-all duration-300 shadow-md"
+          stroke={strokeColor}
+          strokeWidth={strokeWidth}
+          className="transition-all duration-300 shadow-sm"
         />
         <text
           x={node.x}
           y={node.y}
           textAnchor="middle"
           dominantBaseline="middle"
-          className="font-medium select-none"
-          style={{ fill: textColor, fontSize: '14px', userSelect: 'none' }}
+          className="font-bold select-none"
+          style={{
+            fill: textColor,
+            fontSize: '12px',
+            userSelect: 'none',
+            pointerEvents: 'none'
+          }}
         >
           {node.label || node.id}
         </text>
@@ -195,18 +238,30 @@ export function GraphVisualization({
     );
   };
 
+  const getGraphTypeName = (type: string) => {
+    switch (type) {
+      case 'circular': return 'Круговой (замкнутый)';
+      case 'grid': return 'Сетка';
+      case 'complete': return 'Полный граф';
+      case 'random': return 'Случайный граф';
+      default: return type;
+    }
+  };
+
   return (
-    <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
-      <svg 
-        ref={svgRef} 
-        width={width} 
-        height={height} 
+    <div className="bg-card border rounded-lg p-4">
+      <div className="mb-2 text-sm text-muted-foreground text-center">
+        {getGraphTypeName(graphType)} |
+        {directed ? ' Ориентированный' : ' Неориентированный'}
+      </div>
+
+      <svg
+        ref={svgRef}
+        width={width}
+        height={height}
         className="mx-auto block"
         viewBox={`0 0 ${width} ${height}`}
       >
-        {/* Фон */}
-        <rect width="100%" height="100%" fill="#f9fafb" />
-        
         <g>
           {/* Сначала рендерим ребра, чтобы они были под узлами */}
           {edges.map((edge, index) => renderEdge(edge, index))}
@@ -214,26 +269,29 @@ export function GraphVisualization({
           {nodes.map(node => renderNode(node))}
         </g>
       </svg>
-      
-      {/* Легенда */}
-      <div className="flex justify-center flex-wrap gap-6 mt-4 text-sm">
+
+      <div className="flex justify-center flex-wrap gap-4 mt-4 text-sm">
         <div className="flex items-center space-x-2">
-          <div className="w-4 h-4 rounded-full bg-gray-300 border border-gray-400" />
-          <span className="text-gray-700">Обычный</span>
+          <div className="w-4 h-4 rounded-full border-2" style={{ backgroundColor: '#ffffff', borderColor: '#374151' }} />
+          <span className="text-xs text-muted-foreground">Не посещён</span>
         </div>
         <div className="flex items-center space-x-2">
-          <div className="w-4 h-4 rounded-full bg-blue-500 border border-gray-400" />
-          <span className="text-gray-700">Посещённый</span>
+          <div className="w-4 h-4 rounded-full border-2" style={{ backgroundColor: '#3b82f6', borderColor: '#2563eb' }} />
+          <span className="text-xs text-muted-foreground">Посещённый</span>
         </div>
         <div className="flex items-center space-x-2">
-          <div className="w-4 h-4 rounded-full bg-amber-500 border border-gray-400" />
-          <span className="text-gray-700">Выделенный</span>
+          <div className="w-4 h-4 rounded-full border-2" style={{ backgroundColor: '#f59e0b', borderColor: '#d97706' }} />
+          <span className="text-xs text-muted-foreground">Выделенный</span>
         </div>
         <div className="flex items-center space-x-2">
-          <div className="w-4 h-4 rounded-full bg-red-500 border border-gray-400" />
-          <span className="text-gray-700">Текущий</span>
+          <div className="w-4 h-4 rounded-full border-2" style={{ backgroundColor: '#ef4444', borderColor: '#dc2626' }} />
+          <span className="text-xs text-muted-foreground">Текущий</span>
         </div>
       </div>
+
+
+
+
     </div>
   );
 }

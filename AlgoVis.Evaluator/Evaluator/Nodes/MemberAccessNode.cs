@@ -10,58 +10,21 @@ namespace AlgoVis.Evaluator.Evaluator.Nodes
 {
     public class MemberAccessNode : IExpressionNode
     {
-        private readonly IExpressionNode _objectNode;
-        public readonly string _propertyName;
+        private readonly IExpressionNode _target;
+        private readonly string _memberName;
 
-        public MemberAccessNode(IExpressionNode objectNode, string propertyName)
+        public MemberAccessNode(IExpressionNode target, string memberName)
         {
-            _objectNode = objectNode;
-            _propertyName = propertyName;
+            _target = target;
+            _memberName = memberName;
         }
 
-        public object Evaluate(IVariableScope variables)
+        public IVariableValue Evaluate(IVariableScope variables)
         {
-            try
-            {
-                // Получаем базовое имя переменной
-                string baseName = GetBaseVariableName();
-                string fullPath = $"{baseName}.{_propertyName}";
-
-                Console.WriteLine($"🔍 MemberAccess: полный путь = {fullPath}");
-
-                // Пробуем получить значение через VariableScope
-                var result = variables.Get(fullPath);
-
-                Console.WriteLine($"🔍 MemberAccess результат: {result}, тип = {result?.GetType()}");
-
-                // Если результат null, возвращаем null
-                if (result == null)
-                {
-                    Console.WriteLine($"🔍 MemberAccess: возвращаем null");
-                    return null;
-                }
-
-                return result;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"⚠️ MemberAccess ошибка: {ex.Message}");
-                return 0;
-            }
+            var targetValue = _target.Evaluate(variables);
+            return targetValue.GetProperty(_memberName);
         }
 
-        public string GetBaseVariableName()
-        {
-            if (_objectNode is VariableNode variableNode)
-            {
-                return variableNode.Name;
-            }
-            else if (_objectNode is MemberAccessNode memberAccess)
-            {
-                return $"{memberAccess.GetBaseVariableName()}.{memberAccess._propertyName}";
-            }
-
-            throw new InvalidOperationException("Не удается определить имя базовой переменной");
-        }
+        public override string ToString() => $"{_target}.{_memberName}";
     }
 }

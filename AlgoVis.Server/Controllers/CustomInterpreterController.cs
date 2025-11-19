@@ -1,10 +1,12 @@
-using Microsoft.AspNetCore.Mvc;
-using System;
-using System.Collections.Generic;
-using AlgoVis.Core.Core;
+п»їusing AlgoVis.Core.Core;
 using AlgoVis.Models.Models.Core;
 using AlgoVis.Models.Models.Custom;
 using AlgoVis.Models.Models.DataStructures;
+using Microsoft.AspNetCore.Mvc;
+using System;
+using System.Collections.Generic;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace AlgoVis.Server.Controllers
 { 
@@ -20,8 +22,8 @@ namespace AlgoVis.Server.Controllers
         }
 
         /// <summary>
-        /// Выполнить кастомный алгоритм через AlgorithmInterpreter.
-        /// Тело запроса содержит объект Algorithm (CustomAlgorithmRequest) и опционально массив данных для структуры.
+        /// Р’С‹РїРѕР»РЅРёС‚СЊ РєР°СЃС‚РѕРјРЅС‹Р№ Р°Р»РіРѕСЂРёС‚Рј С‡РµСЂРµР· AlgorithmInterpreter.
+        /// РўРµР»Рѕ Р·Р°РїСЂРѕСЃР° СЃРѕРґРµСЂР¶РёС‚ РѕР±СЉРµРєС‚ Algorithm (CustomAlgorithmRequest) Рё РѕРїС†РёРѕРЅР°Р»СЊРЅРѕ РјР°СЃСЃРёРІ РґР°РЅРЅС‹С… РґР»СЏ СЃС‚СЂСѓРєС‚СѓСЂС‹.
         /// </summary>
         [HttpPost("execute")]
         public IActionResult ExecuteCustomAlgorithm([FromBody] InterpreterTestRequest request)
@@ -53,12 +55,52 @@ namespace AlgoVis.Server.Controllers
                 });
             }
         }
+        [HttpGet("test")]
+        public IActionResult ExecuteCustomAlgorithmTest()
+        {
+            try
+            {
+                // Р§С‚РµРЅРёРµ JSON РёР· С„Р°Р№Р»Р°
+                string filePath = "C:\\2025\\Project\\РџСЂРѕРіСЂР°РјРјРЅР°СЏ РёРЅР¶РµРЅРµСЂРёСЏ\\AlgoVis\\AlgoVis.Server\\InstructJson.json"; // СѓРєР°Р¶РёС‚Рµ РїСЂР°РІРёР»СЊРЅС‹Р№ РїСѓС‚СЊ
+                //var json = File.ReadAllText(jsonFilePath)
+
+                // Р”РµСЃРµСЂРёР°Р»РёР·Р°С†РёСЏ JSON РІ РѕР±СЉРµРєС‚
+                //var request = JsonSerializer.Deserialize<InterpreterTestRequest>(jsonContent);
+
+                // Р•СЃР»Рё Сѓ РІР°СЃ РЅРµС‚ РєР»Р°СЃСЃР° CustomAlgorithmRequest, СЃРѕР·РґР°Р№С‚Рµ РµРіРѕ РёР»Рё РёСЃРїРѕР»СЊР·СѓР№С‚Рµ dynamic
+                // dynamic request = Newtonsoft.Json.JsonConvert.DeserializeObject<dynamic>(jsonContent);
+
+                var jsons = System.IO.File.ReadAllText(filePath);
+                var request = JsonSerializer.Deserialize<InterpreterTestRequest>(jsons);
+
+                var data = request.Data ?? Array.Empty<int>();
+                var structure = StructureFactory.CreateStructure(request.Algorithm.structureType, data);
+
+                var result = _algorithmManager.ExecuteCustomAlgorithm(request.Algorithm, structure);
+
+                return Ok(new
+                {
+                    Success = true,
+                    Result = result
+                });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new
+                {
+                    Success = false,
+                    Message = $"Error executing custom algorithm: {ex.Message}"
+                });
+            }
+        }
     }
 
-    // DTO для удобства — оборачивает CustomAlgorithmRequest и данные для структуры
+    // DTO РґР»СЏ СѓРґРѕР±СЃС‚РІР° вЂ” РѕР±РѕСЂР°С‡РёРІР°РµС‚ CustomAlgorithmRequest Рё РґР°РЅРЅС‹Рµ РґР»СЏ СЃС‚СЂСѓРєС‚СѓСЂС‹
     public class InterpreterTestRequest
     {
+        [JsonPropertyName("algorithm")]
         public CustomAlgorithmRequest Algorithm { get; set; } = new CustomAlgorithmRequest();
+        [JsonPropertyName("data")]
         public object Data { get; set; } = Array.Empty<int>();
     }
 }

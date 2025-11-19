@@ -1,10 +1,11 @@
 using AlgoVis.Core.Core.Interfaces;
 using AlgoVis.Evaluator.Evaluator.Core;
 using AlgoVis.Evaluator.Evaluator.Interfaces;
+using AlgoVis.Evaluator.Evaluator.Parsing;
 using AlgoVis.Evaluator.Evaluator.Types;
+using AlgoVis.Evaluator.Evaluator.VariableValues;
 using AlgoVis.Models.Models.Core;
 using AlgoVis.Models.Models.Custom;
-using AlgoVis.Models.Models.DataStructures.initializers;
 using AlgoVis.Models.Models.DataStructures.Interfaces;
 using AlgoVis.Models.Models.Functions;
 using AlgoVis.Models.Models.Functions.Interfaces;
@@ -24,52 +25,39 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using ExecutionContext = AlgoVis.Models.Models.DataStructures.ExecutionContext;
 
-
 namespace AlgoVis.Core.Core
 {
     public class AlgorithmInterpreter : ICustomAlgorithmInterpreter
     {
         private readonly IOperationExecutor _operationExecutor;
-        private readonly IExpressionEvaluator _expressionEvaluator;
+        private readonly IParser _expressionParser;
         private readonly IVariableManager _variableManager;
         private readonly IFunctionManager _functionManager;
         private readonly IStepExecutor _stepExecutor;
+        private readonly UniversalStructureConverter _structureConverter;
 
         public AlgorithmInterpreter(
             IOperationExecutor operationExecutor = null,
-            IExpressionEvaluator expressionEvaluator = null,
+            IParser expressionParser = null,
             IVariableManager variableManager = null,
             IFunctionManager functionManager = null,
             IStepExecutor stepExecutor = null)
         {
             _operationExecutor = operationExecutor ?? new OperationExecutor();
-            _expressionEvaluator = expressionEvaluator ?? new ExpressionEvaluator();
+            _expressionParser = expressionParser ?? new ExpressionParser();
             _variableManager = variableManager ?? new VariableManager();
             _functionManager = functionManager ?? new FunctionManager();
             _stepExecutor = stepExecutor ?? new StepExecutor();
-        }
-
-        private List<IStructureInitializer> GetStructureInitializers()
-        {
-            return new List<IStructureInitializer>
-            {
-                new ArrayStructureInitializer(),
-                new BinaryTreeStructureInitializer()
-            };
+            _structureConverter = new UniversalStructureConverter();
         }
 
         public CustomAlgorithmResult Execute(CustomAlgorithmRequest request, IDataStructure structure)
         {
-            // Валидация входных параметров
             if (request == null)
-            {
                 throw new ArgumentNullException(nameof(request), "Запрос не может быть null");
-            }
 
             if (structure == null)
-            {
                 throw new ArgumentNullException(nameof(structure), "Структура данных не может быть null");
-            }
 
             var stopwatch = Stopwatch.StartNew();
             ExecutionContext context = null;
@@ -86,7 +74,6 @@ namespace AlgoVis.Core.Core
             catch (Exception ex)
             {
                 stopwatch.Stop();
-                // Если контекст не был создан, создаем минимальный для возврата ошибки
                 if (context == null)
                 {
                     try
@@ -95,17 +82,7 @@ namespace AlgoVis.Core.Core
                     }
                     catch
                     {
-                        // Если даже создание контекста не удалось, возвращаем минимальный результат
-                        return new CustomAlgorithmResult
-                        {
-                            success = false,
-                            message = $"Критическая ошибка: {ex.Message}",
-                            result = new AlgorithmResult
-                            {
-                                AlgorithmName = request?.name ?? "Unknown",
-                                ExecutionTime = stopwatch.Elapsed
-                            }
-                        };
+                        return CreateCriticalErrorResult(ex, stopwatch.Elapsed, request);
                     }
                 }
                 return CreateErrorResult(ex, stopwatch.Elapsed, context);
@@ -120,17 +97,17 @@ namespace AlgoVis.Core.Core
                 Structure = structure,
                 Statistics = new AlgorithmStatistics(),
                 VisualizationSteps = new List<VisualizationStep>(),
-                Variables = _variableManager.CreateScope(),
+                Variables = new VariableScope(),
                 FunctionStack = new FunctionStack(),
                 StepHistory = new StepExecutionHistory(),
-                ExpressionEvaluator = _expressionEvaluator,
+                ExpressionParser = _expressionParser,
                 OperationExecutor = _operationExecutor
             };
         }
 
         private void InitializeExecution(ExecutionContext context)
         {
-            // Проверка на null
+            InitializeStructureVariable(context);
             if (context.Request.variables == null)
             {
                 context.Request.variables = new List<VariableDefinition>();
@@ -138,406 +115,280 @@ namespace AlgoVis.Core.Core
 
             foreach (var variableDef in context.Request.variables)
             {
-                // Валидация имени переменной
                 if (string.IsNullOrWhiteSpace(variableDef.name))
-                {
                     throw new ArgumentException("Имя переменной не может быть пустым");
-                }
 
-                var variableType = VariableTypeHelper.ParseType(variableDef.type);
-                VariableValue variableValue;
+                IVariableValue variableValue = variableDef.type.ToLower() switch
+                {
+                    "array" => InitializeArrayVariable(variableDef, context),
+                    "object" => InitializeObjectVariable(variableDef, context),
+                    _ => InitializePrimitiveVariable(variableDef, context)
+                };
 
-                if (variableType == VariableType.Array)
-                {
-                    // Инициализация динамического массива
-                    variableValue = InitializeDynamicArray(variableDef, context);
-                }
-                else if (variableType == VariableType.Object)
-                {
-                    // Инициализация объекта
-                    variableValue = InitializeObject(variableDef, context);
-                }
-                else
-                {
-                    // Обычные переменные
-                    var value = ParseVariableValue(variableType, variableDef.initialValue?.ToString(), context);
-                    variableValue = new VariableValue(variableType, value);
-                }
-
-                // Создаем VariableValue и устанавливаем переменную
                 context.Variables.Set(variableDef.name, variableValue);
+                Console.WriteLine($"✅ Инициализирована переменная '{variableDef.name}' типа {variableDef.type} = {variableValue}");
             }
 
-
-            // Инициализация стандартных переменных алгоритма
             InitializeStandardVariables(context);
         }
-        private VariableValue InitializeDynamicArray(VariableDefinition variableDef, ExecutionContext context)
-        {
-            var array = new List<VariableValue>();
 
-            // Поддержка инициализации массива из initialValue
-            if (variableDef.initialValue is string initStr && !string.IsNullOrWhiteSpace(initStr))
+        private IVariableValue InitializePrimitiveVariable(VariableDefinition variableDef, ExecutionContext context)
+        {
+            var initialValue = variableDef.initialValue?.ToString() ?? "";
+
+            var result = EvaluateExpression(initialValue, context).ToValueString();
+
+            return variableDef.type.ToLower() switch
+            {
+                "int" => CreateIntValue(result),
+                "double" => CreateDoubleValue(result),
+                "bool" => CreateBoolValue(result),
+                "string" => CreateStringValue(result),
+                _ => CreateStringValue(result) // По умолчанию строка
+            };
+        }
+
+        private IVariableValue InitializeArrayVariable(VariableDefinition variableDef, ExecutionContext context)
+        {
+            var initialValue = variableDef.initialValue?.ToString() ?? "";
+
+            if (string.IsNullOrWhiteSpace(initialValue))
+                return new ArrayValue();
+
+            // Попробуем парсить как JSON массив
+            if (IsJsonArray(initialValue))
             {
                 try
                 {
-                    // Попробуем распарсить как JSON массив: [1, 2, 3]
-                    if (initStr.Trim().StartsWith("[") && initStr.Trim().EndsWith("]"))
-                    {
-                        // Упрощенный парсинг для демонстрации
-                        var elements = initStr.Trim().Trim('[', ']').Split(',');
-                        foreach (var element in elements)
-                        {
-                            if (!string.IsNullOrWhiteSpace(element))
-                            {
-                                var elementValue = ParseVariableValue(VariableType.Int, element.Trim(), context);
-                                array.Add(new VariableValue(elementValue));
-                            }
-                        }
-                    }
-                    else
-                    {
-                        // Инициализация массива одним значением
-                        var elementValue = ParseVariableValue(VariableType.Int, initStr, context);
-                        // Создаем массив с одним элементом
-                        array.Add(new VariableValue(elementValue));
-                    }
+                    return ArrayValue.CreateFromJsonArray(initialValue);
                 }
                 catch (Exception ex)
                 {
-                    // Логируем ошибку, но создаем пустой массив для продолжения работы
-                    Console.WriteLine($"⚠️ Ошибка инициализации массива '{variableDef.name}': {ex.Message}");
-                    // Создаем пустой массив в случае ошибки
-                    // В production лучше бы выбросить исключение или вернуть ошибку
+                    Console.WriteLine($"⚠️ Ошибка парсинга JSON массива '{variableDef.name}': {ex.Message}");
                 }
             }
 
-
-            return new VariableValue(array);
+            // Если не JSON, пробуем парсить как простой массив через запятую
+            return ParseSimpleArray(initialValue);
         }
 
-        private VariableValue InitializeObject(VariableDefinition variableDef, ExecutionContext context)
+        private IVariableValue InitializeObjectVariable(VariableDefinition variableDef, ExecutionContext context)
         {
-            // Всегда используем System.Text.Json для надежности
-            return InitializeObjectWithSystemJson(variableDef, context);
-        }
+            var initialValue = variableDef.initialValue?.ToString() ?? "";
 
-        private VariableValue InitializeObjectWithSystemJson(VariableDefinition variableDef, ExecutionContext context)
-        {
-            if (variableDef.initialValue?.ToString() is string initStr && !string.IsNullOrWhiteSpace(initStr))
+            if (string.IsNullOrWhiteSpace(initialValue))
+                return new ObjectValue();
+
+            try
             {
-                try
+                // Пробуем парсить как JSON объект
+                if (IsJsonObject(initialValue))
                 {
-                    initStr = initStr.Trim().Trim('"');
-                    Console.WriteLine($"🔍 Инициализация объекта '{variableDef.name}': {initStr}");
-
-                    using var jsonDocument = JsonDocument.Parse(initStr);
+                    using var jsonDocument = JsonDocument.Parse(initialValue);
                     var root = jsonDocument.RootElement;
 
                     if (root.ValueKind == JsonValueKind.Object)
                     {
-                        var obj = ParseJsonElementToDictionary(root);
-                        Console.WriteLine($"✅ Объект '{variableDef.name}' инициализирован: {obj.Count} свойств");
-
-                        // Логируем структуру объекта
-                        LogObjectStructure(obj, variableDef.name, 0);
-
-                        return new VariableValue(obj);
+                        var properties = ParseJsonElementToDictionary(root);
+                        return new ObjectValue(properties);
                     }
                 }
-                catch (JsonException ex)
+
+                // Если не JSON, создаем простой объект с одним свойством "value"
+                var simpleProperties = new Dictionary<string, IVariableValue>
                 {
-                    Console.WriteLine($"⚠️ Ошибка парсинга JSON для объекта '{variableDef.name}': {ex.Message}");
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"⚠️ Общая ошибка инициализации объекта '{variableDef.name}': {ex.Message}");
-                }
+                    ["value"] = CreateStringValue(initialValue)
+                };
+                return new ObjectValue(simpleProperties);
             }
-
-            // Fallback: создаем пустой объект
-            var fallbackObj = new Dictionary<string, VariableValue> { ["value"] = new VariableValue(0) };
-            Console.WriteLine($"⚠️ Создан fallback объект для '{variableDef.name}'");
-            return new VariableValue(fallbackObj);
-        }
-
-        private void LogObjectStructure(Dictionary<string, VariableValue> obj, string name, int depth)
-        {
-            string indent = new string(' ', depth * 2);
-            foreach (var prop in obj)
+            catch (Exception ex)
             {
-                Console.WriteLine($"{indent}📁 {name}.{prop.Key}: {prop.Value.Value} (тип: {prop.Value.Type})");
-
-                if (prop.Value.Type == VariableType.Object && prop.Value.Value is Dictionary<string, VariableValue> nestedObj)
-                {
-                    LogObjectStructure(nestedObj, $"{name}.{prop.Key}", depth + 1);
-                }
+                Console.WriteLine($"⚠️ Ошибка инициализации объекта '{variableDef.name}': {ex.Message}");
+                return new ObjectValue();
             }
         }
 
-
-        private Dictionary<string, VariableValue> ParseJsonElementToDictionary(JsonElement element)
+        // Вспомогательные методы для создания значений
+        private IVariableValue CreateIntValue(string value)
         {
-            var dict = new Dictionary<string, VariableValue>();
+            if (int.TryParse(value, out int result))
+                return new IntValue(result);
+            return new IntValue(0);
+        }
+
+        private IVariableValue CreateDoubleValue(string value)
+        {
+            if (double.TryParse(value, NumberStyles.Any, CultureInfo.InvariantCulture, out double result))
+                return new DoubleValue(result);
+            return new DoubleValue(0);
+        }
+
+        private IVariableValue CreateBoolValue(string value)
+        {
+            if (bool.TryParse(value, out bool result))
+                return new BoolValue(result);
+
+            // Поддержка различных форматов булевых значений
+            var lowerValue = value.ToLower();
+            return new BoolValue(lowerValue == "true" || lowerValue == "1" || lowerValue == "yes" || lowerValue == "да");
+        }
+
+        private IVariableValue CreateStringValue(string value)
+        {
+            // Убираем кавычки если они есть
+            if (value.StartsWith("\"") && value.EndsWith("\""))
+                value = value.Substring(1, value.Length - 2);
+            else if (value.StartsWith("'") && value.EndsWith("'"))
+                value = value.Substring(1, value.Length - 2);
+
+            return new StringValue(value);
+        }
+
+        private IVariableValue ParseSimpleArray(string value)
+        {
+            var items = new List<IVariableValue>();
+
+            if (string.IsNullOrWhiteSpace(value))
+                return new ArrayValue(items);
+
+            try
+            {
+                var elements = value.Split(',')
+                    .Select(e => e.Trim())
+                    .Where(e => !string.IsNullOrWhiteSpace(e))
+                    .ToArray();
+
+                foreach (var element in elements)
+                {
+                    // Пробуем определить тип элемента
+                    if (int.TryParse(element, out int intValue))
+                        items.Add(new IntValue(intValue));
+                    else if (double.TryParse(element, NumberStyles.Any, CultureInfo.InvariantCulture, out double doubleValue))
+                        items.Add(new DoubleValue(doubleValue));
+                    else if (bool.TryParse(element, out bool boolValue))
+                        items.Add(new BoolValue(boolValue));
+                    else
+                        items.Add(CreateStringValue(element));
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"⚠️ Ошибка парсинга простого массива: {ex.Message}");
+            }
+
+            return new ArrayValue(items);
+        }
+
+        private Dictionary<string, IVariableValue> ParseJsonElementToDictionary(JsonElement element)
+        {
+            var dict = new Dictionary<string, IVariableValue>();
 
             foreach (var property in element.EnumerateObject())
             {
                 var value = ParseJsonElementValue(property.Value);
                 dict[property.Name] = value;
-                Console.WriteLine($"🔍 JSON свойство: {property.Name} = {value.Value} (тип значения: {value.Value?.GetType()})");
             }
 
             return dict;
         }
 
-        private VariableValue ParseJsonElementValue(JsonElement element)
+        private IVariableValue ParseJsonElementValue(JsonElement element)
         {
-            switch (element.ValueKind)
+            return element.ValueKind switch
             {
-                case JsonValueKind.Object:
-                    if (!element.EnumerateObject().Any())
-                    {
-                        return new VariableValue((object)null);
-                    }
-                    var nestedDict = ParseJsonElementToDictionary(element);
-                    return new VariableValue(nestedDict);
-
-                case JsonValueKind.Array:
-                    var array = new List<VariableValue>();
-                    foreach (var item in element.EnumerateArray())
-                    {
-                        array.Add(ParseJsonElementValue(item));
-                    }
-                    return new VariableValue(array);
-
-                case JsonValueKind.String:
-                    var stringValue = element.GetString();
-                    if (stringValue == null) return new VariableValue((object)null);
-
-                    if (int.TryParse(stringValue, out int intValue))
-                        return new VariableValue(intValue);
-                    else if (double.TryParse(stringValue, NumberStyles.Any, CultureInfo.InvariantCulture, out double doubleValue))
-                        return new VariableValue(doubleValue);
-                    else if (bool.TryParse(stringValue, out bool boolValue))
-                        return new VariableValue(boolValue);
-                    else
-                        return new VariableValue(stringValue);
-
-                case JsonValueKind.Number:
-                    if (element.TryGetInt32(out int intVal))
-                        return new VariableValue(intVal);
-                    else if (element.TryGetDouble(out double doubleVal))
-                        return new VariableValue(doubleVal);
-                    else
-                        return new VariableValue(0);
-
-                case JsonValueKind.True:
-                    return new VariableValue(true);
-
-                case JsonValueKind.False:
-                    return new VariableValue(false);
-
-                case JsonValueKind.Null:
-                    return new VariableValue((object)null);
-
-                default:
-                    return new VariableValue(0);
-            }
+                JsonValueKind.Object => new ObjectValue(ParseJsonElementToDictionary(element)),
+                JsonValueKind.Array => ParseJsonArray(element),
+                JsonValueKind.String => new StringValue(element.GetString() ?? ""),
+                JsonValueKind.Number => element.TryGetInt32(out int intVal)
+                    ? new IntValue(intVal)
+                    : new DoubleValue(element.GetDouble()),
+                JsonValueKind.True => new BoolValue(true),
+                JsonValueKind.False => new BoolValue(false),
+                JsonValueKind.Null => new NullValue(),
+                _ => new StringValue(element.ToString())
+            };
         }
 
-        private object ParseVariableValue(VariableType type, string value, ExecutionContext context)
+        private IVariableValue ParseJsonArray(JsonElement element)
+        {
+            var array = new List<IVariableValue>();
+            foreach (var item in element.EnumerateArray())
+            {
+                array.Add(ParseJsonElementValue(item));
+            }
+            return new ArrayValue(array);
+        }
+
+        private bool IsJsonArray(string value)
         {
             if (string.IsNullOrWhiteSpace(value))
-                return VariableTypeHelper.CreateDefaultValue(type);
+                return false;
 
-            try
-            {
-                // Для объектов используем специальную логику
-                if (type == VariableType.Object)
-                {
-                    // Если строка выглядит как выражение, вычисляем его
-                    if (value.Contains(".") || value.Contains("[") || ContainsLetters(value))
-                    {
-                        var result1 = context.ExpressionEvaluator.Evaluate(value, context.Variables);
-                        return ExtractValue(result1);
-                    }
-                    // Иначе парсим как примитивное значение
-                    else
-                    {
-                        return ParsePrimitiveValue(value);
-                    }
-                }
-
-                // Для остальных типов используем стандартную логику
-                var result = context.ExpressionEvaluator.Evaluate(value, context.Variables);
-                return ExtractValue(result);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"❌ Ошибка парсинга переменной: тип={type}, значение={value}, ошибка={ex.Message}");
-                return VariableTypeHelper.CreateDefaultValue(type);
-            }
+            var trimmed = value.Trim();
+            return trimmed.StartsWith("[") && trimmed.EndsWith("]");
         }
 
-        private object ParsePrimitiveValue(string value)
+        private bool IsJsonObject(string value)
         {
-            if (string.IsNullOrWhiteSpace(value)) return 0;
+            if (string.IsNullOrWhiteSpace(value))
+                return false;
 
-            // Пробуем разные типы по порядку
-            if (int.TryParse(value, out int intValue))
-                return intValue;
-            if (double.TryParse(value, NumberStyles.Any, CultureInfo.InvariantCulture, out double doubleValue))
-                return doubleValue;
-            if (bool.TryParse(value, out bool boolValue))
-                return boolValue;
-
-            return value; // строка по умолчанию
+            var trimmed = value.Trim();
+            return trimmed.StartsWith("{") && trimmed.EndsWith("}");
         }
-
-        private bool ContainsLetters(string str)
-        {
-            return !string.IsNullOrEmpty(str) && str.Any(char.IsLetter);
-        }
-
 
         private void InitializeStandardVariables(ExecutionContext context)
         {
-            // Стандартные переменные для алгоритмов
-            var standardVars = new Dictionary<string, object>
+            var standardVars = new Dictionary<string, IVariableValue>
             {
-                ["i"] = 0,
-                ["j"] = 0,
-                ["k"] = 0,
-                ["n"] = 0,
-                ["temp"] = 0,
-                ["swapped"] = false,
-                ["last_comparison"] = 0,
-                ["result"] = 0
+                ["temp"] = new IntValue(0),
+                ["swapped"] = new BoolValue(false),
+                ["last_comparison"] = new IntValue(0),
+                ["result"] = new IntValue(0)
             };
 
             foreach (var stdVar in standardVars)
             {
                 if (!context.Variables.Contains(stdVar.Key))
                 {
-                    context.Variables.Set(stdVar.Key, new VariableValue(stdVar.Value));
+                    context.Variables.Set(stdVar.Key, stdVar.Value);
                 }
             }
-
-            InitializeStructureVariable(context);
         }
 
         private void InitializeStructureVariable(ExecutionContext context)
         {
-            var structure = context.Structure;
-            var structProperties = new Dictionary<string, object>();
-
-            Console.WriteLine($"🔍 Инициализация переменной 'struct' для типа: {structure.Type}");
-
-            // Базовые свойства для всех структур
-            structProperties["type"] = structure.Type;
-            structProperties["id"] = structure.Id;
-
-            // Специфические свойства для разных типов структур
-            switch (structure.Type.ToLower())
+            try
             {
-                case "array":
-                    int[] arrayState = structure.GetState() as int[] ?? Array.Empty<int>();
-                    structProperties["len"] = arrayState.Length;
-                    structProperties["first"] = arrayState.Length > 0 ? arrayState[0] : 0;
-                    structProperties["last"] = arrayState.Length > 0 ? arrayState[^1] : 0;
-                    structProperties["isEmpty"] = arrayState.Length == 0;
-                    structProperties["values"] = arrayState;
-                    break;
-
-                case "binarytree":
-                    var treeState = structure.GetState() as TreeNode;
-                    structProperties["value"] = treeState?.Value ?? 0;
-                    structProperties["hasLeft"] = treeState?.Left != null;
-                    structProperties["hasRight"] = treeState?.Right != null;
-                    structProperties["isLeaf"] = treeState?.Left == null && treeState?.Right == null;
-                    structProperties["height"] = CalculateTreeHeight(treeState);
-                    structProperties["nodeCount"] = CountTreeNodes(treeState);
-                    break;
-
-                case "linkedlist":
-                    var listState = structure.GetState() as ListNode;
-                    structProperties["headValue"] = listState?.Value ?? 0;
-                    structProperties["hasNext"] = listState?.Next != null;
-                    structProperties["length"] = CalculateListLength(listState);
-                    break;
-
-                case "graph":
-                    var graphState = structure.GetState() as GraphState;
-                    structProperties["nodeCount"] = graphState?.Nodes.Count ?? 0;
-                    structProperties["edgeCount"] = graphState?.Edges.Count ?? 0;
-                    structProperties["isDirected"] = false;
-                    break;
-
-                default:
-                    structProperties["description"] = $"Структура типа {structure.Type}";
-                    break;
+                var structValue = _structureConverter.ConvertToVariableValue(context.Structure);
+                context.Variables.Set("struct", structValue);
+                Console.WriteLine($"✅ Переменная 'struct' инициализирована для структуры типа {context.Structure.Type}");
             }
-
-            // Создаем объект struct со всеми свойствами
-            var structObject = new Dictionary<string, VariableValue>();
-            foreach (var prop in structProperties)
+            catch (Exception ex)
             {
-                structObject[prop.Key] = new VariableValue(prop.Value);
-            }
-
-            context.Variables.Set("struct", new VariableValue(structObject));
-
-            Console.WriteLine($"✅ Переменная 'struct' инициализирована с {structProperties.Count} свойствами");
-            foreach (var prop in structProperties)
-            {
-                Console.WriteLine($"   - {prop.Key}: {prop.Value}");
+                Console.WriteLine($"⚠️ Ошибка инициализации переменной 'struct': {ex.Message}");
+                // Создаем базовую структуру в случае ошибки
+                var fallbackStruct = new ObjectValue(new Dictionary<string, IVariableValue>
+                {
+                    ["type"] = new StringValue(context.Structure.Type),
+                    ["id"] = new StringValue(context.Structure.Id.ToString()),
+                    ["error"] = new StringValue($"Failed to initialize: {ex.Message}")
+                });
+                context.Variables.Set("struct", fallbackStruct);
             }
         }
 
-        protected object ExtractValue(object value)
-        {
-            if (value is VariableValue variableValue)
-            {
-                // Извлекаем значение и рекурсивно применяем ExtractValue
-                var extracted = variableValue.Value;
-                return ExtractValue(extracted); // Рекурсивно извлекаем
-            }
-
-            // Если это примитивный тип, возвращаем как есть
-            return value;
-        }
-
-        private object ExtractVariableValue(object value)
-        {
-            if (value is VariableValue variableValue)
-            {
-                // Используем безопасное свойство для сериализации
-                return variableValue.SerializableValue;
-            }
-
-            return value;
-        }
+        // Остальные методы остаются без изменений
         private void ExecuteAlgorithm(ExecutionContext context)
         {
-            // Валидация запроса
-            if (context.Request == null)
-            {
-                throw new ArgumentNullException(nameof(context.Request), "Запрос не может быть null");
-            }
-
             if (context.Request.steps == null || !context.Request.steps.Any())
-            {
                 throw new InvalidOperationException("Запрос должен содержать хотя бы один шаг");
-            }
 
-            // Определяем точку входа
             var entryPoint = "start";
-            
-            // Проверяем существование шага "start"
             var startStep = context.Request.steps.FirstOrDefault(s => s.id == entryPoint);
+
             if (startStep == null && context.Request.functions != null)
             {
-                // Ищем в функциях
                 foreach (var function in context.Request.functions)
                 {
                     if (function.entryPoint == entryPoint || function.steps.Any(s => s.id == entryPoint))
@@ -550,7 +401,6 @@ namespace AlgoVis.Core.Core
 
             if (startStep == null)
             {
-                // Пытаемся использовать первый шаг как точку входа
                 startStep = context.Request.steps.FirstOrDefault();
                 if (startStep != null)
                 {
@@ -565,18 +415,36 @@ namespace AlgoVis.Core.Core
             _stepExecutor.Execute(entryPoint, context);
         }
 
-        private int CalculateTreeHeight(TreeNode node)
+        private IVariableValue EvaluateExpression(string expression, ExecutionContext context)
         {
-            if (node == null) return 0;
-            return 1 + Math.Max(CalculateTreeHeight(node.Left), CalculateTreeHeight(node.Right));
+            try
+            {
+                var node = context.ExpressionParser.Parse(expression);
+                return node.Evaluate(context.Variables);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Ошибка вычисления выражения '{expression}': {ex.Message}");
+                return new IntValue(0);
+            }
         }
 
-        private int CountTreeNodes(TreeNode node)
+        private bool EvaluateCondition(string condition, ExecutionContext context)
         {
-            if (node == null) return 0;
-            return 1 + CountTreeNodes(node.Left) + CountTreeNodes(node.Right);
+            try
+            {
+                var result = EvaluateExpression(condition, context);
+                return result.ToBool();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Ошибка вычисления условия '{condition}': {ex.Message}");
+                return false;
+            }
         }
 
+        private int CalculateTreeHeight(TreeNode node) => node == null ? 0 : 1 + Math.Max(CalculateTreeHeight(node.Left), CalculateTreeHeight(node.Right));
+        private int CountTreeNodes(TreeNode node) => node == null ? 0 : 1 + CountTreeNodes(node.Left) + CountTreeNodes(node.Right);
         private int CalculateListLength(ListNode head)
         {
             int count = 0;
@@ -587,62 +455,6 @@ namespace AlgoVis.Core.Core
                 current = current.Next;
             }
             return count;
-        }
-
-        private int GetStructureLength(IDataStructure structure)
-        {
-            try
-            {
-                Console.WriteLine($"🔍 Получение длины структуры типа: {structure.Type}");
-
-                return structure.Type.ToLower() switch
-                {
-                    "array" => GetArrayLength(structure),
-                    "binarytree" => GetTreeSize(structure),
-                    "linkedlist" => GetListLength(structure),
-                    "graph" => GetGraphNodeCount(structure),
-                    _ => 0
-                };
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"⚠️ Ошибка получения длины структуры: {ex.Message}");
-                return 0;
-            }
-        }
-
-        private int GetArrayLength(IDataStructure structure)
-        {
-            var state = structure.GetState();
-            if (state is int[] array) return array.Length;
-            if (state is Array genericArray) return genericArray.Length;
-
-            // Рефлексия для других типов массивов
-            var lengthProperty = state.GetType().GetProperty("Length");
-            if (lengthProperty != null) return (int)lengthProperty.GetValue(state);
-
-            var countProperty = state.GetType().GetProperty("Count");
-            if (countProperty != null) return (int)countProperty.GetValue(state);
-
-            throw new InvalidOperationException("Не удается определить длину массива");
-        }
-
-        private int GetTreeSize(IDataStructure structure)
-        {
-            var treeState = structure.GetState() as TreeNode;
-            return CountTreeNodes(treeState);
-        }
-
-        private int GetListLength(IDataStructure structure)
-        {
-            var listState = structure.GetState() as ListNode;
-            return CalculateListLength(listState);
-        }
-
-        private int GetGraphNodeCount(IDataStructure structure)
-        {
-            var graphState = structure.GetState() as GraphState;
-            return graphState?.Nodes.Count ?? 0;
         }
 
         private CustomAlgorithmResult CreateSuccessResult(ExecutionContext context, TimeSpan executionTime)
@@ -661,26 +473,80 @@ namespace AlgoVis.Core.Core
                     ExecutionTime = executionTime,
                     OutputData = CreateOutputData(context)
                 },
-                executionState = context.Variables.GetAllVariables()
+                executionState = ConvertVariablesToDictionary(context.Variables)
             };
+        }
+
+        private Dictionary<string, object> ConvertVariablesToDictionary(IVariableScope variables)
+        {
+            var result = new Dictionary<string, object>();
+            try
+            {
+                var allVariables = variables.GetAllVariables();
+                foreach (var variable in allVariables)
+                {
+                    result[variable.Key] = ConvertVariableValue(variable.Value);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"⚠️ Ошибка преобразования переменных: {ex.Message}");
+            }
+            return result;
+        }
+
+        private object ConvertVariableValue(object value)
+        {
+            if (value is IVariableValue variableValue)
+            {
+                return variableValue switch
+                {
+                    IntValue intVal => intVal.RawValue,
+                    DoubleValue doubleVal => doubleVal.RawValue,
+                    BoolValue boolVal => boolVal.RawValue,
+                    StringValue stringVal => stringVal.RawValue,
+                    NullValue => null,
+                    ArrayValue arrayVal => ConvertArrayValue(arrayVal),
+                    ObjectValue objVal => ConvertObjectValue(objVal),
+                    _ => variableValue.ToString()
+                };
+            }
+            return value;
+        }
+
+        private List<object> ConvertArrayValue(ArrayValue arrayValue)
+        {
+            var result = new List<object>();
+            for (int i = 0; i < arrayValue.Length; i++)
+            {
+                result.Add(ConvertVariableValue(arrayValue[i]));
+            }
+            return result;
+        }
+
+        private Dictionary<string, object> ConvertObjectValue(ObjectValue objectValue)
+        {
+            var result = new Dictionary<string, object>();
+            var rawValue = objectValue.RawValue as Dictionary<string, IVariableValue>;
+
+            if (rawValue != null)
+            {
+                foreach (var property in rawValue)
+                {
+                    result[property.Key] = ConvertVariableValue(property.Value);
+                }
+            }
+
+            return result;
         }
 
         private Dictionary<string, object> CreateOutputData(ExecutionContext context)
         {
-            var variables = context.Variables.GetAllVariables();
-
-            // Преобразуем VariableValue в простые значения для вывода
-            var simpleVariables = new Dictionary<string, object>();
-            foreach (var variable in variables)
-            {
-                simpleVariables[variable.Key] = ExtractVariableValue(variable.Value);
-            }
-
             return new Dictionary<string, object>
             {
                 ["start_structure"] = context.Structure.GetOriginState(),
-                ["final_structure"] = context.Structure.GetState(),
-                ["variables"] = simpleVariables,
+                ["final_structure"] = context.Variables.Get("struct").ToValueString(),
+                ["variables"] = ConvertVariablesToDictionary(context.Variables),
                 ["call_depth"] = context.FunctionStack.CurrentDepth,
                 ["function_calls"] = context.Statistics.RecursiveCalls,
                 ["total_steps"] = context.Statistics.Steps
@@ -703,15 +569,18 @@ namespace AlgoVis.Core.Core
             };
         }
 
-        private object EvaluateExpression(string expression, ExecutionContext context)
+        private CustomAlgorithmResult CreateCriticalErrorResult(Exception ex, TimeSpan executionTime, CustomAlgorithmRequest request)
         {
-            return _expressionEvaluator.Evaluate(expression, context.Variables);
+            return new CustomAlgorithmResult
+            {
+                success = false,
+                message = $"Критическая ошибка: {ex.Message}",
+                result = new AlgorithmResult
+                {
+                    AlgorithmName = request?.name ?? "Unknown",
+                    ExecutionTime = executionTime
+                }
+            };
         }
-
-        private bool EvaluateCondition(string condition, ExecutionContext context)
-        {
-            return _expressionEvaluator.EvaluateCondition(condition, context.Variables);
-        }
-
     }
 }

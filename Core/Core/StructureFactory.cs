@@ -1,18 +1,22 @@
-﻿using AlgoVis.Models.Models.DataStructures;
+﻿using AlgoVis.Evaluator.Evaluator.Interfaces;
+using AlgoVis.Evaluator.Evaluator.VariableValues;
+using AlgoVis.Models.Models.DataStructures;
 using AlgoVis.Models.Models.DataStructures.Interfaces;
 using AlgoVis.Models.Models.Suport;
+using AlgoVis.Models.Models.Visualization;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
-    using System.Text.Json;
 
 namespace AlgoVis.Core.Core
 {
-
     public static class StructureFactory
     {
+        private static readonly UniversalStructureConverter _converter = new UniversalStructureConverter();
+
         public static IDataStructure CreateStructure(string type, object data)
         {
             Console.WriteLine($"🔍 StructureFactory: создание структуры типа '{type}', данные: {data}, тип данных: {data?.GetType()}");
@@ -30,10 +34,16 @@ namespace AlgoVis.Core.Core
                 };
             }
 
+            // Если данные уже в формате IVariableValue
+            if (data is IVariableValue variableValue)
+            {
+                return _converter.ConvertFromVariableValue(variableValue, type);
+            }
+
             // Старая логика для обратной совместимости
             return type.ToLower() switch
             {
-                "array" => new ArrayStructure((int[])data),
+                "array" => CreateArrayStructure(data),
                 "linkedlist" => new LinkedListStructure { Head = (ListNode)data },
                 "binarytree" => new BinaryTreeStructure { Root = (TreeNode)data },
                 "graph" => new GraphStructure
@@ -45,18 +55,99 @@ namespace AlgoVis.Core.Core
             };
         }
 
+        private static IDataStructure CreateArrayStructure(object data)
+        {
+            return data switch
+            {
+                int[] intArray => new ArrayStructure(intArray),
+                double[] doubleArray => new UniversalArrayStructure(ArrayValue.CreateDoubleArray(doubleArray)),
+                string[] stringArray => new UniversalArrayStructure(ArrayValue.CreateStringArray(stringArray)),
+                bool[] boolArray => new UniversalArrayStructure(ArrayValue.CreateBoolArray(boolArray)),
+                object[] objectArray => new UniversalArrayStructure(ArrayValue.CreateFromObjects(objectArray)),
+                ArrayValue arrayValue => new UniversalArrayStructure(arrayValue),
+                JsonElement jsonElement when jsonElement.ValueKind == JsonValueKind.Array =>
+                    new UniversalArrayStructure(ArrayValue.CreateFromJsonArray(jsonElement.GetRawText())),
+                _ => throw new ArgumentException($"Unsupported array data type: {data?.GetType().Name}")
+            };
+        }
+
+        // Универсальная структура для любых типов массивов
+        public class UniversalArrayStructure : IDataStructure
+        {
+            public ArrayValue ArrayValue { get; private set; }
+            public string Type => "array";
+            public string Id { get; } = Guid.NewGuid().ToString();
+
+            public UniversalArrayStructure(ArrayValue arrayValue = null)
+            {
+                ArrayValue = arrayValue ?? new ArrayValue();
+            }
+
+            public object GetState()
+            {
+                return ArrayValue;
+            }
+
+            public object GetOriginState()
+            {
+                return ArrayValue;
+            }
+
+            public void ApplyState(object state)
+            {
+                if (state is ArrayValue arrayValue)
+                {
+                    ArrayValue = arrayValue;
+                }
+                else if (state is int[] intArray)
+                {
+                    ArrayValue = ArrayValue.CreateIntArray(intArray);
+                }
+                else if (state is string[] stringArray)
+                {
+                    ArrayValue = ArrayValue.CreateStringArray(stringArray);
+                }
+                else
+                {
+                    throw new InvalidOperationException($"Invalid state type for UniversalArrayStructure: {state?.GetType().Name}");
+                }
+            }
+
+            public VisualizationData ToVisualizationData()
+            {
+                throw new NotImplementedException();
+            }
+        }
+
         private static ArrayStructure CreateArrayFromJson(JsonElement jsonElement)
         {
             if (jsonElement.ValueKind == JsonValueKind.Array)
             {
-                var array = jsonElement.EnumerateArray().Select(e => e.GetInt32()).ToArray();
+                // Парсим универсальный массив
+                var array = new List<int>();
+                foreach (var element in jsonElement.EnumerateArray())
+                {
+                    array.Add(ParseJsonValueToInt(element));
+                }
                 Console.WriteLine($"🔍 Создан массив: [{string.Join(", ", array)}]");
-                return new ArrayStructure(array);
+                return new ArrayStructure(array.ToArray());
             }
             else
             {
                 throw new ArgumentException("Для массива ожидается JSON массив");
             }
+        }
+
+        private static int ParseJsonValueToInt(JsonElement element)
+        {
+            return element.ValueKind switch
+            {
+                JsonValueKind.Number => element.GetInt32(),
+                JsonValueKind.String => int.TryParse(element.GetString(), out int result) ? result : 0,
+                JsonValueKind.True => 1,
+                JsonValueKind.False => 0,
+                _ => 0
+            };
         }
 
         private static BinaryTreeStructure CreateBinaryTreeFromJson(JsonElement jsonElement)
@@ -188,5 +279,17 @@ namespace AlgoVis.Core.Core
             return structure as IDataStructure<T> ??
                 throw new InvalidOperationException($"Не удается привести структуру к типу {typeof(T).Name}");
         }
+
+        public static IDataStructure CreateStructureFromVariableValue(IVariableValue value, string type)
+        {
+            return _converter.ConvertFromVariableValue(value, type);
+        }
+
+        // Метод для конвертации структуры в IVariableValue
+        public static IVariableValue ConvertStructureToVariableValue(IDataStructure structure)
+        {
+            return _converter.ConvertToVariableValue(structure);
+        }
+
     }
 }

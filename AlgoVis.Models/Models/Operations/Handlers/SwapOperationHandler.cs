@@ -1,4 +1,5 @@
-﻿using AlgoVis.Models.Models.Custom;
+﻿using AlgoVis.Evaluator.Evaluator.VariableValues;
+using AlgoVis.Models.Models.Custom;
 using AlgoVis.Models.Models.DataStructures.Interfaces;
 using AlgoVis.Models.Models.Operations.Base;
 using AlgoVis.Models.Models.Visualization;
@@ -22,35 +23,63 @@ namespace AlgoVis.Models.Models.Operations.Handlers
             if (step.parameters.Count < 2)
                 throw new ArgumentException("Swap operation requires 2 parameters");
 
-            var index1 = ConvertToIndex(EvaluateExpression(step.parameters[0], context));
-            var index2 = ConvertToIndex(EvaluateExpression(step.parameters[1], context));
+            // Получаем имя массива и индексы
+            string arrayName = step.parameters.Count > 2 ? step.parameters[0] : "array";
+            var index1Value = EvaluateExpression(step.parameters[step.parameters.Count > 2 ? 1 : 0], context);
+            var index2Value = EvaluateExpression(step.parameters[step.parameters.Count > 2 ? 2 : 1], context);
 
-            var array = GetArrayState(context.Structure);
-            (array[index2], array[index1]) = (array[index1], array[index2]);
+            int index1 = index1Value.ToInt();
+            int index2 = index2Value.ToInt();
 
-            context.Structure.ApplyState(array);
+            // Получаем массив из переменных
+            var arrayValue = context.Variables.Get(arrayName) as ArrayValue;
+
+            if (context.Variables.Get(arrayName).HasProperty("values"))
+                arrayValue = context.Variables.Get(arrayName).GetProperty("values") as ArrayValue;
+
+            if (arrayValue == null)
+                throw new InvalidOperationException($"Массив '{arrayName}' не найден или не является массивом");
+
+            // Проверяем индексы
+            if (index1 < 0 || index1 >= arrayValue.Length)
+                throw new IndexOutOfRangeException($"Index {index1} is out of range for array of length {arrayValue.Length}");
+
+            if (index2 < 0 || index2 >= arrayValue.Length)
+                throw new IndexOutOfRangeException($"Index {index2} is out of range for array of length {arrayValue.Length}");
+
+            // Выполняем обмен в ArrayValue
+            var temp = arrayValue[index1];
+            arrayValue[index1] = arrayValue[index2];
+            arrayValue[index2] = temp;
+
+            // Обновляем состояние структуры, если нужно
+            context.Variables.Set(arrayName, arrayValue);
 
             AddVisualizationStep(step, context, "swap",
-                step.description ?? $"Обмен элементов [{index1}] и [{index2}]",
+                step.description ?? $"Обмен элементов {arrayName}[{index1}] и {arrayName}[{index2}]",
                 new List<HighlightedElement>
                 {
-                new() { ElementId = index1.ToString(), HighlightType = "swapping", Color = "red" },
-                new() { ElementId = index2.ToString(), HighlightType = "swapping", Color = "red" }
+                    new() {
+                        ElementId = $"{arrayName}[{index1}]",
+                        HighlightType = "swapping",
+                        Color = "red"
+                    },
+                    new() {
+                        ElementId = $"{arrayName}[{index2}]",
+                        HighlightType = "swapping",
+                        Color = "red"
+                    }
                 },
                 new Dictionary<string, object>
                 {
+                    ["array_name"] = arrayName,
                     ["index1"] = index1,
-                    ["index2"] = index2
+                    ["index2"] = index2,
+                    ["value1"] = arrayValue[index1].RawValue,
+                    ["value2"] = arrayValue[index2].RawValue
                 });
 
             ExecuteNextStep(step, context);
         }
-
-        private int[] GetArrayState(IDataStructure structure)
-        {
-            var state = structure.GetState();
-            return state as int[] ?? throw new InvalidOperationException("Операция обмена поддерживает только массивы");
-        }
-
     }
 }

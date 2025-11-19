@@ -1,4 +1,4 @@
-﻿{
+﻿{"algorithm":{
   "name": "BinaryTreeDFS",
   "description": "Обход бинарного дерева в глубину (префиксный порядок)",
   "structureType": "tree",
@@ -204,4 +204,5 @@
       "visualizationType": "tree_traverse_end"
     }
   ]
-}
+},
+"data":[1,2,3]}

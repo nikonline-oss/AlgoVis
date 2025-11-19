@@ -1,5 +1,6 @@
 ﻿using AlgoVis.Evaluator.Evaluator.Interfaces;
 using AlgoVis.Evaluator.Evaluator.Types;
+using AlgoVis.Evaluator.Evaluator.VariableValues;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,55 +12,49 @@ namespace AlgoVis.Evaluator.Evaluator.Nodes
     // Узел для доступа к элементам массива: array[index]
     public class ArrayAccessNode : IExpressionNode
     {
-        private readonly IExpressionNode _arrayNode;
-        private readonly IExpressionNode _indexNode;
+        private readonly IExpressionNode _arrayExpression;
+        private readonly IExpressionNode _indexExpression;
 
-        public ArrayAccessNode(IExpressionNode arrayNode, IExpressionNode indexNode)
+        public ArrayAccessNode(IExpressionNode arrayExpression, IExpressionNode indexExpression)
         {
-            _arrayNode = arrayNode;
-            _indexNode = indexNode;
+            _arrayExpression = arrayExpression;
+            _indexExpression = indexExpression;
         }
 
-        public object Evaluate(IVariableScope variables)
+        public IVariableValue Evaluate(IVariableScope variables)
         {
-            var array = _arrayNode.Evaluate(variables);
-            var index = _indexNode.Evaluate(variables);
+            var arrayValue = _arrayExpression.Evaluate(variables);
+            var indexValue = _indexExpression.Evaluate(variables);
+            if (arrayValue.HasProperty("values"))
+                arrayValue = arrayValue.GetProperty("values");
 
-            int indexValue = Convert.ToInt32(ExtractValue(index));
-
-            // Если это VariableValue, используем его методы
-            if (array is VariableValue variableValue)
+            if (arrayValue is ArrayValue arrayVal)
             {
-                return variableValue.GetElement(indexValue);
+                var index = indexValue.ToInt();
+
+                // Автоматическое расширение массива при обращении к несуществующему индексу
+                if (index >= 0 && index < arrayVal.Length)
+                {
+                    return arrayVal[index];
+                }
+                else if (index >= 0)
+                {
+                    // Автоматически расширяем массив до нужного размера
+                    var newValue = new IntValue(0);
+                    // Массив автоматически расширяется через индексатор
+                    arrayVal[index] = newValue;
+                    return newValue;
+                }
+                else
+                {
+                    throw new IndexOutOfRangeException($"Array index cannot be negative: {index}");
+                }
             }
 
-            // Получаем через VariableScope
-            string arrayName = GetArrayName();
-            return variables.GetElement(arrayName, indexValue);
+            // Если это не массив, пытаемся получить свойство с именем индекса
+            return arrayValue.GetProperty(indexValue.ToValueString());
         }
 
-        public string GetArrayName()
-        {
-            // Рекурсивно получаем имя массива
-            if (_arrayNode is VariableNode variableNode)
-            {
-                return variableNode.Name;
-            }
-            else if (_arrayNode is MemberAccessNode memberAccess)
-            {
-                return $"{memberAccess.GetBaseVariableName()}.{memberAccess._propertyName}";
-            }
-            else if (_arrayNode is ArrayAccessNode arrayAccess)
-            {
-                return arrayAccess.GetArrayName();
-            }
-
-            throw new InvalidOperationException("Не удается определить имя массива");
-        }
-
-        private object ExtractValue(object value)
-        {
-            return value is VariableValue variableValue ? variableValue.Value : value;
-        }
+        public override string ToString() => $"{_arrayExpression}[{_indexExpression}]";
     }
 }

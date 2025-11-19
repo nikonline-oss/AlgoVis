@@ -1,0 +1,438 @@
+﻿{
+  "algorithm": {
+    "name": "FixedIterativeQuickSort",
+    "description": "Исправленная быстрая сортировка с правильной работой стека",
+    "structureType": "array",
+    "variables": [
+      {
+        "name": "low",
+        "type": "int",
+        "initialValue": 0
+      },
+      {
+        "name": "high",
+        "type": "int",
+        "initialValue": "struct.len - 1"
+      },
+      {
+        "name": "i",
+        "type": "int",
+        "initialValue": 0
+      },
+      {
+        "name": "j",
+        "type": "int",
+        "initialValue": 0
+      },
+      {
+        "name": "pivot",
+        "type": "int",
+        "initialValue": 0
+      },
+      {
+        "name": "pivot_index",
+        "type": "int",
+        "initialValue": 0
+      },
+      {
+        "name": "stack",
+        "type": "array",
+        "initialValue": "[]"
+      },
+      {
+        "name": "stack_top",
+        "type": "int",
+        "initialValue": -1
+      },
+      {
+        "name": "temp",
+        "type": "int",
+        "initialValue": 0
+      }
+    ],
+    "functions": [
+      {
+        "name": "stack_push",
+        "description": "Добавление элемента в стек",
+        "parameters": [ "value" ],
+        "entryPoint": "check_stack_overflow",
+        "steps": [
+          {
+            "id": "check_stack_overflow",
+            "type": "condition",
+            "description": "Проверка переполнения стека",
+            "parameters": [ "stack_top < 199" ],
+            "conditionCases": [
+              {
+                "condition": "true",
+                "nextStep": "increment_stack"
+              },
+              {
+                "condition": "false",
+                "nextStep": "stack_error"
+              }
+            ],
+            "visualize": true
+          },
+          {
+            "id": "increment_stack",
+            "type": "assign",
+            "description": "Увеличение указателя стека",
+            "parameters": [ "stack_top", "stack_top + 1" ],
+            "nextStep": "store_value",
+            "visualize": true
+          },
+          {
+            "id": "store_value",
+            "type": "assign",
+            "description": "Сохранение значения в стек",
+            "parameters": [ "stack[stack_top]", "value" ],
+            "nextStep": "return_push",
+            "visualize": true
+          },
+          {
+            "id": "stack_error",
+            "type": "generic",
+            "operation": "error",
+            "description": "Переполнение стека",
+            "nextStep": "return_push"
+          },
+          {
+            "id": "return_push",
+            "type": "return",
+            "description": "Возврат из функции"
+          }
+        ]
+      },
+      {
+        "name": "stack_pop",
+        "description": "Извлечение элемента из стека",
+        "parameters": [],
+        "entryPoint": "check_stack_empty",
+        "steps": [
+          {
+            "id": "check_stack_empty",
+            "type": "condition",
+            "description": "Проверка пустоты стека",
+            "parameters": [ "stack_top >= 0" ],
+            "conditionCases": [
+              {
+                "condition": "true",
+                "nextStep": "get_value"
+              },
+              {
+                "condition": "false",
+                "nextStep": "stack_empty_error"
+              }
+            ],
+            "visualize": true
+          },
+          {
+            "id": "get_value",
+            "type": "assign",
+            "description": "Получение значения из стека",
+            "parameters": [ "temp", "stack[stack_top]" ],
+            "nextStep": "decrement_stack",
+            "visualize": true
+          },
+          {
+            "id": "decrement_stack",
+            "type": "assign",
+            "description": "Уменьшение указателя стека",
+            "parameters": [ "stack_top", "stack_top - 1" ],
+            "nextStep": "return_pop",
+            "visualize": true
+          },
+          {
+            "id": "stack_empty_error",
+            "type": "generic",
+            "operation": "error",
+            "description": "Стек пуст",
+            "nextStep": "return_pop"
+          },
+          {
+            "id": "return_pop",
+            "type": "return",
+            "description": "Возврат из функции"
+          }
+        ]
+      },
+      {
+        "name": "partition",
+        "description": "Разделение массива",
+        "parameters": [ "left", "right" ],
+        "entryPoint": "choose_pivot",
+        "steps": [
+          {
+            "id": "choose_pivot",
+            "type": "assign",
+            "description": "Выбор опорного элемента",
+            "parameters": [ "pivot", "struct[right]" ],
+            "nextStep": "init_i",
+            "visualize": true
+          },
+          {
+            "id": "init_i",
+            "type": "assign",
+            "description": "Инициализация индекса i",
+            "parameters": [ "i", "left - 1" ],
+            "nextStep": "init_j",
+            "visualize": true
+          },
+          {
+            "id": "init_j",
+            "type": "assign",
+            "description": "Инициализация индекса j",
+            "parameters": [ "j", "left" ],
+            "nextStep": "partition_loop",
+            "visualize": true
+          },
+          {
+            "id": "partition_loop",
+            "type": "condition",
+            "description": "Цикл разделения",
+            "parameters": [ "j < right" ],
+            "conditionCases": [
+              {
+                "condition": "true",
+                "nextStep": "compare_elements"
+              },
+              {
+                "condition": "false",
+                "nextStep": "place_pivot"
+              }
+            ],
+            "visualize": true
+          },
+          {
+            "id": "compare_elements",
+            "type": "compare",
+            "description": "Сравнение с опорным элементом",
+            "parameters": [ "struct", "j", "right" ],
+            "nextStep": "check_comparison",
+            "visualize": true
+          },
+          {
+            "id": "check_comparison",
+            "type": "condition",
+            "description": "Проверка результата сравнения",
+            "parameters": [ "last_comparison <= 0" ],
+            "conditionCases": [
+              {
+                "condition": "true",
+                "nextStep": "swap_elements"
+              },
+              {
+                "condition": "false",
+                "nextStep": "next_iteration"
+              }
+            ],
+            "visualize": true
+          },
+          {
+            "id": "swap_elements",
+            "type": "swap",
+            "description": "Обмен элементов",
+            "parameters": [ "struct", "i + 1", "j" ],
+            "nextStep": "increment_i",
+            "visualize": true
+          },
+          {
+            "id": "increment_i",
+            "type": "assign",
+            "description": "Увеличение индекса i",
+            "parameters": [ "i", "i + 1" ],
+            "nextStep": "next_iteration",
+            "visualize": true
+          },
+          {
+            "id": "next_iteration",
+            "type": "assign",
+            "description": "Следующая итерация",
+            "parameters": [ "j", "j + 1" ],
+            "nextStep": "partition_loop",
+            "visualize": true
+          },
+          {
+            "id": "place_pivot",
+            "type": "swap",
+            "description": "Размещение опорного элемента",
+            "parameters": [ "struct", "i + 1", "right" ],
+            "nextStep": "set_pivot_index",
+            "visualize": true
+          },
+          {
+            "id": "set_pivot_index",
+            "type": "assign",
+            "description": "Сохранение индекса опорного элемента",
+            "parameters": [ "pivot_index", "i + 1" ],
+            "nextStep": "return_partition",
+            "visualize": true
+          },
+          {
+            "id": "return_partition",
+            "type": "return",
+            "description": "Возврат из функции"
+          }
+        ]
+      }
+    ],
+    "steps": [
+      {
+        "id": "start",
+        "type": "call_function",
+        "description": "Добавление начальных границ в стек",
+        "functionName": "stack_push",
+        "functionParameters": {
+          "value": "0"
+        },
+        "returnToStep": "push_high",
+        "visualize": false,
+        "highlightColor": "green"
+      },
+      {
+        "id": "push_high",
+        "type": "call_function",
+        "description": "Добавление верхней границы в стек",
+        "functionName": "stack_push",
+        "functionParameters": {
+          "value": "struct.len - 1"
+        },
+        "returnToStep": "main_loop",
+        "visualize": false
+      },
+      {
+        "id": "main_loop",
+        "type": "condition",
+        "description": "Проверка пустоты стека",
+        "parameters": [ "stack_top >= 0" ],
+        "conditionCases": [
+          {
+            "condition": "true",
+            "nextStep": "pop_high"
+          },
+          {
+            "condition": "false",
+            "nextStep": "end"
+          }
+        ],
+        "visualize": true
+      },
+      {
+        "id": "pop_high",
+        "type": "call_function",
+        "description": "Извлечение верхней границы",
+        "functionName": "stack_pop",
+        "functionParameters": {},
+        "returnToStep": "set_high",
+        "visualize": false
+      },
+      {
+        "id": "set_high",
+        "type": "assign",
+        "description": "Установка верхней границы",
+        "parameters": [ "high", "temp" ],
+        "nextStep": "pop_low",
+        "visualize": true
+      },
+      {
+        "id": "pop_low",
+        "type": "call_function",
+        "description": "Извлечение нижней границы",
+        "functionName": "stack_pop",
+        "functionParameters": {},
+        "returnToStep": "set_low",
+        "visualize": false
+      },
+      {
+        "id": "set_low",
+        "type": "assign",
+        "description": "Установка нижней границы",
+        "parameters": [ "low", "temp" ],
+        "nextStep": "check_partition",
+        "visualize": false
+      },
+      {
+        "id": "check_partition",
+        "type": "condition",
+        "description": "Проверка размера раздела",
+        "parameters": [ "low < high" ],
+        "conditionCases": [
+          {
+            "condition": "true",
+            "nextStep": "call_partition"
+          },
+          {
+            "condition": "false",
+            "nextStep": "main_loop"
+          }
+        ],
+        "visualize": true
+      },
+      {
+        "id": "call_partition",
+        "type": "call_function",
+        "description": "Разделение массива",
+        "functionName": "partition",
+        "functionParameters": {
+          "left": "low",
+          "right": "high"
+        },
+        "returnToStep": "push_left_low",
+        "visualize": false
+      },
+      {
+        "id": "push_left_low",
+        "type": "call_function",
+        "description": "Сохранение левой нижней границы",
+        "functionName": "stack_push",
+        "functionParameters": {
+          "value": "low"
+        },
+        "returnToStep": "push_left_high",
+        "visualize": false
+      },
+      {
+        "id": "push_left_high",
+        "type": "call_function",
+        "description": "Сохранение левой верхней границы",
+        "functionName": "stack_push",
+        "functionParameters": {
+          "value": "pivot_index - 1"
+        },
+        "returnToStep": "push_right_low",
+        "visualize": false
+      },
+      {
+        "id": "push_right_low",
+        "type": "call_function",
+        "description": "Сохранение правой нижней границы",
+        "functionName": "stack_push",
+        "functionParameters": {
+          "value": "pivot_index + 1"
+        },
+        "returnToStep": "push_right_high",
+        "visualize": false
+      },
+      {
+        "id": "push_right_high",
+        "type": "call_function",
+        "description": "Сохранение правой верхней границы",
+        "functionName": "stack_push",
+        "functionParameters": {
+          "value": "high"
+        },
+        "returnToStep": "main_loop",
+        "visualize": false
+      },
+      {
+        "id": "end",
+        "type": "generic",
+        "operation": "complete",
+        "description": "Сортировка завершена",
+        "visualize": true
+      }
+    ]
+  },
+  "data": [ 1,7,4,9,7,43,2,44,5,12,4 ]
+}

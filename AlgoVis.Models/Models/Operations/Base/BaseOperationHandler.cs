@@ -1,5 +1,7 @@
 ﻿using AlgoVis.Evaluator.Evaluator.Interfaces;
+using AlgoVis.Evaluator.Evaluator.Parsing;
 using AlgoVis.Evaluator.Evaluator.Types;
+using AlgoVis.Evaluator.Evaluator.VariableValues;
 using AlgoVis.Models.Models.Custom;
 using AlgoVis.Models.Models.Operations.Interfaces;
 using AlgoVis.Models.Models.Visualization;
@@ -45,59 +47,49 @@ namespace AlgoVis.Models.Models.Operations.Base
             }
         }
 
-        protected object EvaluateExpression(string expression, ExecutionContext context)
+        protected IVariableValue EvaluateExpression(string expression, ExecutionContext context)
         {
-            IVariableScope currentScope = context.FunctionStack.Current?.Variables ?? context.Variables;
+            if (string.IsNullOrWhiteSpace(expression))
+                return new IntValue(0);
 
-            var result = context.ExpressionEvaluator.Evaluate(expression, currentScope);
-            return ExtractValue(result);
+            try
+            {
+                var node = context.ExpressionParser.Parse(expression);
+                return node.Evaluate(context.FunctionStack.Current != null ? context.FunctionStack.Current.Variables : context.Variables);
+            }
+            catch (ParseException ex)
+            {
+                throw new InvalidOperationException($"Ошибка парсинга выражения '{expression}': {ex.Message}", ex);
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Ошибка вычисления выражения '{expression}': {ex.Message}", ex);
+            }
         }
 
         protected bool EvaluateCondition(string condition, ExecutionContext context)
         {
-            IVariableScope currentScope = context.FunctionStack.Current?.Variables ?? context.Variables;
+            if (string.IsNullOrWhiteSpace(condition))
+                return false;
 
-            return context.ExpressionEvaluator.EvaluateCondition(condition, currentScope);
-        }
-
-        protected int ConvertToIndex(object value)
-        {
-            var extractedValue = ExtractValue(value);
-
-            return extractedValue switch
+            try
             {
-                int i => i,
-                double d => (int)d,
-                _ => Convert.ToInt32(extractedValue)
-            };
-        }
+                // Получаем правильную область видимости с учетом стека вызовов
+                IVariableScope currentScope = context.FunctionStack.Current?.Variables ?? context.Variables;
 
-        protected object ExtractValue(object value)
-        {
-            Console.WriteLine($"🔍 ExtractValue: входное значение = {value}, тип = {value?.GetType()}");
+                var node = context.ExpressionParser.Parse(condition);
+                var result = node.Evaluate(currentScope);
 
-            if (value is VariableValue variableValue)
-            {
-                Console.WriteLine($"🔍 ExtractValue: из VariableValue типа {variableValue.Type}");
-
-                // Для объектов возвращаем сам VariableValue, чтобы сохранить возможность доступа к свойствам
-                if (variableValue.Type == VariableType.Object)
-                {
-                    return variableValue;
-                }
-
-                var result = variableValue.Value;
-                Console.WriteLine($"🔍 ExtractValue: извлечено значение = {result}");
-                return result;
+                return result.ToBool();
             }
-            else if (value is Dictionary<string, VariableValue> dict)
+            catch (ParseException ex)
             {
-                Console.WriteLine($"🔍 ExtractValue: получен словарь, преобразуем в VariableValue");
-                return new VariableValue(dict);
+                throw new InvalidOperationException($"Ошибка парсинга условия '{condition}': {ex.Message}", ex);
             }
-
-            Console.WriteLine($"🔍 ExtractValue: возвращаем как есть = {value}");
-            return value;
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Ошибка вычисления условия '{condition}': {ex.Message}", ex);
+            }
         }
 
         protected void AddVisualizationStep(AlgorithmStep step, ExecutionContext context,

@@ -1,9 +1,12 @@
 ﻿using AlgoVis.Evaluator.Evaluator.Interfaces;
 using AlgoVis.Evaluator.Evaluator.Types;
+using AlgoVis.Evaluator.Evaluator.VariableValues;
+using AlgoVis.Evaluator.Evaluator.VariableValues.Base;
 using AlgoVis.Models.Models.Custom;
 using AlgoVis.Models.Models.Operations.Base;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -22,9 +25,9 @@ namespace AlgoVis.Models.Models.Operations.Handlers
 
             var leftSide = step.parameters[0];
             var rightExpression = step.parameters[1];
-            var value = EvaluateExpression(rightExpression, context);
+            IVariableValue value = EvaluateExpression(rightExpression, context);
 
-            Console.WriteLine($"🔍 Assign: {leftSide} = {value} (тип: {value?.GetType()})");
+            Console.WriteLine($"🔍 Assign: {leftSide} = {value.ToValueString()} (тип: {value?.GetType()})");
 
             if (IsArrayAccess(leftSide))
             {
@@ -63,7 +66,7 @@ namespace AlgoVis.Models.Models.Operations.Handlers
             return expression.Contains(".") && !expression.Contains("[");
         }
 
-        private void SetArrayElement(string arrayAccess, object value, ExecutionContext context)
+        private void SetArrayElement(string arrayAccess, IVariableValue value, ExecutionContext context)
         {
             var pattern = @"^([a-zA-Z_][a-zA-Z0-9_]*)\[(.+)\]$";
             var match = Regex.Match(arrayAccess, pattern);
@@ -74,100 +77,56 @@ namespace AlgoVis.Models.Models.Operations.Handlers
             string arrayName = match.Groups[1].Value;
             string indexExpression = match.Groups[2].Value;
 
-            var indexResult = EvaluateExpression(indexExpression, context);
-            int index = Convert.ToInt32(ExtractValue(indexResult));
+            var index = EvaluateExpression(indexExpression, context);
 
-            context.Variables.SetElement(arrayName, index, value);
+            var arrayValue = context.Variables.Get(arrayName);
+
+            ArrayValue array = context.Variables.Get(arrayName) as ArrayValue;
+
+            if (array == null)
+                array = arrayValue.GetProperty("values") as ArrayValue;
+
+            IVariableValue[] args = [index, value];
+
+            array.CallMethod("set",args);
+
+
+            context.Variables.Set(arrayName, array);
         }
 
-        private void SetProperty(string propertyAccess, object value, ExecutionContext context)
+        private void SetProperty(string propertyAccess, IVariableValue value, ExecutionContext context)
         {
             Console.WriteLine($"🔍 SetProperty: {propertyAccess} = {value}");
 
             // Разбираем путь к свойству: obj.prop1.prop2
             var parts = propertyAccess.Split('.');
 
-            if (parts.Length == 2)
+            if (parts.Length == 1)
             {
                 // Простой случай: obj.property
-                context.Variables.SetProperty(parts[0], parts[1], value);
+                context.Variables.SetNested(propertyAccess, value);
             }
             else
             {
                 // Сложный случай: obj.prop1.prop2 - используем рекурсивную установку
-                SetNestedProperty(context.Variables, parts, value, 0);
+                context.Variables.Set(propertyAccess, value);
             }
         }
 
-        private void SetNestedProperty(IVariableScope variables, string[] path, object value, int depth)
-        {
-            if (depth >= path.Length - 1)
-            {
-                // Достигли конечного свойства - устанавливаем значение
-                variables.SetProperty(path[depth - 1], path[depth], value);
-                return;
-            }
-
-            // Получаем текущий объект
-            var currentObj = variables.Get(string.Join(".", path.Take(depth + 1)));
-
-            if (currentObj is VariableValue variableValue && variableValue.Type == VariableType.Object)
-            {
-                // Продолжаем углубляться
-                SetNestedProperty(variables, path, value, depth + 1);
-            }
-            else
-            {
-                // Создаем промежуточные объекты
-                CreateNestedObject(variables, path, value, depth);
-            }
-        }
-
-        private void CreateNestedObject(IVariableScope variables, string[] path, object value, int depth)
-        {
-            // Создаем цепочку объектов
-            var currentPath = new List<string>();
-
-            for (int i = 0; i <= depth; i++)
-            {
-                currentPath.Add(path[i]);
-
-                if (i == path.Length - 1)
-                {
-                    // Последний элемент - устанавливаем значение
-                    variables.SetProperty(
-                        string.Join(".", currentPath.Take(currentPath.Count - 1)),
-                        path[i],
-                        value
-                    );
-                }
-                else
-                {
-                    // Промежуточный объект - создаем пустой объект
-                    var obj = new Dictionary<string, VariableValue>();
-                    variables.SetProperty(
-                        string.Join(".", currentPath.Take(currentPath.Count - 1)),
-                        path[i],
-                        new VariableValue(obj)
-                    );
-                }
-            }
-        }
-
-        private object ExtractDisplayValue(object value)
+        private object ExtractDisplayValue(IVariableValue value)
         {
             // Для отображения в логах и визуализации
             if (value is VariableValue variableValue)
             {
                 if (variableValue.Type == VariableType.Object)
                 {
-                    return "[Object]";
+                    return value.ToValueString();
                 }
                 else if (variableValue.Type == VariableType.Array)
                 {
-                    return $"[Array({variableValue.ArrayValue.Count})]";
+                    return $"[Array({variableValue.ToValueString()})]";
                 }
-                return variableValue.Value;
+                return variableValue.ToValueString();
             }
             else if (value is Dictionary<string, VariableValue> dict)
             {

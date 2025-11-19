@@ -22,7 +22,7 @@
     <ProjectReference Include="..\algovis.client\algovis.client.esproj">
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-	  <ProjectReference Include="..\testing\testing.csproj"/>
+	  <ProjectReference Include="..\AlgoVis.Core\AlgoVis.Core.csproj"/>
   </ItemGroup>
 
 </Project>

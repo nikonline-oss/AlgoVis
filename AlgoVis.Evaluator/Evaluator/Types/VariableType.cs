@@ -13,6 +13,7 @@ namespace AlgoVis.Evaluator.Evaluator.Types
         Bool,
         String,
         Array,
-        Object
+        Object,
+        Null
     }
 }

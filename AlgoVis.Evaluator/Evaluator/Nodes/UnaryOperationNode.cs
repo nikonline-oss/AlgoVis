@@ -1,5 +1,6 @@
 ﻿using AlgoVis.Evaluator.Evaluator.Interfaces;
 using AlgoVis.Evaluator.Evaluator.Types;
+using AlgoVis.Evaluator.Evaluator.VariableValues;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -19,36 +20,34 @@ namespace AlgoVis.Evaluator.Evaluator.Nodes
             _operator = op;
         }
 
-        private object ExtractValue(object value)
+        public IVariableValue Evaluate(IVariableScope variables)
         {
-            return value is VariableValue variableValue ? variableValue.Value : value;
-        }
-
-        public object Evaluate(IVariableScope variables)
-        {
-            var value = ExtractValue(_operand.Evaluate(variables));
+            var value = _operand.Evaluate(variables);
 
             return _operator switch
             {
-                "u+" => Convert.ToDouble(value),
-                "u-" => -Convert.ToDouble(value),
-                "u!" => !ConvertToBoolean(value),
+                "u+" => value, // Унарный плюс
+                "u-" => NegateValue(value),
+                "u!" => LogicalNot(value),
                 _ => throw new ArgumentException($"Неизвестный унарный оператор: {_operator}")
             };
         }
 
-        private bool ConvertToBoolean(object value)
+        private IVariableValue NegateValue(IVariableValue value)
         {
-            var extractedValue = ExtractValue(value);
-
-            return extractedValue switch
+            return value.Type switch
             {
-                bool b => b,
-                int i => i != 0,
-                double d => Math.Abs(d) > 1e-10,
-                string s => !string.IsNullOrEmpty(s),
-                _ => Convert.ToBoolean(extractedValue)
+                VariableType.Int => new IntValue(-value.ToInt()),
+                VariableType.Double => new DoubleValue(-value.ToDouble()),
+                _ => new DoubleValue(-value.ToDouble()) // Пробуем преобразовать
             };
         }
+
+        private IVariableValue LogicalNot(IVariableValue value)
+        {
+            return new BoolValue(!value.ToBool());
+        }
+
+        public override string ToString() => $"{_operator}{_operand}";
     }
 }

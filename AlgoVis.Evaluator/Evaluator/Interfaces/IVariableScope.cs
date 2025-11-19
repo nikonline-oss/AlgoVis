@@ -8,14 +8,15 @@ namespace AlgoVis.Evaluator.Evaluator.Interfaces
 {
     public interface IVariableScope
     {
-        object Get(string name);
-        void Set(string name, object value);
+        IVariableValue Get(string name);
+        void Set(string name, IVariableValue value);
         bool Contains(string name);
+
+        IVariableValue GetNested(string path);
+        void SetNested(string path, IVariableValue value);
+
+        // Для обратной совместимости со старым кодом (постепенно уберем)
         Dictionary<string, object> GetAllVariables();
-        object GetElement(string arrayName, int index);
-        void SetElement(string arrayName, int index, object value);
-        object GetProperty(string objectName, string propertyName);
-        void SetProperty(string objectName, string propertyName, object value);
     }
 
 }

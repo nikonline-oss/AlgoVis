@@ -14,7 +14,7 @@ namespace AlgoVis.Evaluator.Evaluator.Core
             return new VariableScope();
         }
 
-        public IVariableScope CreateChildScope(IVariableScope parent)
+        public IVariableScope CreateChildScope(VariableScope parent)
         {
             return new VariableScope(parent);
         }

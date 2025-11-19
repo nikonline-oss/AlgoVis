@@ -1,5 +1,6 @@
 ﻿using AlgoVis.Evaluator.Evaluator.Interfaces;
 using AlgoVis.Evaluator.Evaluator.Types;
+using AlgoVis.Evaluator.Evaluator.VariableValues;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -21,79 +22,80 @@ namespace AlgoVis.Evaluator.Evaluator.Nodes
             _operator = op;
         }
 
-        public object Evaluate(IVariableScope variables)
+        public IVariableValue Evaluate(IVariableScope variables)
         {
-            var leftVal = ExtractValue(_left.Evaluate(variables));
-            var rightVal = ExtractValue(_right.Evaluate(variables));
-
-            // Для логических операторов
-            if (_operator == "&&" || _operator == "||")
-            {
-                bool leftBool = ConvertToBoolean(leftVal);
-                bool rightBool = ConvertToBoolean(rightVal);
-
-                return _operator switch
-                {
-                    "&&" => leftBool && rightBool,
-                    "||" => leftBool || rightBool,
-                    _ => throw new ArgumentException($"Неизвестный логический оператор: {_operator}")
-                };
-            }
-
-            // Для операторов сравнения
-            if (_operator == "==" || _operator == "!=")
-            {
-                bool areEqual = ObjectsEqual(leftVal, rightVal);
-                return _operator == "==" ? areEqual : !areEqual;
-            }
-
-            // Для числовых операторов
-            double leftNum = Convert.ToDouble(leftVal);
-            double rightNum = Convert.ToDouble(rightVal);
+            var leftVal = _left.Evaluate(variables);
+            var rightVal = _right.Evaluate(variables);
 
             return _operator switch
             {
-                "+" => leftNum + rightNum,
-                "-" => leftNum - rightNum,
-                "*" => leftNum * rightNum,
-                "/" => rightNum != 0 ? leftNum / rightNum : throw new DivideByZeroException("Деление на ноль"),
-                "%" => rightNum != 0 ? leftNum % rightNum : throw new DivideByZeroException("Деление на ноль"),
-                "^" => Math.Pow(leftNum, rightNum),
-                "<" => leftNum < rightNum,
-                ">" => leftNum > rightNum,
-                "<=" => leftNum <= rightNum,
-                ">=" => leftNum >= rightNum,
-                _ => throw new ArgumentException($"Неизвестный оператор: {_operator}")
+                // Арифметические операции
+                "+" => Add(leftVal, rightVal),
+                "-" => Subtract(leftVal, rightVal),
+                "*" => Multiply(leftVal, rightVal),
+                "/" => Divide(leftVal, rightVal),
+                "%" => Modulo(leftVal, rightVal),
+                "^" => Power(leftVal, rightVal),
+
+                // Операции сравнения
+                "==" => new BoolValue(Equals(leftVal, rightVal)),
+                "!=" => new BoolValue(!Equals(leftVal, rightVal)),
+                "<" => new BoolValue(leftVal.ToDouble() < rightVal.ToDouble()),
+                ">" => new BoolValue(leftVal.ToDouble() > rightVal.ToDouble()),
+                "<=" => new BoolValue(leftVal.ToDouble() <= rightVal.ToDouble()),
+                ">=" => new BoolValue(leftVal.ToDouble() >= rightVal.ToDouble()),
+
+                // Логические операции
+                "&&" => new BoolValue(leftVal.ToBool() && rightVal.ToBool()),
+                "||" => new BoolValue(leftVal.ToBool() || rightVal.ToBool()),
+
+                _ => throw new ArgumentException($"Unknown operator: {_operator}")
             };
         }
 
-        private object ExtractValue(object value)
+        private IVariableValue Add(IVariableValue left, IVariableValue right)
         {
-            return value is VariableValue variableValue ? variableValue.Value : value;
+            // Конкатенация строк
+            if (left is StringValue || right is StringValue)
+                return new StringValue(left.ToString() + right.ToString());
+
+            // Сложение чисел
+            return new DoubleValue(left.ToDouble() + right.ToDouble());
         }
 
-        private bool ConvertToBoolean(object value)
-        {
-            var extractedValue = ExtractValue(value);
+        private IVariableValue Subtract(IVariableValue left, IVariableValue right)
+            => new DoubleValue(left.ToDouble() - right.ToDouble());
 
-            return extractedValue switch
-            {
-                bool b => b,
-                int i => i != 0,
-                double d => Math.Abs(d) > 1e-10,
-                string s => !string.IsNullOrEmpty(s),
-                _ => Convert.ToBoolean(extractedValue)
-            };
+        private IVariableValue Multiply(IVariableValue left, IVariableValue right)
+            => new DoubleValue(left.ToDouble() * right.ToDouble());
+
+        private IVariableValue Divide(IVariableValue left, IVariableValue right)
+        {
+            if (Math.Abs(right.ToDouble()) < 1e-10)
+                throw new DivideByZeroException("Division by zero");
+            return new DoubleValue(left.ToDouble() / right.ToDouble());
         }
 
-        private bool ObjectsEqual(object a, object b)
+        private IVariableValue Modulo(IVariableValue left, IVariableValue right)
         {
-            var aVal = ExtractValue(a);
-            var bVal = ExtractValue(b);
-
-            if (aVal == null && bVal == null) return true;
-            if (aVal == null || bVal == null) return false;
-            return aVal.Equals(bVal);
+            if (Math.Abs(right.ToDouble()) < 1e-10)
+                throw new DivideByZeroException("Modulo by zero");
+            return new DoubleValue(left.ToDouble() % right.ToDouble());
         }
+
+        private IVariableValue Power(IVariableValue left, IVariableValue right)
+            => new DoubleValue(Math.Pow(left.ToDouble(), right.ToDouble()));
+
+        private bool Equals(IVariableValue left, IVariableValue right)
+        {
+            // Для строк - строковое сравнение
+            if (left is StringValue leftStr && right is StringValue rightStr)
+                return leftStr.ToString() == rightStr.ToString();
+
+            // Для чисел - численное сравнение
+            return Math.Abs(left.ToDouble() - right.ToDouble()) < 1e-10;
+        }
+
+        public override string ToString() => $"({_left} {_operator} {_right})";
     }
 }

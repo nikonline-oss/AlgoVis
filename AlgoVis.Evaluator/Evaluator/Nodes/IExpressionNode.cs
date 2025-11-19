@@ -9,6 +9,6 @@ namespace AlgoVis.Evaluator.Evaluator.Nodes
 {
     public interface IExpressionNode
     {
-        object Evaluate(IVariableScope variables);
+        IVariableValue Evaluate(IVariableScope variables);
     }
 }

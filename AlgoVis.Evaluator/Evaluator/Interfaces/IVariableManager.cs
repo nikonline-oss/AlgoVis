@@ -1,4 +1,5 @@
-﻿using System;
+﻿using AlgoVis.Evaluator.Evaluator.Core;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -9,6 +10,6 @@ namespace AlgoVis.Evaluator.Evaluator.Interfaces
     public interface IVariableManager
     {
         IVariableScope CreateScope();
-        IVariableScope CreateChildScope(IVariableScope parent);
+        IVariableScope CreateChildScope(VariableScope parent);
     }
 }

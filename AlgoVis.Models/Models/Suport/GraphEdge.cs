@@ -11,5 +11,6 @@ namespace AlgoVis.Models.Models.Suport
         public string FromId { get; set; } = string.Empty;
         public string ToId { get; set; } = string.Empty;
         public double Weight { get; set; }
+        public string? Label { get; set; }
     }
 }

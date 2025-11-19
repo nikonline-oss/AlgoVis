@@ -1,419 +1,3118 @@
 ﻿{
-  "name": "IterativeQuickSort",
-  "description": "Быстрая сортировка с использованием стека",
-  "structureType": "array",
-  "variables": [
-    {
-      "name": "low",
-      "type": "int",
-      "initialValue": 0
-    },
-    {
-      "name": "high",
-      "type": "int",
-      "initialValue": "array_length-1"
-    },
-    {
-      "name": "i",
-      "type": "int",
-      "initialValue": 0
-    },
-    {
-      "name": "j",
-      "type": "int",
-      "initialValue": 0
-    },
-    {
-      "name": "pivot",
-      "type": "int",
-      "initialValue": 0
-    },
-    {
-      "name": "pivot_index",
-      "type": "int",
-      "initialValue": 0
-    },
-    {
-      "name": "stack_low",
-      "type": "array",
-      "initialValue": "100",
-      "arraySize": 100
-    },
-    {
-      "name": "stack_high",
-      "type": "array",
-      "initialValue": "100",
-      "arraySize": 100
-    },
-    {
-      "name": "stack_size",
-      "type": "int",
-      "initialValue": 0
-    },
-    {
-      "name": "stack_capacity",
-      "type": "int",
-      "initialValue": "100"
-    }
-  ],
-  "functions": [
-    {
-      "name": "push_to_stack",
-      "description": "Добавление границ в стек",
-      "parameters": [ "low_val", "high_val" ],
-      "entryPoint": "check_stack_overflow",
+  "success": true,
+  "result": {
+    "success": true,
+    "message": "Алгоритм выполнен успешно",
+    "result": {
+      "algorithmName": "FixedIterativeQuickSort",
+      "sessionId": "b61c033e-d738-4d43-b58c-c3d06dd5e93a",
+      "structureType": "array",
       "steps": [
         {
-          "id": "check_stack_overflow",
-          "type": "condition",
-          "description": "Проверка переполнения стека",
-          "parameters": [ "stack_size < stack_capacity" ],
-          "conditionCases": [
-            {
-              "condition": "true",
-              "nextStep": "store_low"
+          "stepNumber": 1,
+          "operation": "call_function",
+          "description": "Добавление начальных границ в стек",
+          "metadata": {
+            "function_name": "stack_push",
+            "call_depth": 1,
+            "parameters": { "value": "0" },
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
             },
-            {
-              "condition": "false",
-              "nextStep": "stack_overflow_error"
-            }
-          ],
-          "visualize": false
+            "highlights": [],
+            "connections": []
+          }
         },
         {
-          "id": "store_low",
-          "type": "assign",
-          "description": "Сохранение нижней границы",
-          "parameters": [ "stack_low[stack_size]", "low_val" ],
-          "nextStep": "store_high",
-          "visualize": false
+          "stepNumber": 2,
+          "operation": "call_function",
+          "description": "Добавление верхней границы в стек",
+          "metadata": {
+            "function_name": "stack_push",
+            "call_depth": 1,
+            "parameters": { "value": "struct.len - 1" },
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
+            },
+            "highlights": [],
+            "connections": []
+          }
         },
         {
-          "id": "store_high",
-          "type": "assign",
-          "description": "Сохранение верхней границы",
-          "parameters": [ "stack_high[stack_size]", "high_val" ],
-          "nextStep": "increment_stack",
-          "visualize": false
-        },
-        {
-          "id": "increment_stack",
-          "type": "assign",
-          "description": "Увеличение размера стека",
-          "parameters": [ "stack_size", "stack_size+1" ],
-          "nextStep": "return_from_push",
-          "visualize": false
-        },
-        {
-          "id": "stack_overflow_error",
-          "type": "generic",
-          "operation": "error",
-          "description": "Переполнение стека",
-          "nextStep": "return_from_push",
-          "visualize": false
-        },
-        {
-          "id": "return_from_push",
-          "type": "return",
-          "description": "Возврат из функции push",
-          "visualize": false
-        }
-      ]
-    },
-    {
-      "name": "pop_from_stack",
-      "description": "Извлечение границ из стека",
-      "parameters": [],
-      "entryPoint": "check_stack_empty",
-      "steps": [
-        {
-          "id": "check_stack_empty",
-          "type": "condition",
+          "stepNumber": 3,
+          "operation": "condition",
           "description": "Проверка пустоты стека",
-          "parameters": [ "stack_size > 0" ],
-          "conditionCases": [
-            {
-              "condition": "true",
-              "nextStep": "load_low"
+          "metadata": {
+            "condition": "stack_top >= 0",
+            "result": true,
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
             },
-            {
-              "condition": "false",
-              "nextStep": "stack_empty_error"
-            }
-          ],
-          "visualize": false
+            "highlights": [],
+            "connections": []
+          }
         },
         {
-          "id": "load_low",
-          "type": "assign",
-          "description": "Загрузка нижней границы",
-          "parameters": [ "low", "stack_low[stack_size-1]" ],
-          "nextStep": "load_high",
-          "visualize": false
-        },
-        {
-          "id": "load_high",
-          "type": "assign",
-          "description": "Загрузка верхней границы",
-          "parameters": [ "high", "stack_high[stack_size-1]" ],
-          "nextStep": "decrement_stack",
-          "visualize": false
-        },
-        {
-          "id": "decrement_stack",
-          "type": "assign",
-          "description": "Уменьшение размера стека",
-          "parameters": [ "stack_size", "stack_size-1" ],
-          "nextStep": "return_from_pop",
-          "visualize": false
-        },
-        {
-          "id": "stack_empty_error",
-          "type": "generic",
-          "operation": "error",
-          "description": "Стек пуст",
-          "nextStep": "return_from_pop",
-          "visualize": false
-        },
-        {
-          "id": "return_from_pop",
-          "type": "return",
-          "description": "Возврат из функции pop",
-          "visualize": false
-        }
-      ]
-    },
-    {
-      "name": "partition",
-      "description": "Разделение массива относительно опорного элемента",
-      "parameters": [ "low_param", "high_param" ],
-      "entryPoint": "init_variables",
-      "steps": [
-        {
-          "id": "init_variables",
-          "type": "assign",
-          "description": "Инициализация переменных раздела",
-          "parameters": [ "pivot", "array[high_param]" ],
-          "nextStep": "init_i",
-          "visualize": false
-        },
-        {
-          "id": "init_i",
-          "type": "assign",
-          "description": "Инициализация индекса i",
-          "parameters": [ "i", "low_param-1" ],
-          "nextStep": "init_j",
-          "visualize": false
-        },
-        {
-          "id": "init_j",
-          "type": "assign",
-          "description": "Инициализация индекса j",
-          "parameters": [ "j", "low_param" ],
-          "nextStep": "partition_loop_condition",
-          "visualize": false
-        },
-        {
-          "id": "partition_loop_condition",
-          "type": "condition",
-          "description": "Проверка условия цикла разделения",
-          "parameters": [ "j < high_param" ],
-          "conditionCases": [
-            {
-              "condition": "true",
-              "nextStep": "compare_element_with_pivot"
+          "stepNumber": 4,
+          "operation": "call_function",
+          "description": "Извлечение верхней границы",
+          "metadata": {
+            "function_name": "stack_pop",
+            "call_depth": 1,
+            "parameters": {},
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
             },
-            {
-              "condition": "false",
-              "nextStep": "place_pivot"
-            }
-          ],
-          "visualize": false
+            "highlights": [],
+            "connections": []
+          }
         },
         {
-          "id": "compare_element_with_pivot",
-          "type": "compare",
-          "description": "Сравнение элемента array[j] с опорным",
-          "parameters": [ "j", "high_param" ],
-          "nextStep": "check_if_less_equal",
-          "visualize": true,
-          "highlightElements": [ "j", "high_param" ],
-          "highlightColor": "yellow",
-          "visualizationType": "comparison"
-        },
-        {
-          "id": "check_if_less_equal",
-          "type": "condition",
-          "description": "Проверка, нужно ли переместить элемент",
-          "parameters": [ "last_comparison <= 0" ],
-          "conditionCases": [
-            {
-              "condition": "true",
-              "nextStep": "increment_i"
+          "stepNumber": 5,
+          "operation": "assign",
+          "description": "Установка верхней границы",
+          "metadata": {
+            "variable": "high",
+            "value": "8",
+            "expression": "temp",
+            "value_type": "DoubleValue",
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
             },
-            {
-              "condition": "false",
-              "nextStep": "increment_j"
-            }
-          ],
-          "visualize": false
+            "highlights": [],
+            "connections": []
+          }
         },
         {
-          "id": "increment_i",
-          "type": "assign",
-          "description": "Увеличение индекса i",
-          "parameters": [ "i", "i+1" ],
-          "nextStep": "swap_elements",
-          "visualize": false
+          "stepNumber": 6,
+          "operation": "call_function",
+          "description": "Извлечение нижней границы",
+          "metadata": {
+            "function_name": "stack_pop",
+            "call_depth": 1,
+            "parameters": {},
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
+            },
+            "highlights": [],
+            "connections": []
+          }
         },
         {
-          "id": "swap_elements",
-          "type": "swap",
-          "description": "Обмен элементов i и j",
-          "parameters": [ "i", "j" ],
-          "nextStep": "increment_j",
-          "visualize": true,
-          "highlightElements": [ "i", "j" ],
-          "highlightColor": "red",
-          "visualizationType": "swap"
+          "stepNumber": 7,
+          "operation": "assign",
+          "description": "Установка нижней границы",
+          "metadata": {
+            "variable": "low",
+            "value": "0",
+            "expression": "temp",
+            "value_type": "IntValue",
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
+            },
+            "highlights": [],
+            "connections": []
+          }
         },
         {
-          "id": "increment_j",
-          "type": "assign",
-          "description": "Переход к следующему элементу",
-          "parameters": [ "j", "j+1" ],
-          "nextStep": "partition_loop_condition",
-          "visualize": false
+          "stepNumber": 8,
+          "operation": "condition",
+          "description": "Проверка размера раздела",
+          "metadata": {
+            "condition": "low < high",
+            "result": true,
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
+            },
+            "highlights": [],
+            "connections": []
+          }
         },
         {
-          "id": "place_pivot",
-          "type": "assign",
-          "description": "Размещение опорного элемента на правильную позицию",
-          "parameters": [ "pivot_index", "i+1" ],
-          "nextStep": "swap_pivot",
-          "visualize": false
+          "stepNumber": 9,
+          "operation": "call_function",
+          "description": "Разделение массива",
+          "metadata": {
+            "function_name": "partition",
+            "call_depth": 1,
+            "parameters": { "left": "low", "right": "high" },
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
+            },
+            "highlights": [],
+            "connections": []
+          }
         },
         {
-          "id": "swap_pivot",
-          "type": "swap",
-          "description": "Обмен опорного элемента с позицией i+1",
-          "parameters": [ "pivot_index", "high_param" ],
-          "nextStep": "return_partition",
-          "visualize": true,
-          "highlightElements": [ "pivot_index", "high_param" ],
-          "highlightColor": "purple",
-          "visualizationType": "pivot_placement"
+          "stepNumber": 10,
+          "operation": "call_function",
+          "description": "Сохранение левой нижней границы",
+          "metadata": {
+            "function_name": "stack_push",
+            "call_depth": 1,
+            "parameters": { "value": "low" },
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
+            },
+            "highlights": [],
+            "connections": []
+          }
         },
         {
-          "id": "return_partition",
-          "type": "return",
-          "description": "Возврат из функции разделения",
-          "visualize": false
-        }
-      ]
-    }
-  ],
-  "steps": [
-    {
-      "id": "start",
-      "type": "call_function",
-      "description": "Добавление начальных границ в стек",
-      "functionName": "push_to_stack",
-      "functionParameters": {
-        "low_val": "0",
-        "high_val": "array_length-1"
-      },
-      "returnToStep": "main_loop_condition",
-      "visualize": false
-    },
-    {
-      "id": "main_loop_condition",
-      "type": "condition",
-      "description": "Проверка, есть ли элементы в стеке",
-      "parameters": [ "stack_size > 0" ],
-      "conditionCases": [
-        {
-          "condition": "true",
-          "nextStep": "pop_from_stack"
+          "stepNumber": 11,
+          "operation": "call_function",
+          "description": "Сохранение левой верхней границы",
+          "metadata": {
+            "function_name": "stack_push",
+            "call_depth": 1,
+            "parameters": { "value": "pivot_index - 1" },
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
+            },
+            "highlights": [],
+            "connections": []
+          }
         },
         {
-          "condition": "false",
-          "nextStep": "end"
+          "stepNumber": 12,
+          "operation": "call_function",
+          "description": "Сохранение правой нижней границы",
+          "metadata": {
+            "function_name": "stack_push",
+            "call_depth": 1,
+            "parameters": { "value": "pivot_index + 1" },
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
+            },
+            "highlights": [],
+            "connections": []
+          }
+        },
+        {
+          "stepNumber": 13,
+          "operation": "call_function",
+          "description": "Сохранение правой верхней границы",
+          "metadata": {
+            "function_name": "stack_push",
+            "call_depth": 1,
+            "parameters": { "value": "high" },
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
+            },
+            "highlights": [],
+            "connections": []
+          }
+        },
+        {
+          "stepNumber": 14,
+          "operation": "condition",
+          "description": "Проверка пустоты стека",
+          "metadata": {
+            "condition": "stack_top >= 0",
+            "result": true,
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
+            },
+            "highlights": [],
+            "connections": []
+          }
+        },
+        {
+          "stepNumber": 15,
+          "operation": "call_function",
+          "description": "Извлечение верхней границы",
+          "metadata": {
+            "function_name": "stack_pop",
+            "call_depth": 1,
+            "parameters": {},
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
+            },
+            "highlights": [],
+            "connections": []
+          }
+        },
+        {
+          "stepNumber": 16,
+          "operation": "assign",
+          "description": "Установка верхней границы",
+          "metadata": {
+            "variable": "high",
+            "value": "8",
+            "expression": "temp",
+            "value_type": "DoubleValue",
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
+            },
+            "highlights": [],
+            "connections": []
+          }
+        },
+        {
+          "stepNumber": 17,
+          "operation": "call_function",
+          "description": "Извлечение нижней границы",
+          "metadata": {
+            "function_name": "stack_pop",
+            "call_depth": 1,
+            "parameters": {},
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
+            },
+            "highlights": [],
+            "connections": []
+          }
+        },
+        {
+          "stepNumber": 18,
+          "operation": "assign",
+          "description": "Установка нижней границы",
+          "metadata": {
+            "variable": "low",
+            "value": "1",
+            "expression": "temp",
+            "value_type": "DoubleValue",
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
+            },
+            "highlights": [],
+            "connections": []
+          }
+        },
+        {
+          "stepNumber": 19,
+          "operation": "condition",
+          "description": "Проверка размера раздела",
+          "metadata": {
+            "condition": "low < high",
+            "result": true,
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
+            },
+            "highlights": [],
+            "connections": []
+          }
+        },
+        {
+          "stepNumber": 20,
+          "operation": "call_function",
+          "description": "Разделение массива",
+          "metadata": {
+            "function_name": "partition",
+            "call_depth": 1,
+            "parameters": { "left": "low", "right": "high" },
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
+            },
+            "highlights": [],
+            "connections": []
+          }
+        },
+        {
+          "stepNumber": 21,
+          "operation": "call_function",
+          "description": "Сохранение левой нижней границы",
+          "metadata": {
+            "function_name": "stack_push",
+            "call_depth": 1,
+            "parameters": { "value": "low" },
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
+            },
+            "highlights": [],
+            "connections": []
+          }
+        },
+        {
+          "stepNumber": 22,
+          "operation": "call_function",
+          "description": "Сохранение левой верхней границы",
+          "metadata": {
+            "function_name": "stack_push",
+            "call_depth": 1,
+            "parameters": { "value": "pivot_index - 1" },
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
+            },
+            "highlights": [],
+            "connections": []
+          }
+        },
+        {
+          "stepNumber": 23,
+          "operation": "call_function",
+          "description": "Сохранение правой нижней границы",
+          "metadata": {
+            "function_name": "stack_push",
+            "call_depth": 1,
+            "parameters": { "value": "pivot_index + 1" },
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
+            },
+            "highlights": [],
+            "connections": []
+          }
+        },
+        {
+          "stepNumber": 24,
+          "operation": "call_function",
+          "description": "Сохранение правой верхней границы",
+          "metadata": {
+            "function_name": "stack_push",
+            "call_depth": 1,
+            "parameters": { "value": "high" },
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
+            },
+            "highlights": [],
+            "connections": []
+          }
+        },
+        {
+          "stepNumber": 25,
+          "operation": "condition",
+          "description": "Проверка пустоты стека",
+          "metadata": {
+            "condition": "stack_top >= 0",
+            "result": true,
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
+            },
+            "highlights": [],
+            "connections": []
+          }
+        },
+        {
+          "stepNumber": 26,
+          "operation": "call_function",
+          "description": "Извлечение верхней границы",
+          "metadata": {
+            "function_name": "stack_pop",
+            "call_depth": 1,
+            "parameters": {},
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
+            },
+            "highlights": [],
+            "connections": []
+          }
+        },
+        {
+          "stepNumber": 27,
+          "operation": "assign",
+          "description": "Установка верхней границы",
+          "metadata": {
+            "variable": "high",
+            "value": "8",
+            "expression": "temp",
+            "value_type": "DoubleValue",
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
+            },
+            "highlights": [],
+            "connections": []
+          }
+        },
+        {
+          "stepNumber": 28,
+          "operation": "call_function",
+          "description": "Извлечение нижней границы",
+          "metadata": {
+            "function_name": "stack_pop",
+            "call_depth": 1,
+            "parameters": {},
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
+            },
+            "highlights": [],
+            "connections": []
+          }
+        },
+        {
+          "stepNumber": 29,
+          "operation": "assign",
+          "description": "Установка нижней границы",
+          "metadata": {
+            "variable": "low",
+            "value": "5",
+            "expression": "temp",
+            "value_type": "DoubleValue",
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
+            },
+            "highlights": [],
+            "connections": []
+          }
+        },
+        {
+          "stepNumber": 30,
+          "operation": "condition",
+          "description": "Проверка размера раздела",
+          "metadata": {
+            "condition": "low < high",
+            "result": true,
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
+            },
+            "highlights": [],
+            "connections": []
+          }
+        },
+        {
+          "stepNumber": 31,
+          "operation": "call_function",
+          "description": "Разделение массива",
+          "metadata": {
+            "function_name": "partition",
+            "call_depth": 1,
+            "parameters": { "left": "low", "right": "high" },
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
+            },
+            "highlights": [],
+            "connections": []
+          }
+        },
+        {
+          "stepNumber": 32,
+          "operation": "call_function",
+          "description": "Сохранение левой нижней границы",
+          "metadata": {
+            "function_name": "stack_push",
+            "call_depth": 1,
+            "parameters": { "value": "low" },
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
+            },
+            "highlights": [],
+            "connections": []
+          }
+        },
+        {
+          "stepNumber": 33,
+          "operation": "call_function",
+          "description": "Сохранение левой верхней границы",
+          "metadata": {
+            "function_name": "stack_push",
+            "call_depth": 1,
+            "parameters": { "value": "pivot_index - 1" },
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
+            },
+            "highlights": [],
+            "connections": []
+          }
+        },
+        {
+          "stepNumber": 34,
+          "operation": "call_function",
+          "description": "Сохранение правой нижней границы",
+          "metadata": {
+            "function_name": "stack_push",
+            "call_depth": 1,
+            "parameters": { "value": "pivot_index + 1" },
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
+            },
+            "highlights": [],
+            "connections": []
+          }
+        },
+        {
+          "stepNumber": 35,
+          "operation": "call_function",
+          "description": "Сохранение правой верхней границы",
+          "metadata": {
+            "function_name": "stack_push",
+            "call_depth": 1,
+            "parameters": { "value": "high" },
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
+            },
+            "highlights": [],
+            "connections": []
+          }
+        },
+        {
+          "stepNumber": 36,
+          "operation": "condition",
+          "description": "Проверка пустоты стека",
+          "metadata": {
+            "condition": "stack_top >= 0",
+            "result": true,
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
+            },
+            "highlights": [],
+            "connections": []
+          }
+        },
+        {
+          "stepNumber": 37,
+          "operation": "call_function",
+          "description": "Извлечение верхней границы",
+          "metadata": {
+            "function_name": "stack_pop",
+            "call_depth": 1,
+            "parameters": {},
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
+            },
+            "highlights": [],
+            "connections": []
+          }
+        },
+        {
+          "stepNumber": 38,
+          "operation": "assign",
+          "description": "Установка верхней границы",
+          "metadata": {
+            "variable": "high",
+            "value": "8",
+            "expression": "temp",
+            "value_type": "DoubleValue",
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
+            },
+            "highlights": [],
+            "connections": []
+          }
+        },
+        {
+          "stepNumber": 39,
+          "operation": "call_function",
+          "description": "Извлечение нижней границы",
+          "metadata": {
+            "function_name": "stack_pop",
+            "call_depth": 1,
+            "parameters": {},
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
+            },
+            "highlights": [],
+            "connections": []
+          }
+        },
+        {
+          "stepNumber": 40,
+          "operation": "assign",
+          "description": "Установка нижней границы",
+          "metadata": {
+            "variable": "low",
+            "value": "8",
+            "expression": "temp",
+            "value_type": "DoubleValue",
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
+            },
+            "highlights": [],
+            "connections": []
+          }
+        },
+        {
+          "stepNumber": 41,
+          "operation": "condition",
+          "description": "Проверка размера раздела",
+          "metadata": {
+            "condition": "low < high",
+            "result": false,
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
+            },
+            "highlights": [],
+            "connections": []
+          }
+        },
+        {
+          "stepNumber": 42,
+          "operation": "condition",
+          "description": "Проверка пустоты стека",
+          "metadata": {
+            "condition": "stack_top >= 0",
+            "result": true,
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
+            },
+            "highlights": [],
+            "connections": []
+          }
+        },
+        {
+          "stepNumber": 43,
+          "operation": "call_function",
+          "description": "Извлечение верхней границы",
+          "metadata": {
+            "function_name": "stack_pop",
+            "call_depth": 1,
+            "parameters": {},
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
+            },
+            "highlights": [],
+            "connections": []
+          }
+        },
+        {
+          "stepNumber": 44,
+          "operation": "assign",
+          "description": "Установка верхней границы",
+          "metadata": {
+            "variable": "high",
+            "value": "6",
+            "expression": "temp",
+            "value_type": "DoubleValue",
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
+            },
+            "highlights": [],
+            "connections": []
+          }
+        },
+        {
+          "stepNumber": 45,
+          "operation": "call_function",
+          "description": "Извлечение нижней границы",
+          "metadata": {
+            "function_name": "stack_pop",
+            "call_depth": 1,
+            "parameters": {},
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
+            },
+            "highlights": [],
+            "connections": []
+          }
+        },
+        {
+          "stepNumber": 46,
+          "operation": "assign",
+          "description": "Установка нижней границы",
+          "metadata": {
+            "variable": "low",
+            "value": "5",
+            "expression": "temp",
+            "value_type": "DoubleValue",
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
+            },
+            "highlights": [],
+            "connections": []
+          }
+        },
+        {
+          "stepNumber": 47,
+          "operation": "condition",
+          "description": "Проверка размера раздела",
+          "metadata": {
+            "condition": "low < high",
+            "result": true,
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
+            },
+            "highlights": [],
+            "connections": []
+          }
+        },
+        {
+          "stepNumber": 48,
+          "operation": "call_function",
+          "description": "Разделение массива",
+          "metadata": {
+            "function_name": "partition",
+            "call_depth": 1,
+            "parameters": { "left": "low", "right": "high" },
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
+            },
+            "highlights": [],
+            "connections": []
+          }
+        },
+        {
+          "stepNumber": 49,
+          "operation": "call_function",
+          "description": "Сохранение левой нижней границы",
+          "metadata": {
+            "function_name": "stack_push",
+            "call_depth": 1,
+            "parameters": { "value": "low" },
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
+            },
+            "highlights": [],
+            "connections": []
+          }
+        },
+        {
+          "stepNumber": 50,
+          "operation": "call_function",
+          "description": "Сохранение левой верхней границы",
+          "metadata": {
+            "function_name": "stack_push",
+            "call_depth": 1,
+            "parameters": { "value": "pivot_index - 1" },
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
+            },
+            "highlights": [],
+            "connections": []
+          }
+        },
+        {
+          "stepNumber": 51,
+          "operation": "call_function",
+          "description": "Сохранение правой нижней границы",
+          "metadata": {
+            "function_name": "stack_push",
+            "call_depth": 1,
+            "parameters": { "value": "pivot_index + 1" },
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
+            },
+            "highlights": [],
+            "connections": []
+          }
+        },
+        {
+          "stepNumber": 52,
+          "operation": "call_function",
+          "description": "Сохранение правой верхней границы",
+          "metadata": {
+            "function_name": "stack_push",
+            "call_depth": 1,
+            "parameters": { "value": "high" },
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
+            },
+            "highlights": [],
+            "connections": []
+          }
+        },
+        {
+          "stepNumber": 53,
+          "operation": "condition",
+          "description": "Проверка пустоты стека",
+          "metadata": {
+            "condition": "stack_top >= 0",
+            "result": true,
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
+            },
+            "highlights": [],
+            "connections": []
+          }
+        },
+        {
+          "stepNumber": 54,
+          "operation": "call_function",
+          "description": "Извлечение верхней границы",
+          "metadata": {
+            "function_name": "stack_pop",
+            "call_depth": 1,
+            "parameters": {},
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
+            },
+            "highlights": [],
+            "connections": []
+          }
+        },
+        {
+          "stepNumber": 55,
+          "operation": "assign",
+          "description": "Установка верхней границы",
+          "metadata": {
+            "variable": "high",
+            "value": "6",
+            "expression": "temp",
+            "value_type": "DoubleValue",
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
+            },
+            "highlights": [],
+            "connections": []
+          }
+        },
+        {
+          "stepNumber": 56,
+          "operation": "call_function",
+          "description": "Извлечение нижней границы",
+          "metadata": {
+            "function_name": "stack_pop",
+            "call_depth": 1,
+            "parameters": {},
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
+            },
+            "highlights": [],
+            "connections": []
+          }
+        },
+        {
+          "stepNumber": 57,
+          "operation": "assign",
+          "description": "Установка нижней границы",
+          "metadata": {
+            "variable": "low",
+            "value": "7",
+            "expression": "temp",
+            "value_type": "DoubleValue",
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
+            },
+            "highlights": [],
+            "connections": []
+          }
+        },
+        {
+          "stepNumber": 58,
+          "operation": "condition",
+          "description": "Проверка размера раздела",
+          "metadata": {
+            "condition": "low < high",
+            "result": false,
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
+            },
+            "highlights": [],
+            "connections": []
+          }
+        },
+        {
+          "stepNumber": 59,
+          "operation": "condition",
+          "description": "Проверка пустоты стека",
+          "metadata": {
+            "condition": "stack_top >= 0",
+            "result": true,
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
+            },
+            "highlights": [],
+            "connections": []
+          }
+        },
+        {
+          "stepNumber": 60,
+          "operation": "call_function",
+          "description": "Извлечение верхней границы",
+          "metadata": {
+            "function_name": "stack_pop",
+            "call_depth": 1,
+            "parameters": {},
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
+            },
+            "highlights": [],
+            "connections": []
+          }
+        },
+        {
+          "stepNumber": 61,
+          "operation": "assign",
+          "description": "Установка верхней границы",
+          "metadata": {
+            "variable": "high",
+            "value": "5",
+            "expression": "temp",
+            "value_type": "DoubleValue",
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
+            },
+            "highlights": [],
+            "connections": []
+          }
+        },
+        {
+          "stepNumber": 62,
+          "operation": "call_function",
+          "description": "Извлечение нижней границы",
+          "metadata": {
+            "function_name": "stack_pop",
+            "call_depth": 1,
+            "parameters": {},
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
+            },
+            "highlights": [],
+            "connections": []
+          }
+        },
+        {
+          "stepNumber": 63,
+          "operation": "assign",
+          "description": "Установка нижней границы",
+          "metadata": {
+            "variable": "low",
+            "value": "5",
+            "expression": "temp",
+            "value_type": "DoubleValue",
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
+            },
+            "highlights": [],
+            "connections": []
+          }
+        },
+        {
+          "stepNumber": 64,
+          "operation": "condition",
+          "description": "Проверка размера раздела",
+          "metadata": {
+            "condition": "low < high",
+            "result": false,
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
+            },
+            "highlights": [],
+            "connections": []
+          }
+        },
+        {
+          "stepNumber": 65,
+          "operation": "condition",
+          "description": "Проверка пустоты стека",
+          "metadata": {
+            "condition": "stack_top >= 0",
+            "result": true,
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
+            },
+            "highlights": [],
+            "connections": []
+          }
+        },
+        {
+          "stepNumber": 66,
+          "operation": "call_function",
+          "description": "Извлечение верхней границы",
+          "metadata": {
+            "function_name": "stack_pop",
+            "call_depth": 1,
+            "parameters": {},
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
+            },
+            "highlights": [],
+            "connections": []
+          }
+        },
+        {
+          "stepNumber": 67,
+          "operation": "assign",
+          "description": "Установка верхней границы",
+          "metadata": {
+            "variable": "high",
+            "value": "3",
+            "expression": "temp",
+            "value_type": "DoubleValue",
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
+            },
+            "highlights": [],
+            "connections": []
+          }
+        },
+        {
+          "stepNumber": 68,
+          "operation": "call_function",
+          "description": "Извлечение нижней границы",
+          "metadata": {
+            "function_name": "stack_pop",
+            "call_depth": 1,
+            "parameters": {},
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
+            },
+            "highlights": [],
+            "connections": []
+          }
+        },
+        {
+          "stepNumber": 69,
+          "operation": "assign",
+          "description": "Установка нижней границы",
+          "metadata": {
+            "variable": "low",
+            "value": "1",
+            "expression": "temp",
+            "value_type": "DoubleValue",
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
+            },
+            "highlights": [],
+            "connections": []
+          }
+        },
+        {
+          "stepNumber": 70,
+          "operation": "condition",
+          "description": "Проверка размера раздела",
+          "metadata": {
+            "condition": "low < high",
+            "result": true,
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
+            },
+            "highlights": [],
+            "connections": []
+          }
+        },
+        {
+          "stepNumber": 71,
+          "operation": "call_function",
+          "description": "Разделение массива",
+          "metadata": {
+            "function_name": "partition",
+            "call_depth": 1,
+            "parameters": { "left": "low", "right": "high" },
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
+            },
+            "highlights": [],
+            "connections": []
+          }
+        },
+        {
+          "stepNumber": 72,
+          "operation": "call_function",
+          "description": "Сохранение левой нижней границы",
+          "metadata": {
+            "function_name": "stack_push",
+            "call_depth": 1,
+            "parameters": { "value": "low" },
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
+            },
+            "highlights": [],
+            "connections": []
+          }
+        },
+        {
+          "stepNumber": 73,
+          "operation": "call_function",
+          "description": "Сохранение левой верхней границы",
+          "metadata": {
+            "function_name": "stack_push",
+            "call_depth": 1,
+            "parameters": { "value": "pivot_index - 1" },
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
+            },
+            "highlights": [],
+            "connections": []
+          }
+        },
+        {
+          "stepNumber": 74,
+          "operation": "call_function",
+          "description": "Сохранение правой нижней границы",
+          "metadata": {
+            "function_name": "stack_push",
+            "call_depth": 1,
+            "parameters": { "value": "pivot_index + 1" },
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
+            },
+            "highlights": [],
+            "connections": []
+          }
+        },
+        {
+          "stepNumber": 75,
+          "operation": "call_function",
+          "description": "Сохранение правой верхней границы",
+          "metadata": {
+            "function_name": "stack_push",
+            "call_depth": 1,
+            "parameters": { "value": "high" },
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
+            },
+            "highlights": [],
+            "connections": []
+          }
+        },
+        {
+          "stepNumber": 76,
+          "operation": "condition",
+          "description": "Проверка пустоты стека",
+          "metadata": {
+            "condition": "stack_top >= 0",
+            "result": true,
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
+            },
+            "highlights": [],
+            "connections": []
+          }
+        },
+        {
+          "stepNumber": 77,
+          "operation": "call_function",
+          "description": "Извлечение верхней границы",
+          "metadata": {
+            "function_name": "stack_pop",
+            "call_depth": 1,
+            "parameters": {},
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
+            },
+            "highlights": [],
+            "connections": []
+          }
+        },
+        {
+          "stepNumber": 78,
+          "operation": "assign",
+          "description": "Установка верхней границы",
+          "metadata": {
+            "variable": "high",
+            "value": "3",
+            "expression": "temp",
+            "value_type": "DoubleValue",
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
+            },
+            "highlights": [],
+            "connections": []
+          }
+        },
+        {
+          "stepNumber": 79,
+          "operation": "call_function",
+          "description": "Извлечение нижней границы",
+          "metadata": {
+            "function_name": "stack_pop",
+            "call_depth": 1,
+            "parameters": {},
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
+            },
+            "highlights": [],
+            "connections": []
+          }
+        },
+        {
+          "stepNumber": 80,
+          "operation": "assign",
+          "description": "Установка нижней границы",
+          "metadata": {
+            "variable": "low",
+            "value": "2",
+            "expression": "temp",
+            "value_type": "DoubleValue",
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
+            },
+            "highlights": [],
+            "connections": []
+          }
+        },
+        {
+          "stepNumber": 81,
+          "operation": "condition",
+          "description": "Проверка размера раздела",
+          "metadata": {
+            "condition": "low < high",
+            "result": true,
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
+            },
+            "highlights": [],
+            "connections": []
+          }
+        },
+        {
+          "stepNumber": 82,
+          "operation": "call_function",
+          "description": "Разделение массива",
+          "metadata": {
+            "function_name": "partition",
+            "call_depth": 1,
+            "parameters": { "left": "low", "right": "high" },
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
+            },
+            "highlights": [],
+            "connections": []
+          }
+        },
+        {
+          "stepNumber": 83,
+          "operation": "call_function",
+          "description": "Сохранение левой нижней границы",
+          "metadata": {
+            "function_name": "stack_push",
+            "call_depth": 1,
+            "parameters": { "value": "low" },
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
+            },
+            "highlights": [],
+            "connections": []
+          }
+        },
+        {
+          "stepNumber": 84,
+          "operation": "call_function",
+          "description": "Сохранение левой верхней границы",
+          "metadata": {
+            "function_name": "stack_push",
+            "call_depth": 1,
+            "parameters": { "value": "pivot_index - 1" },
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
+            },
+            "highlights": [],
+            "connections": []
+          }
+        },
+        {
+          "stepNumber": 85,
+          "operation": "call_function",
+          "description": "Сохранение правой нижней границы",
+          "metadata": {
+            "function_name": "stack_push",
+            "call_depth": 1,
+            "parameters": { "value": "pivot_index + 1" },
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
+            },
+            "highlights": [],
+            "connections": []
+          }
+        },
+        {
+          "stepNumber": 86,
+          "operation": "call_function",
+          "description": "Сохранение правой верхней границы",
+          "metadata": {
+            "function_name": "stack_push",
+            "call_depth": 1,
+            "parameters": { "value": "high" },
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
+            },
+            "highlights": [],
+            "connections": []
+          }
+        },
+        {
+          "stepNumber": 87,
+          "operation": "condition",
+          "description": "Проверка пустоты стека",
+          "metadata": {
+            "condition": "stack_top >= 0",
+            "result": true,
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
+            },
+            "highlights": [],
+            "connections": []
+          }
+        },
+        {
+          "stepNumber": 88,
+          "operation": "call_function",
+          "description": "Извлечение верхней границы",
+          "metadata": {
+            "function_name": "stack_pop",
+            "call_depth": 1,
+            "parameters": {},
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
+            },
+            "highlights": [],
+            "connections": []
+          }
+        },
+        {
+          "stepNumber": 89,
+          "operation": "assign",
+          "description": "Установка верхней границы",
+          "metadata": {
+            "variable": "high",
+            "value": "3",
+            "expression": "temp",
+            "value_type": "DoubleValue",
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
+            },
+            "highlights": [],
+            "connections": []
+          }
+        },
+        {
+          "stepNumber": 90,
+          "operation": "call_function",
+          "description": "Извлечение нижней границы",
+          "metadata": {
+            "function_name": "stack_pop",
+            "call_depth": 1,
+            "parameters": {},
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
+            },
+            "highlights": [],
+            "connections": []
+          }
+        },
+        {
+          "stepNumber": 91,
+          "operation": "assign",
+          "description": "Установка нижней границы",
+          "metadata": {
+            "variable": "low",
+            "value": "3",
+            "expression": "temp",
+            "value_type": "DoubleValue",
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
+            },
+            "highlights": [],
+            "connections": []
+          }
+        },
+        {
+          "stepNumber": 92,
+          "operation": "condition",
+          "description": "Проверка размера раздела",
+          "metadata": {
+            "condition": "low < high",
+            "result": false,
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
+            },
+            "highlights": [],
+            "connections": []
+          }
+        },
+        {
+          "stepNumber": 93,
+          "operation": "condition",
+          "description": "Проверка пустоты стека",
+          "metadata": {
+            "condition": "stack_top >= 0",
+            "result": true,
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
+            },
+            "highlights": [],
+            "connections": []
+          }
+        },
+        {
+          "stepNumber": 94,
+          "operation": "call_function",
+          "description": "Извлечение верхней границы",
+          "metadata": {
+            "function_name": "stack_pop",
+            "call_depth": 1,
+            "parameters": {},
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
+            },
+            "highlights": [],
+            "connections": []
+          }
+        },
+        {
+          "stepNumber": 95,
+          "operation": "assign",
+          "description": "Установка верхней границы",
+          "metadata": {
+            "variable": "high",
+            "value": "1",
+            "expression": "temp",
+            "value_type": "DoubleValue",
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
+            },
+            "highlights": [],
+            "connections": []
+          }
+        },
+        {
+          "stepNumber": 96,
+          "operation": "call_function",
+          "description": "Извлечение нижней границы",
+          "metadata": {
+            "function_name": "stack_pop",
+            "call_depth": 1,
+            "parameters": {},
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
+            },
+            "highlights": [],
+            "connections": []
+          }
+        },
+        {
+          "stepNumber": 97,
+          "operation": "assign",
+          "description": "Установка нижней границы",
+          "metadata": {
+            "variable": "low",
+            "value": "2",
+            "expression": "temp",
+            "value_type": "DoubleValue",
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
+            },
+            "highlights": [],
+            "connections": []
+          }
+        },
+        {
+          "stepNumber": 98,
+          "operation": "condition",
+          "description": "Проверка размера раздела",
+          "metadata": {
+            "condition": "low < high",
+            "result": false,
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
+            },
+            "highlights": [],
+            "connections": []
+          }
+        },
+        {
+          "stepNumber": 99,
+          "operation": "condition",
+          "description": "Проверка пустоты стека",
+          "metadata": {
+            "condition": "stack_top >= 0",
+            "result": true,
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
+            },
+            "highlights": [],
+            "connections": []
+          }
+        },
+        {
+          "stepNumber": 100,
+          "operation": "call_function",
+          "description": "Извлечение верхней границы",
+          "metadata": {
+            "function_name": "stack_pop",
+            "call_depth": 1,
+            "parameters": {},
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
+            },
+            "highlights": [],
+            "connections": []
+          }
+        },
+        {
+          "stepNumber": 101,
+          "operation": "assign",
+          "description": "Установка верхней границы",
+          "metadata": {
+            "variable": "high",
+            "value": "0",
+            "expression": "temp",
+            "value_type": "DoubleValue",
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
+            },
+            "highlights": [],
+            "connections": []
+          }
+        },
+        {
+          "stepNumber": 102,
+          "operation": "call_function",
+          "description": "Извлечение нижней границы",
+          "metadata": {
+            "function_name": "stack_pop",
+            "call_depth": 1,
+            "parameters": {},
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
+            },
+            "highlights": [],
+            "connections": []
+          }
+        },
+        {
+          "stepNumber": 103,
+          "operation": "assign",
+          "description": "Установка нижней границы",
+          "metadata": {
+            "variable": "low",
+            "value": "1",
+            "expression": "temp",
+            "value_type": "DoubleValue",
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
+            },
+            "highlights": [],
+            "connections": []
+          }
+        },
+        {
+          "stepNumber": 104,
+          "operation": "condition",
+          "description": "Проверка размера раздела",
+          "metadata": {
+            "condition": "low < high",
+            "result": false,
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
+            },
+            "highlights": [],
+            "connections": []
+          }
+        },
+        {
+          "stepNumber": 105,
+          "operation": "condition",
+          "description": "Проверка пустоты стека",
+          "metadata": {
+            "condition": "stack_top >= 0",
+            "result": true,
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
+            },
+            "highlights": [],
+            "connections": []
+          }
+        },
+        {
+          "stepNumber": 106,
+          "operation": "call_function",
+          "description": "Извлечение верхней границы",
+          "metadata": {
+            "function_name": "stack_pop",
+            "call_depth": 1,
+            "parameters": {},
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
+            },
+            "highlights": [],
+            "connections": []
+          }
+        },
+        {
+          "stepNumber": 107,
+          "operation": "assign",
+          "description": "Установка верхней границы",
+          "metadata": {
+            "variable": "high",
+            "value": "-1",
+            "expression": "temp",
+            "value_type": "DoubleValue",
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
+            },
+            "highlights": [],
+            "connections": []
+          }
+        },
+        {
+          "stepNumber": 108,
+          "operation": "call_function",
+          "description": "Извлечение нижней границы",
+          "metadata": {
+            "function_name": "stack_pop",
+            "call_depth": 1,
+            "parameters": {},
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
+            },
+            "highlights": [],
+            "connections": []
+          }
+        },
+        {
+          "stepNumber": 109,
+          "operation": "assign",
+          "description": "Установка нижней границы",
+          "metadata": {
+            "variable": "low",
+            "value": "0",
+            "expression": "temp",
+            "value_type": "IntValue",
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
+            },
+            "highlights": [],
+            "connections": []
+          }
+        },
+        {
+          "stepNumber": 110,
+          "operation": "condition",
+          "description": "Проверка размера раздела",
+          "metadata": {
+            "condition": "low < high",
+            "result": false,
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
+            },
+            "highlights": [],
+            "connections": []
+          }
+        },
+        {
+          "stepNumber": 111,
+          "operation": "condition",
+          "description": "Проверка пустоты стека",
+          "metadata": {
+            "condition": "stack_top >= 0",
+            "result": false,
+            "visualization_type": "default"
+          },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
+            },
+            "highlights": [],
+            "connections": []
+          }
+        },
+        {
+          "stepNumber": 112,
+          "operation": "complete",
+          "description": "Сортировка завершена",
+          "metadata": { "visualization_type": "default" },
+          "visualizationData": {
+            "structureType": "array",
+            "elements": {
+              "0": { "value": 4, "index": 0, "label": "arr[0]" },
+              "1": { "value": 2, "index": 1, "label": "arr[1]" },
+              "2": { "value": 5, "index": 2, "label": "arr[2]" },
+              "3": { "value": 7, "index": 3, "label": "arr[3]" },
+              "4": { "value": 8, "index": 4, "label": "arr[4]" },
+              "5": { "value": 9, "index": 5, "label": "arr[5]" },
+              "6": { "value": 3, "index": 6, "label": "arr[6]" },
+              "7": { "value": 1, "index": 7, "label": "arr[7]" },
+              "8": { "value": 0, "index": 8, "label": "arr[8]" }
+            },
+            "highlights": [],
+            "connections": []
+          }
         }
       ],
-      "visualize": false
-    },
-    {
-      "id": "pop_from_stack",
-      "type": "call_function",
-      "description": "Извлечение границ из стека",
-      "functionName": "pop_from_stack",
-      "functionParameters": {},
-      "returnToStep": "check_partition_size",
-      "visualize": false
-    },
-    {
-      "id": "check_partition_size",
-      "type": "condition",
-      "description": "Проверка размера раздела",
-      "parameters": [ "low < high" ],
-      "conditionCases": [
-        {
-          "condition": "true",
-          "nextStep": "call_partition"
+      "statistics": {
+        "comparisons": 22,
+        "swaps": 12,
+        "steps": 112,
+        "recursiveCalls": 58,
+        "memoryOperations": 0,
+        "timeComplexity": 0,
+        "spaceComplexity": 0,
+        "customMetrics": {}
+      },
+      "executionTime": "00:00:00.0472988",
+      "outputData": {
+        "start_structure": [4, 2, 5, 7, 8, 9, 3, 1, 0],
+        "final_structure": "[0, 1, 2, 3, 4, 5, 7, 8, 9]",
+        "variables": {
+          "struct": [
+            { "type": 0, "rawValue": 0 },
+            { "type": 0, "rawValue": 1 },
+            { "type": 0, "rawValue": 2 },
+            { "type": 0, "rawValue": 3 },
+            { "type": 0, "rawValue": 4 },
+            { "type": 0, "rawValue": 5 },
+            { "type": 0, "rawValue": 7 },
+            { "type": 0, "rawValue": 8 },
+            { "type": 0, "rawValue": 9 }
+          ],
+          "low": 0,
+          "high": -1,
+          "i": 1,
+          "j": 3,
+          "pivot": 2,
+          "pivot_index": 2,
+          "stack": [
+            { "type": 0, "rawValue": 0 },
+            { "type": 1, "rawValue": -1 },
+            { "type": 1, "rawValue": 1 },
+            { "type": 1, "rawValue": 0 },
+            { "type": 1, "rawValue": 2 },
+            { "type": 1, "rawValue": 1 },
+            { "type": 1, "rawValue": 3 },
+            { "type": 1, "rawValue": 3 }
+          ],
+          "stack_top": -1,
+          "temp": 0,
+          "swapped": false,
+          "last_comparison": 1,
+          "result": 0
         },
-        {
-          "condition": "false",
-          "nextStep": "main_loop_condition"
-        }
+        "call_depth": 0,
+        "function_calls": 58,
+        "total_steps": 112
+      }
+    },
+    "executionState": {
+      "struct": [
+        { "type": 0, "rawValue": 0 },
+        { "type": 0, "rawValue": 1 },
+        { "type": 0, "rawValue": 2 },
+        { "type": 0, "rawValue": 3 },
+        { "type": 0, "rawValue": 4 },
+        { "type": 0, "rawValue": 5 },
+        { "type": 0, "rawValue": 7 },
+        { "type": 0, "rawValue": 8 },
+        { "type": 0, "rawValue": 9 }
       ],
-      "visualize": false
-    },
-    {
-      "id": "call_partition",
-      "type": "call_function",
-      "description": "Вызов функции разделения",
-      "functionName": "partition",
-      "functionParameters": {
-        "low_param": "low",
-        "high_param": "high"
-      },
-      "returnToStep": "push_left_partition",
-      "visualize": false
-    },
-    {
-      "id": "push_left_partition",
-      "type": "call_function",
-      "description": "Добавление левого раздела в стек",
-      "functionName": "push_to_stack",
-      "functionParameters": {
-        "low_val": "low",
-        "high_val": "pivot_index-1"
-      },
-      "returnToStep": "push_right_partition",
-      "visualize": false
-    },
-    {
-      "id": "push_right_partition",
-      "type": "call_function",
-      "description": "Добавление правого раздела в стек",
-      "functionName": "push_to_stack",
-      "functionParameters": {
-        "low_val": "pivot_index+1",
-        "high_val": "high"
-      },
-      "returnToStep": "main_loop_condition",
-      "visualize": false
-    },
-    {
-      "id": "end",
-      "type": "generic",
-      "operation": "complete",
-      "description": "Сортировка завершена",
-      "visualize": true,
-      "highlightElements": [],
-      "highlightColor": "green",
-      "visualizationType": "completion"
+      "low": 0,
+      "high": -1,
+      "i": 1,
+      "j": 3,
+      "pivot": 2,
+      "pivot_index": 2,
+      "stack": [
+        { "type": 0, "rawValue": 0 },
+        { "type": 1, "rawValue": -1 },
+        { "type": 1, "rawValue": 1 },
+        { "type": 1, "rawValue": 0 },
+        { "type": 1, "rawValue": 2 },
+        { "type": 1, "rawValue": 1 },
+        { "type": 1, "rawValue": 3 },
+        { "type": 1, "rawValue": 3 }
+      ],
+      "stack_top": -1,
+      "temp": 0,
+      "swapped": false,
+      "last_comparison": 1,
+      "result": 0
     }
-  ]
+  }
 }

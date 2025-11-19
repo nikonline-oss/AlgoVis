@@ -1,7 +1,12 @@
-﻿using AlgoVis.Models.Models.Custom;
+﻿using AlgoVis.Evaluator.Evaluator.Interfaces;
+using AlgoVis.Evaluator.Evaluator.Types;
+using AlgoVis.Evaluator.Evaluator.VariableValues;
+using AlgoVis.Evaluator.Evaluator.VariableValues.Base;
+using AlgoVis.Models.Models.Custom;
 using AlgoVis.Models.Models.Operations.Base;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -20,29 +25,32 @@ namespace AlgoVis.Models.Models.Operations.Handlers
 
             var leftSide = step.parameters[0];
             var rightExpression = step.parameters[1];
-            var value = EvaluateExpression(rightExpression, context);
-            var extractedValue = ExtractValue(value);
+            IVariableValue value = EvaluateExpression(rightExpression, context);
+
+            Console.WriteLine($"🔍 Assign: {leftSide} = {value.ToValueString()} (тип: {value?.GetType()})");
 
             if (IsArrayAccess(leftSide))
             {
-                SetArrayElement(leftSide, extractedValue, context);
+                SetArrayElement(leftSide, value, context);
             }
             else if (IsPropertyAccess(leftSide))
             {
-                SetProperty(leftSide, extractedValue, context);
+                SetProperty(leftSide, value, context);
             }
             else
             {
-                context.Variables.Set(leftSide, extractedValue);
+                // Прямое присваивание переменной
+                context.Variables.Set(leftSide, value);
             }
 
             AddVisualizationStep(step, context, "assign",
-                step.description ?? $"Присвоение {leftSide} = {extractedValue}",
+                step.description ?? $"Присвоение {leftSide} = {ExtractDisplayValue(value)}",
                 metadata: new Dictionary<string, object>
                 {
                     ["variable"] = leftSide,
-                    ["value"] = extractedValue,
-                    ["expression"] = rightExpression
+                    ["value"] = ExtractDisplayValue(value),
+                    ["expression"] = rightExpression,
+                    ["value_type"] = value?.GetType().Name
                 });
 
             ExecuteNextStep(step, context);
@@ -52,14 +60,14 @@ namespace AlgoVis.Models.Models.Operations.Handlers
         {
             return expression.Contains("[") && expression.Contains("]");
         }
+
         private bool IsPropertyAccess(string expression)
         {
             return expression.Contains(".") && !expression.Contains("[");
         }
 
-        private void SetArrayElement(string arrayAccess, object value, ExecutionContext context)
+        private void SetArrayElement(string arrayAccess, IVariableValue value, ExecutionContext context)
         {
-            // Парсим выражение доступа к массиву: array[index]
             var pattern = @"^([a-zA-Z_][a-zA-Z0-9_]*)\[(.+)\]$";
             var match = Regex.Match(arrayAccess, pattern);
 
@@ -69,26 +77,63 @@ namespace AlgoVis.Models.Models.Operations.Handlers
             string arrayName = match.Groups[1].Value;
             string indexExpression = match.Groups[2].Value;
 
-            // Вычисляем индекс
-            var indexResult = EvaluateExpression(indexExpression, context);
-            int index = Convert.ToInt32(ExtractValue(indexResult));
+            var index = EvaluateExpression(indexExpression, context);
 
-            // Устанавливаем элемент массива
-            context.Variables.SetElement(arrayName, index, value);
+            var arrayValue = context.Variables.Get(arrayName);
+
+            ArrayValue array = context.Variables.Get(arrayName) as ArrayValue;
+
+            if (array == null)
+                array = arrayValue.GetProperty("values") as ArrayValue;
+
+            IVariableValue[] args = [index, value];
+
+            array.CallMethod("set",args);
+
+
+            context.Variables.Set(arrayName, array);
         }
-        private void SetProperty(string propertyAccess, object value, ExecutionContext context)
+
+        private void SetProperty(string propertyAccess, IVariableValue value, ExecutionContext context)
         {
-            // Простой случай: obj.property
+            Console.WriteLine($"🔍 SetProperty: {propertyAccess} = {value}");
+
+            // Разбираем путь к свойству: obj.prop1.prop2
             var parts = propertyAccess.Split('.');
-            if (parts.Length == 2)
+
+            if (parts.Length == 1)
             {
-                context.Variables.SetProperty(parts[0], parts[1], value);
+                // Простой случай: obj.property
+                context.Variables.SetNested(propertyAccess, value);
             }
             else
             {
-                // Сложный случай: obj.subobj.property - используем обычный Set
+                // Сложный случай: obj.prop1.prop2 - используем рекурсивную установку
                 context.Variables.Set(propertyAccess, value);
             }
+        }
+
+        private object ExtractDisplayValue(IVariableValue value)
+        {
+            // Для отображения в логах и визуализации
+            if (value is VariableValue variableValue)
+            {
+                if (variableValue.Type == VariableType.Object)
+                {
+                    return value.ToValueString();
+                }
+                else if (variableValue.Type == VariableType.Array)
+                {
+                    return $"[Array({variableValue.ToValueString()})]";
+                }
+                return variableValue.ToValueString();
+            }
+            else if (value is Dictionary<string, VariableValue> dict)
+            {
+                return $"[Object({dict.Count} properties)]";
+            }
+
+            return value;
         }
     }
 }

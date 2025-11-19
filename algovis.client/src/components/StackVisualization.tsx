@@ -17,7 +17,7 @@ export function StackVisualization({
   const itemWidth = 120;
   const itemHeight = 50;
   const startX = 250;
-  const startY = 400;
+  const startY = 300; // Подняли стартовую позицию
 
   const getItemColor = (index: number) => {
     if (highlightedIndex === index) {
@@ -29,8 +29,8 @@ export function StackVisualization({
   };
 
   return (
-    <div className="w-full h-[500px] flex items-center justify-center bg-card rounded-lg border p-6">
-      <svg width="600" height="500">
+    <div className="w-full h-[450px] flex flex-col items-center justify-center bg-card rounded-lg border p-6">
+      <svg width="600" height="350">
         {/* Stack base */}
         <rect
           x={startX - 10}
@@ -130,6 +130,30 @@ export function StackVisualization({
           </text>
         )}
       </svg>
+
+      {/* Легенда */}
+      <div className="flex justify-center flex-wrap gap-4 mt-6 text-sm">
+        <div className="flex items-center space-x-2">
+          <div className="w-4 h-4 rounded-full border-2" style={{ backgroundColor: 'rgb(156, 163, 175)', borderColor: 'rgb(100, 116, 139)' }} />
+          <span className="text-xs text-muted-foreground">Обычный элемент</span>
+        </div>
+        <div className="flex items-center space-x-2">
+          <div className="w-4 h-4 rounded-full border-2" style={{ backgroundColor: 'rgb(59, 130, 246)', borderColor: 'rgb(37, 99, 235)' }} />
+          <span className="text-xs text-muted-foreground">Верх стека (TOP)</span>
+        </div>
+        <div className="flex items-center space-x-2">
+          <div className="w-4 h-4 rounded-full border-2" style={{ backgroundColor: 'rgb(34, 197, 94)', borderColor: 'rgb(21, 128, 61)' }} />
+          <span className="text-xs text-muted-foreground">Добавление (PUSH)</span>
+        </div>
+        <div className="flex items-center space-x-2">
+          <div className="w-4 h-4 rounded-full border-2" style={{ backgroundColor: 'rgb(239, 68, 68)', borderColor: 'rgb(220, 38, 38)' }} />
+          <span className="text-xs text-muted-foreground">Удаление (POP)</span>
+        </div>
+        <div className="flex items-center space-x-2">
+          <div className="w-4 h-2 border-2 border-dashed" style={{ borderColor: 'rgb(100, 116, 139)' }} />
+          <span className="text-xs text-muted-foreground">Границы стека</span>
+        </div>
+      </div>
     </div>
   );
 }

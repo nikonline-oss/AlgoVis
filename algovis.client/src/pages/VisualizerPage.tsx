@@ -14,6 +14,7 @@ import { QueueVisualization } from '../components/QueueVisualization';
 import { StatsPanel } from '../components/StatsPanel';
 import { useApp } from '../contexts/AppContext';
 
+
 interface SortingStep {
   array: number[];
   comparing?: number[];
@@ -1969,8 +1970,8 @@ const generateRandomGraph = useCallback((type: 'circular' | 'grid' | 'complete' 
                   <Slider
                     value={[listSize]}
                     onValueChange={(value) => setListSize(value[0])}
-                    max={10}
-                    min={1}
+                    max={8}
+                    min={2}
                     step={1}
                   />
                 </div>
@@ -2009,8 +2010,8 @@ const generateRandomGraph = useCallback((type: 'circular' | 'grid' | 'complete' 
                   <Slider
                     value={[stackSize]}
                     onValueChange={(value) => setStackSize(value[0])}
-                    max={10}
-                    min={1}
+                    max={5}
+                    min={2}
                     step={1}
                   />
                 </div>

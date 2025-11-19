@@ -115,12 +115,6 @@ export function QueueVisualization({
                   >
                     FRONT
                   </text>
-                  {/* <motion.polygon
-                    points={`${xPos + itemWidth / 2},${startY + itemHeight + 20} ${xPos + itemWidth / 2 - 6},${startY + itemHeight + 28} ${xPos + itemWidth / 2 + 6},${startY + itemHeight + 28}`}
-                    fill="rgb(59, 130, 246)"
-                    animate={{ y: [0, 5, 0] }}
-                    transition={{ duration: 1, repeat: Infinity }}
-                  /> */}
                 </g>
               )}
               
@@ -135,12 +129,6 @@ export function QueueVisualization({
                   >
                     REAR
                   </text>
-                  {/* <motion.polygon
-                    points={`${xPos + itemWidth / 2},${startY + itemHeight + 20} ${xPos + itemWidth / 2 - 6},${startY + itemHeight + 28} ${xPos + itemWidth / 2 + 6},${startY + itemHeight + 28}`}
-                    fill="rgb(147, 51, 234)"
-                    animate={{ y: [0, 5, 0] }}
-                    transition={{ duration: 1, repeat: Infinity }}
-                  /> */}
                 </g>
               )}
             </motion.g>
@@ -179,6 +167,34 @@ export function QueueVisualization({
           </g>
         )}
       </svg>
+
+      {/* Легенда для очереди */}
+      <div className="flex justify-center flex-wrap gap-4 mt-6 text-sm">
+        <div className="flex items-center space-x-2">
+          <div className="w-4 h-4 rounded-full border-2" style={{ backgroundColor: 'rgb(156, 163, 175)', borderColor: 'rgb(100, 116, 139)' }} />
+          <span className="text-xs text-muted-foreground">Обычный элемент</span>
+        </div>
+        <div className="flex items-center space-x-2">
+          <div className="w-4 h-4 rounded-full border-2" style={{ backgroundColor: 'rgb(59, 130, 246)', borderColor: 'rgb(37, 99, 235)' }} />
+          <span className="text-xs text-muted-foreground">FRONT (начало)</span>
+        </div>
+        <div className="flex items-center space-x-2">
+          <div className="w-4 h-4 rounded-full border-2" style={{ backgroundColor: 'rgb(147, 51, 234)', borderColor: 'rgb(126, 34, 206)' }} />
+          <span className="text-xs text-muted-foreground">REAR (конец)</span>
+        </div>
+        <div className="flex items-center space-x-2">
+          <div className="w-4 h-4 rounded-full border-2" style={{ backgroundColor: 'rgb(34, 197, 94)', borderColor: 'rgb(21, 128, 61)' }} />
+          <span className="text-xs text-muted-foreground">Добавление (Enqueue)</span>
+        </div>
+        <div className="flex items-center space-x-2">
+          <div className="w-4 h-4 rounded-full border-2" style={{ backgroundColor: 'rgb(239, 68, 68)', borderColor: 'rgb(220, 38, 38)' }} />
+          <span className="text-xs text-muted-foreground">Удаление (Dequeue)</span>
+        </div>
+        <div className="flex items-center space-x-2">
+          <div className="w-4 h-2 border-2 border-dashed" style={{ borderColor: 'rgb(100, 116, 139)' }} />
+          <span className="text-xs text-muted-foreground">Границы очереди</span>
+        </div>
+      </div>
     </div>
   );
 }

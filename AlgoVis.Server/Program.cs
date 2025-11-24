@@ -1,8 +1,13 @@
-﻿using AlgoVis.Server.Data;
+﻿using AlgoVis.Core.Core;
+using AlgoVis.Evaluator.Evaluator.Types;
+using AlgoVis.Server.Data;
 using AlgoVis.Server.Hubs;
 using AlgoVis.Server.Interfaces;
 using AlgoVis.Server.Services;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -25,9 +30,23 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
 
-builder.Services.AddScoped<ISessionService, SessionService>();
+
+
+builder.Services.AddSingleton<RandomStructureFactory>();
+
 builder.Services.AddScoped<ISessionService, SessionService>();
 builder.Services.AddScoped<ICodeAnalysisService, CodeAnalysisService>();
+builder.Services.AddScoped<IGigaChatService, GigaChatService>();
+builder.Services.AddScoped<AlgorithmManager>();
+builder.Services.AddScoped<AlgoVis.Core.Core.Interfaces.ICustomAlgorithmInterpreter, AlgoVis.Core.Core.AlgorithmInterpreter>();
+
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+        options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
+    });
+
 
 // Add SignalR
 builder.Services.AddSignalR(options =>

@@ -17,13 +17,13 @@ namespace AlgoVis.Server.DTO
 
     public class StructureGenerationResponse
     {
-        public bool Success { get; set; }
+        public bool success { get; set; }
         public string StructureType { get; set; }
-        public string Error { get; set; }
-        public VisualizationData VisualizationData { get; set; }
-        public Dictionary<string, object> UsedParameters { get; set; }
-        public object State { get; set; }
-        public StructureMetadata Metadata { get; set; }
+        public string? Error { get; set; }
+        public VisualizationData? VisualizationData { get; set; }
+        public Dictionary<string, object>? UsedParameters { get; set; }
+        public object? data { get; set; }
+        public StructureMetadata? Metadata { get; set; }
     }
 
     public class StructureMetadata

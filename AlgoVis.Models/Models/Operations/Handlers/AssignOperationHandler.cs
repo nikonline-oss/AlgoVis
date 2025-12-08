@@ -23,8 +23,8 @@ namespace AlgoVis.Models.Models.Operations.Handlers
             if (step.parameters.Count < 2)
                 throw new ArgumentException("Assign operation requires 2 parameters");
 
-            var leftSide = step.parameters[0];
-            var rightExpression = step.parameters[1];
+             var leftSide = step.parameters[0];
+            var rightExpression = step.parameters[1].ToLower();
             IVariableValue value = EvaluateExpression(rightExpression, context);
 
             Console.WriteLine($"🔍 Assign: {leftSide} = {value.ToValueString()} (тип: {value?.GetType()})");
@@ -84,7 +84,17 @@ namespace AlgoVis.Models.Models.Operations.Handlers
             ArrayValue array = context.Variables.Get(arrayName) as ArrayValue;
 
             if (array == null)
+            {
                 array = arrayValue.GetProperty("values") as ArrayValue;
+
+                IVariableValue[] args1 = [index, value];
+
+                array.CallMethod("set", args1);
+
+                arrayValue.SetProperty("values", array);
+
+                return;
+            }
 
             IVariableValue[] args = [index, value];
 

@@ -1,8 +1,9 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using AlgoVis.Core.Core;
+using AlgoVis.Models.Models.Core;
+using AlgoVis.Models.Models.Visualization;
+using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
-using AlgoVis.Core.Core;
-using AlgoVis.Models.Models.Core;
 
 namespace testing.Controllers
 {
@@ -17,43 +18,36 @@ namespace testing.Controllers
             _algorithmManager = new AlgorithmManager();
         }
 
-        [HttpPost("bubble-sort")]
-        public IActionResult ExecuteBubbleSort([FromBody] BubbleSortRequest request)
+        [HttpPost("array/{sort}")]
+        public AlgorithmResponse<SortingStep> ExecuteSort(string sort,[FromBody] BubbleSortRequest request)
         {
             try
             {
-                // Создаем конфигурацию алгоритма
                 var config = new AlgorithmConfig
                 {
-                    Name = "BubbleSort",
-                    Length = request.Data.Length,
-                    SessionId = Guid.NewGuid().ToString(),
-                    Parameters = new Dictionary<string, object>
-                    {
-                        ["Detailed"] = request.Detailed
-                    }
+                    Name = sort,
+                    Length = request.data.Length,
+                    SessionId = Guid.NewGuid().ToString()
                 };
 
-                // Создаем структуру данных
-                var structure = StructureFactory.CreateStructure("array", request.Data);
+                var structure = StructureFactory.CreateStructure("array", request.data);
 
-                // Выполняем алгоритм
-                var result = _algorithmManager.ExecuteAlgorithm(config, structure);
+                var result = _algorithmManager.ExecuteAlgorithm<SortingStep>(config, structure);
 
-                return Ok(new
+                return new AlgorithmResponse<SortingStep>
                 {
-                    Success = true,
-                    Result = result,
-                    Message = "Bubble sort executed successfully"
-                });
+                    success = true,
+                    message = "Успешная визуализация",
+                    data = result
+                };
             }
             catch (Exception ex)
             {
-                return BadRequest(new
+                return new AlgorithmResponse<SortingStep>
                 {
-                    Success = false,
-                    Message = $"Error executing bubble sort: {ex.Message}"
-                });
+                    success = false,
+                    message = $"Error executing bubble sort: {ex.Message}"
+                };
             }
         }
 
@@ -86,13 +80,13 @@ namespace testing.Controllers
             {
                 var config = new AlgorithmConfig
                 {
-                    Name = request.AlgorithmName,
+                    Name = request.algorithmName,
                     SessionId = Guid.NewGuid().ToString(),
-                    Parameters = request.Parameters ?? new Dictionary<string, object>()
+                    Parameters = request.parameters ?? new Dictionary<string, object>()
                 };
 
                 // В реальном приложении здесь нужно определить тип структуры на основе алгоритма
-                var structure = StructureFactory.CreateStructure("array", request.Data);
+                var structure = StructureFactory.CreateStructure("array", request.data);
 
                 var result = _algorithmManager.ExecuteAlgorithm(config, structure);
 
@@ -115,14 +109,26 @@ namespace testing.Controllers
 
     public class BubbleSortRequest
     {
-        public int[] Data { get; set; } = Array.Empty<int>();
-        public bool Detailed { get; set; } = true;
+        public int[] data { get; set; } = Array.Empty<int>();
+    }
+
+    public class SearchRequest
+    {
+        public int[] data { get; set; } = Array.Empty<int>();
+        public int target { get; set; }
+    }
+
+    public class AlgorithmResponse<TStep> where TStep : IStep
+    {
+        public bool success { get; set; }
+        public string message { get; set; } = string.Empty;
+        public AlgorithmResult<TStep> data { get; set; } = new();
     }
 
     public class GenericAlgorithmRequest
     {
-        public string AlgorithmName { get; set; } = string.Empty;
-        public int[] Data { get; set; } = Array.Empty<int>();
-        public Dictionary<string, object> Parameters { get; set; } = new Dictionary<string, object>();
+        public string algorithmName { get; set; } = string.Empty;
+        public int[] data { get; set; } = Array.Empty<int>();
+        public Dictionary<string, object> parameters { get; set; } = new Dictionary<string, object>();
     }
 }

@@ -1,12 +1,6 @@
 import React from 'react';
+import type { ArrayStep } from '../types/interfaces';
 
-interface ArrayVisualizationProps {
-  array: number[];
-  comparing?: number[];
-  swapping?: number[];
-  sorted?: number[];
-  pivotIndex?: number;
-}
 
 export function ArrayVisualization({ 
   array, 
@@ -14,7 +8,8 @@ export function ArrayVisualization({
   swapping = [], 
   sorted = [],
   pivotIndex 
-}: ArrayVisualizationProps) {
+}: ArrayStep) {
+  if (!array) return;
   const maxValue = Math.max(...array);
 
   const getBarColor = (index: number) => {

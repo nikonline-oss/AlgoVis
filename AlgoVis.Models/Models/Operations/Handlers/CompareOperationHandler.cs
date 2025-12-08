@@ -24,9 +24,9 @@ namespace AlgoVis.Models.Models.Operations.Handlers
             if (step.parameters.Count < 2)
                 throw new ArgumentException("Compare operation requires 2 parameters");
 
-            string arrayName = step.parameters.Count > 2 ? step.parameters[0] : "array";
-            var value1 = EvaluateExpression(step.parameters[step.parameters.Count > 2 ? 1 : 0], context);
-            var value2 = EvaluateExpression(step.parameters[step.parameters.Count > 2 ? 2 : 1], context);
+            string arrayName = step.parameters.Count > 2 ? step.parameters[0] : "struct";
+            var value1 = EvaluateExpression(step.parameters[step.parameters.Count > 2 ? 1 : 0].ToLower(), context);
+            var value2 = EvaluateExpression(step.parameters[step.parameters.Count > 2 ? 2 : 1].ToLower(), context);
 
             // Получаем массив из переменных
             var arrayValue = context.Variables.Get(arrayName) as ArrayValue;

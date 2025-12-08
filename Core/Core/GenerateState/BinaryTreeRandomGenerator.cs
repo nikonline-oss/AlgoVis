@@ -83,8 +83,8 @@ namespace AlgoVis.Core.Core.GenerateState
             var node = new TreeNode
             {
                 Value = _random.Next(minValue, maxValue + 1),
-                Left = BuildBalancedTree(start, mid - 1, minValue, maxValue),
-                Right = BuildBalancedTree(mid + 1, end, minValue, maxValue)
+                Left = BuildBalancedTree(mid + 1, end, minValue, maxValue),
+                Right = BuildBalancedTree(start, mid - 1, minValue, maxValue)
             };
 
             return node;

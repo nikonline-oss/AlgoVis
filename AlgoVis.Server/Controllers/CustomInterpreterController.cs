@@ -9,16 +9,18 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace AlgoVis.Server.Controllers
-{ 
+{
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("api/inter")]
     public class CustomInterpreterController : ControllerBase
     {
         private readonly AlgorithmManager _algorithmManager;
 
+        private readonly RandomStructureFactory _factory;
         public CustomInterpreterController()
         {
             _algorithmManager = new AlgorithmManager();
+            _factory = new RandomStructureFactory();
         }
 
         /// <summary>
@@ -93,7 +95,48 @@ namespace AlgoVis.Server.Controllers
                 });
             }
         }
+
+        [HttpGet("tes")]
+        public IActionResult ExecuteCustomAlgorithm([FromQuery]string patch)
+        {
+            try
+            {
+                // Чтение JSON из файла
+                string filePath = patch; // укажите правильный путь
+                //var json = File.ReadAllText(jsonFilePath)
+
+                // Десериализация JSON в объект
+                //var request = JsonSerializer.Deserialize<InterpreterTestRequest>(jsonContent);
+
+                // Если у вас нет класса CustomAlgorithmRequest, создайте его или используйте dynamic
+                // dynamic request = Newtonsoft.Json.JsonConvert.DeserializeObject<dynamic>(jsonContent);
+
+                var jsons = System.IO.File.ReadAllText(filePath);
+                var request = JsonSerializer.Deserialize<CustomAlgorithmRequest>(jsons);
+
+                var defaultParams = _factory.GetDefaultParameters(request.structureType);
+
+                var structure = _factory.GenerateStructure(request.structureType, defaultParams);
+
+                var result = _algorithmManager.ExecuteCustomAlgorithm(request, structure);
+
+                return Ok(new
+                {
+                    Success = true,
+                    Result = result
+                });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new
+                {
+                    Success = false,
+                    Message = $"Error executing custom algorithm: {ex.Message}"
+                });
+            }
+        }
     }
+
 
     // DTO для удобства — оборачивает CustomAlgorithmRequest и данные для структуры
     public class InterpreterTestRequest

@@ -254,11 +254,11 @@ namespace AlgoVis.Core.Core
                     {
                         var edge = new GraphEdge();
                         if (edgeElement.TryGetProperty("fromId", out JsonElement fromIdProp))
-                            edge.FromId = fromIdProp.GetString();
+                            edge.from = fromIdProp.GetString();
                         if (edgeElement.TryGetProperty("toId", out JsonElement toIdProp))
-                            edge.ToId = toIdProp.GetString();
+                            edge.to = toIdProp.GetString();
                         if (edgeElement.TryGetProperty("weight", out JsonElement weightProp))
-                            edge.Weight = weightProp.GetDouble();
+                            edge.weight = weightProp.GetDouble();
                         edges.Add(edge);
                     }
                 }

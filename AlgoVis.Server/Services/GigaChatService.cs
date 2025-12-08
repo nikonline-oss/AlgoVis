@@ -1,6 +1,7 @@
 ﻿using AlgoVis.Server.Interfaces;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace AlgoVis.Server.Services
 {
@@ -162,7 +163,7 @@ namespace AlgoVis.Server.Services
                     ["stream"] = false,
                     ["repetition_penalty"] = 1,
                     ["temperature"] = 0.7,
-                    ["max_tokens"] = 1000
+                    ["max_tokens"] = 10000
                 };
 
                 // Добавляем дополнительные параметры если есть
@@ -186,12 +187,9 @@ namespace AlgoVis.Server.Services
 
                 Console.WriteLine("GigaChat API response received");
                 var responseContent = await response.Content.ReadAsStringAsync();
-                var result = JsonSerializer.Deserialize<JsonElement>(responseContent);
+                var result = JsonSerializer.Deserialize<messageFromGiga>(responseContent);
 
-                return result.GetProperty("choices")[0]
-                            .GetProperty("message")
-                            .GetProperty("content")
-                            .GetString();
+                return result.choices[0].message.content;
             }
             catch (HttpRequestException error) when (error.Message.Contains("401"))
             {
@@ -233,8 +231,11 @@ namespace AlgoVis.Server.Services
         {
             string content = File.ReadAllText("Instruction.txt");
 
+            string primer = "{Algorithm:...}";
+
             string finalpromt = $"Есть инструкция по языку ява : \"{content}\"," +
-                $"мне нужно чтобы ты переписал вот этот код: {code} в язык ЯВА и вернул ответ в виде JSON c алгоритмом как в инструкции и без лишних слов(только Json алгоритма)";
+                $"мне нужно чтобы ты переписал вот этот код: {code} в язык ЯВА и вернул ответ в виде JSON c алгоритмом как в инструкции и без лишних слов(только Json алгоритма)" +
+                $"пример вывода: {primer}";
 
             return finalpromt;
         }
@@ -248,6 +249,38 @@ namespace AlgoVis.Server.Services
                 ["is_expired"] = string.IsNullOrEmpty(_token) || DateTime.Now >= _tokenExpiry,
                 ["time_until_expiry"] = string.IsNullOrEmpty(_token) ? null : (_tokenExpiry - DateTime.Now).TotalSeconds
             };
+        }
+
+        public class messageFromGiga
+        {
+            public Choices[] choices { get; set; } = Array.Empty<Choices>();
+
+            public Usage usage { get; set; } = new();
+            [JsonPropertyName("object")]
+            public string _object{ get; set; } = string.Empty;
+            public string model{ get; set; } = string.Empty;
+            public int created{ get; set; } = 0;
+
+        }
+        public class Choices
+        {
+            public Message message { get; set; } = new();
+            public string finish_reason { get; set; } = string.Empty;
+            public int index { get; set; } = 0;
+
+        }
+        public class Message
+        {
+            public string content { get; set; } = string.Empty;
+            public string role { get; set; } = string.Empty;
+
+        }
+        public class Usage
+        {
+            public int prompt_tokens { get; set; } = 0;
+            public int completion_tokens { get; set; } = 0;
+            public int total_tokens { get; set; } = 0;
+            public int precached_prompt_tokens { get; set; } = 0;
         }
     }
 }

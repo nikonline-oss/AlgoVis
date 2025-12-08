@@ -1,38 +1,5 @@
 ЯВА (Язык Визуализации Алгоритмов) - Полная документация
-📖 Оглавление
-1.	Введение
-2.	Базовые концепции
-3.	Структура алгоритма
-4.	Типы данных и переменные
-5.	Система выражений
-6.	Операции и шаги
-7.	Функции
-8.	Визуализация
-9.	Структуры данных
-10.	Примеры алгоритмов
-11.	Лучшие практики
-🎯 Введение
-ЯВА (Язык Визуализации Алгоритмов) - это декларативный JSON-подобный язык для описания алгоритмов с поддержкой пошаговой визуализации. ЯВА компилируется в исполняемый код интерпретатором алгоритмов.
-Основные возможности:
-•	✅ Полноценная система типов - числа, строки, булевы значения, массивы, объекты
-•	✅ Расширенная система выражений - арифметика, логика, строковые операции, функции
-•	✅ Поддержка структур данных - массивы, деревья, графы, связные списки
-•	✅ Визуализация - подсветка, пошаговое выполнение
-•	✅ Функции и рекурсия - модульность и повторное использование кода
-•	✅ Управление потоком - условия, циклы, переходы
-🧩 Базовые концепции
-Структура проекта
-algorithm.json
-├── Метаданные (название, описание)
-├── Переменные (объявления)
-├── Функции (вспомогательные)
-└── Шаги (последовательность операций)
-Принцип выполнения
-1.	Инициализация - создание переменных и структур данных
-2.	Последовательное выполнение - шаги выполняются по порядку
-3.	Визуализация - каждый шаг может генерировать визуальное представление
-4.	Управление потоком - переходы между шагами через условия
-🏗️ Структура алгоритма
+
 Базовая структура
 {
   "name": "Название алгоритма",
@@ -99,6 +66,8 @@ algorithm.json
     }
   ]
 }
+
+id первого и последнего шаги обязательно должны быть названы start и end соотвественно
 📊 Типы данных и переменные
 Базовые типы данных
 {
@@ -110,7 +79,7 @@ algorithm.json
     },
     {
       "name": "temperature",
-      "type": "double", 
+      "type": "float", 
       "initialValue": 36.6
     },
     {
@@ -171,7 +140,7 @@ algorithm.json
     {
       "name": "user",
       "type": "object",
-      "ObjectProperties": {
+      "initialValue": {
         "name": "Алексей",
         "age": 30,
         "active": true,
@@ -181,7 +150,7 @@ algorithm.json
     {
       "name": "node",
       "type": "object",
-      "ObjectProperties": {
+      "initialValue": {
         "value": 10,
         "visited": false,
         "children": []
@@ -245,7 +214,7 @@ algorithm.json
   "expressions": [
     {"example": "sqrt(16)", "result": "4", "description": "Квадратный корень"},
     {"example": "min(5, 10)", "result": "5", "description": "Минимум из двух чисел"},
-    {"example": "max(array[0], array[1])", "description": "Максимум элементов массива"},
+    {"example": "max(struct[0], struct[1])", "description": "Максимум элементов массива"},
     {"example": "abs(-5)", "result": "5", "description": "Модуль числа"},
     {"example": "pow(2, 3)", "result": "8", "description": "Возведение в степень"},
     {"example": "length(\"Hello\")", "result": "5", "description": "Длина строки"},
@@ -261,15 +230,9 @@ algorithm.json
     {"example": "numbers[i]", "description": "Элемент массива по индексу"},
     {"example": "user.name", "description": "Свойство объекта"},
     {"example": "graph.nodes[0].connections", "description": "Вложенный доступ"},
-    {"example": "array[i + 1]", "description": "Выражение в качестве индекса"},
+    {"example": "struct[i + 1]", "description": "Выражение в качестве индекса"},
     {"example": "matrix[i][j]", "description": "Многомерный массив"},
     {"example": "tree.root.left.value", "description": "Цепочка свойств"}
-  ]
-}
-Специальные выражения
-{
-  "expressions": [
-    {"example": "array_length", "description": "Длина массива (автоматическая переменная)"}
   ]
 }
 ⚙️ Операции и шаги
@@ -280,15 +243,13 @@ algorithm.json
   "description": "Присвоение значения переменной",
   "parameters": ["variable_name", "expression"],
   "nextStep": "next_step_id",
-  "visualize": true,
-  "highlightElements": ["variable_name"],
-  "highlightColor": "blue"
+  "visualize": true
 
 }
 Примеры присваивания:
 {"parameters": ["i", "0"], "description": "Присвоение константы"}
 {"parameters": ["j", "i + 1"], "description": "Присвоение результата выражения"}
-{"parameters": ["array[i]", "temp"], "description": "Присвоение элементу массива"}
+{"parameters": ["struct[i]", "temp"], "description": "Присвоение элементу массива"}
 {"parameters": ["node.visited", "true"], "description": "Присвоение свойству объекта"}
 {"parameters": ["message", "'Hello' + ' World'"], "description": "Присвоение строки"}
 {"parameters": ["counter", "counter + 1"], "description": "Инкремент переменной"}
@@ -299,9 +260,7 @@ algorithm.json
   "description": "Сравнение двух элементов массива",
   "parameters": ["index1", "index2"],
   "nextStep": "after_compare",
-  "visualize": true,
-  "highlightElements": ["index1", "index2"],
-  "highlightColor": "yellow"
+  "visualize": true
 }
 3. Обмен (swap)
 {
@@ -310,9 +269,7 @@ algorithm.json
   "description": "Обмен элементов местами",
   "parameters": ["index1", "index2"],
   "nextStep": "next_step",
-  "visualize": true,
-  "highlightElements": ["index1", "index2"],
-  "highlightColor": "red",
+  "visualize": true
 }
 4. Условие (condition)
 {
@@ -335,10 +292,10 @@ algorithm.json
   "visualize": true
 }
 Примеры условий:
-{"parameters": ["array[i] > array[j]"], "description": "Сравнение элементов массива"}
+{"parameters": ["struct[i] > struct[j]"], "description": "Сравнение элементов массива"}
 {"parameters": ["user.name == 'Алексей'"], "description": "Сравнение строк"}
 {"parameters": ["length(message) > 10"], "description": "Проверка длины строки"}
-{"parameters": ["is_sorted || i >= array_length"], "description": "Комбинированное условие"}
+{"parameters": ["is_sorted || i >= struct.len"], "description": "Комбинированное условие"}
 {"parameters": ["!visited.includes(current.id)"], "description": "Проверка в массиве"}
 {"parameters": ["counter % 2 == 0"], "description": "Проверка четности"}
 5. Вызов функции (call_function)
@@ -386,7 +343,7 @@ algorithm.json
           "id": "choose_pivot",
           "type": "assign",
           "description": "Выбор опорного элемента",
-          "parameters": ["pivot", "array[high]"],
+          "parameters": ["pivot", "struct[high]"],
           "nextStep": "init_i",
           "visualize": true,
           "highlightElements": ["high"],
@@ -411,14 +368,11 @@ algorithm.json
   "functionName": "partition", 
   "functionParameters": {
     "low": "0",
-    "high": "array_length - 1"
+    "high": "struct.len - 1"
   },
   "returnToStep": "after_partition",
   "description": "Вызов функции разделения массива",
-  "visualize": true,
-  "metadata": {
-    "algorithm_phase": "divide"
-  }
+  "visualize": true
 }
 Рекурсивные функции
 {
@@ -464,46 +418,6 @@ algorithm.json
         }
       ]
     }
-  ]
-}
-🎨 Визуализация
-Настройки визуализации шага
-{
-  "id": "visualization_example",
-  "type": "compare",
-  "description": "Сравнение с расширенной визуализацией",
-  "parameters": ["i", "j"],
-  "visualize": true,
-  "highlightElements": ["i", "j", "pivot"],
-  "highlightColor": "yellow",
-  "visualizationType": "comparison"
-}
-Цветовая палитра для подсветки
-{
-  "colors": [
-    {"name": "red", "usage": "Обмены, ошибки, важные операции"},
-    {"name": "blue", "usage": "Текущий элемент, указатели"},
-    {"name": "green", "usage": "Отсортированные элементы, успешные операции"},
-    {"name": "yellow", "usage": "Сравнения, активные элементы"},
-    {"name": "orange", "usage": "Опорные элементы, ключевые точки"},
-    {"name": "purple", "usage": "Рекурсивные вызовы, специальные состояния"},
-    {"name": "lightblue", "usage": "Вспомогательные элементы, диапазоны"},
-    {"name": "lightgreen", "usage": "Промежуточные состояния"},
-    {"name": "#FF5733", "usage": "Пользовательские цвета (HEX)"},
-    {"name": "bg-red-500", "usage": "Tailwind классы для веб-интерфейса"}
-  ]
-}
-Типы визуализации
-{
-  "visualization_types": [
-    {"type": "default", "description": "Стандартная подсветка элементов"},
-    {"type": "comparison", "description": "Визуализация сравнения двух элементов"},
-    {"type": "swap", "description": "Анимация обмена элементов"},
-    {"type": "traversal", "description": "Визуализация обхода структуры данных"},
-    {"type": "recursion", "description": "Отображение рекурсивных вызовов"},
-    {"type": "insertion", "description": "Вставка элементов"},
-    {"type": "deletion", "description": "Удаление элементов"},
-    {"type": "custom", "description": "Пользовательская визуализация"}
   ]
 }
 🏗️ Структуры данных
@@ -573,7 +487,7 @@ graph (Граф):
       "id": "outer_loop_check", 
       "type": "condition",
       "description": "Проверка внешнего цикла",
-      "parameters": ["i < array_length - 1"],
+      "parameters": ["i < struct.len - 1"],
       "conditionCases": [
         {
           "condition": "true",
@@ -584,9 +498,7 @@ graph (Граф):
           "nextStep": "end"
         }
       ],
-      "visualize": true,
-      "highlightElements": ["i"],
-      "highlightColor": "blue"
+      "visualize": true
     },
     {
       "id": "init_inner_loop",
@@ -600,7 +512,7 @@ graph (Граф):
       "id": "inner_loop_check",
       "type": "condition",
       "description": "Проверка внутреннего цикла",
-      "parameters": ["j < array_length - i - 1"],
+      "parameters": ["j < struct.len - i - 1"],
       "conditionCases": [
         {
           "condition": "true",
@@ -619,15 +531,13 @@ graph (Граф):
       "description": "Сравнение соседних элементов",
       "parameters": ["j", "j + 1"],
       "nextStep": "check_swap",
-      "visualize": true,
-      "highlightElements": ["j", "j + 1"],
-      "highlightColor": "yellow"
+      "visualize": true
     },
     {
       "id": "check_swap",
       "type": "condition", 
       "description": "Проверка необходимости обмена",
-      "parameters": ["array[j] > array[j + 1]"],
+      "parameters": ["struct[j] > struct[j + 1]"],
       "conditionCases": [
         {
           "condition": "true",
@@ -646,9 +556,7 @@ graph (Граф):
       "description": "Обмен элементов местами",
       "parameters": ["j", "j + 1"],
       "nextStep": "mark_swapped",
-      "visualize": true,
-      "highlightElements": ["j", "j + 1"],
-      "highlightColor": "red"
+      "visualize": true
     },
     {
       "id": "mark_swapped",
@@ -704,184 +612,7 @@ graph (Граф):
       "type": "generic",
       "description": "Сортировка завершена",
       "parameters": [],
-      "visualize": true,
-      "highlightElements": ["all"],
-      "highlightColor": "green"
-    }
-  ]
-}
-2. Поиск в глубину (DFS) для графов
-{
-  "name": "GraphDFS",
-  "description": "Поиск в глубину с визуализацией обхода",
-  "structureType": "graph",
-  "variables": [
-    {
-      "name": "stack",
-      "type": "array",
-      "initialValue": [],
-      "description": "Стек для DFS"
-    },
-    {
-      "name": "visited",
-      "type": "array", 
-      "initialValue": [],
-      "description": "Посещенные узлы"
-    },
-    {
-      "name": "current",
-      "type": "object",
-      "initialValue": "null",
-      "description": "Текущий узел"
-    }
-  ],
-  "steps": [
-    {
-      "id": "start",
-      "type": "assign",
-      "description": "Инициализация стека начальным узлом",
-      "parameters": ["stack", "[start_node]"],
-      "nextStep": "dfs_loop",
-      "visualize": true,
-      "highlightElements": ["start_node"],
-      "highlightColor": "blue"
-    },
-    {
-      "id": "dfs_loop",
-      "type": "condition",
-      "description": "Проверка пустоты стека",
-      "parameters": ["stack.length > 0"],
-      "conditionCases": [
-        {
-          "condition": "true",
-          "nextStep": "pop_node"
-        },
-        {
-          "condition": "false",
-          "nextStep": "end"
-        }
-      ],
       "visualize": true
-    },
-    {
-      "id": "pop_node",
-      "type": "assign",
-      "description": "Извлечение узла из стека",
-      "parameters": ["current", "stack.pop()"],
-      "nextStep": "check_visited",
-      "visualize": true,
-      "highlightElements": ["current"],
-      "highlightColor": "orange"
-    },
-    {
-      "id": "check_visited",
-      "type": "condition",
-      "description": "Проверка посещения узла",
-      "parameters": ["visited.includes(current.id)"],
-      "conditionCases": [
-        {
-          "condition": "true",
-          "nextStep": "dfs_loop"
-        },
-        {
-          "condition": "false",
-          "nextStep": "mark_visited"
-        }
-      ],
-      "visualize": true
-    },
-    {
-      "id": "mark_visited",
-      "type": "generic",
-      "description": "Помечаем узел как посещенный",
-      "parameters": ["visited.push(current.id)"],
-      "nextStep": "process_node",
-      "visualize": true,
-      "highlightElements": ["current"],
-      "highlightColor": "green"
-    },
-    {
-      "id": "process_node",
-      "type": "generic",
-      "description": "Обработка текущего узла",
-      "parameters": [],
-      "nextStep": "get_neighbors",
-      "visualize": true,
-      "metadata": {
-        "operation": "visit_node",
-        "node_value": "current.value"
-      }
-    },
-    {
-      "id": "get_neighbors",
-      "type": "assign",
-      "description": "Получение соседей текущего узла",
-      "parameters": ["neighbors", "graph.getNeighbors(current.id)"],
-      "nextStep": "process_neighbors",
-      "visualize": true
-    },
-    {
-      "id": "process_neighbors",
-      "type": "condition",
-      "description": "Обработка всех соседей",
-      "parameters": ["neighbors.length > 0"],
-      "conditionCases": [
-        {
-          "condition": "true",
-          "nextStep": "process_next_neighbor"
-        },
-        {
-          "condition": "false",
-          "nextStep": "dfs_loop"
-        }
-      ],
-      "visualize": true
-    },
-    {
-      "id": "process_next_neighbor",
-      "type": "assign",
-      "description": "Обработка следующего соседа",
-      "parameters": ["neighbor", "neighbors.shift()"],
-      "nextStep": "check_neighbor_visited",
-      "visualize": true,
-      "highlightElements": ["neighbor"],
-      "highlightColor": "yellow"
-    },
-    {
-      "id": "check_neighbor_visited",
-      "type": "condition",
-      "description": "Проверка посещения соседа",
-      "parameters": ["!visited.includes(neighbor.id)"],
-      "conditionCases": [
-        {
-          "condition": "true",
-          "nextStep": "push_neighbor"
-        },
-        {
-          "condition": "false",
-          "nextStep": "process_neighbors"
-        }
-      ],
-      "visualize": true
-    },
-    {
-      "id": "push_neighbor",
-      "type": "generic",
-      "description": "Добавление непосещенного соседа в стек",
-      "parameters": ["stack.push(neighbor)"],
-      "nextStep": "process_neighbors",
-      "visualize": true,
-      "highlightElements": ["neighbor"],
-      "highlightColor": "lightblue"
-    },
-    {
-      "id": "end",
-      "type": "generic",
-      "description": "DFS завершен",
-      "parameters": [],
-      "visualize": true,
-      "highlightElements": ["all_visited"],
-      "highlightColor": "purple"
     }
   ]
 }
@@ -1006,9 +737,7 @@ graph (Граф):
       "description": "Подстрока найдена",
       "parameters": ["found", "true"],
       "nextStep": "set_position",
-      "visualize": true,
-      "highlightElements": ["i"],
-      "highlightColor": "green"
+      "visualize": true
     },
     {
       "id": "set_position",
@@ -1031,12 +760,7 @@ graph (Граф):
       "type": "generic",
       "description": "Поиск завершен",
       "parameters": [],
-      "visualize": true,
-      "metadata": {
-        "result_found": "found",
-        "position": "position",
-        "search_result": "found ? 'Найдено в позиции ' + position : 'Не найдено'"
-      }
+      "visualize": true
     }
   ]
 }
@@ -1090,9 +814,7 @@ graph (Граф):
       "description": "Обработка элемента",
       "parameters": ["result", "result + i"],
       "nextStep": "increment",
-      "visualize": true,
-      "highlightElements": ["i"],
-      "highlightColor": "blue"
+      "visualize": true
     },
     {
       "id": "increment",
@@ -1107,11 +829,8 @@ graph (Граф):
       "type": "generic",
       "description": "Алгоритм завершен",
       "parameters": [],
-      "visualize": true,
-      "metadata": {
-        "final_result": "result"
-      }
+      "visualize": true
     }
   ]
 }
-
+конец инструкции

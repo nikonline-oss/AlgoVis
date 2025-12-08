@@ -22,6 +22,18 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="GigaChatService.py" />
+    <Compile Include="python_java_translator\data_structures.py" />
+    <Compile Include="python_java_translator\examples.py" />
+    <Compile Include="python_java_translator\java_translator.py" />
+    <Compile Include="python_java_translator\variable_collector.py" />
+    <Compile Include="python_java_translator\visualization_config.py" />
+    <Compile Include="python_java_translator\__init__.py" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="python_java_translator\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="python_java_translator\README.md" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
   <!-- Uncomment the CoreCompile target to enable the Build command in

@@ -6,15 +6,22 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Input } from '../components/ui/input';
 import { AnimationControls } from '../components/AnimationControls';
 import { ArrayVisualization } from '../components/ArrayVisualization';
-import { TreeVisualization, type TreeNode } from '../components/TreeVisualization';
-import { GraphVisualization, type GraphNode, type GraphEdge } from '../components/GraphVisualization';
-import { ListVisualization, type ListNode } from '../components/ListVisualization';
+import { TreeVisualization, TreeNode } from '../components/TreeVisualization';
+import { GraphVisualization, GraphNode, GraphEdge } from '../components/GraphVisualization';
+import { ListVisualization, ListNode } from '../components/ListVisualization';
 import { StackVisualization } from '../components/StackVisualization';
 import { QueueVisualization } from '../components/QueueVisualization';
 import { StatsPanel } from '../components/StatsPanel';
 import { useApp } from '../contexts/AppContext';
-import { useAlgorithmApi } from '../hooks/useAlgorithmApi';
-import type { AlgorithmStepsResponse, VisualizationStep, ArrayStep } from '../types/interfaces';
+
+
+interface SortingStep {
+  array: number[];
+  comparing?: number[];
+  swapping?: number[];
+  sorted?: number[];
+  pivotIndex?: number;
+}
 
 interface TreeStep {
   tree: TreeNode | null;
@@ -57,10 +64,9 @@ interface QueueStep {
   operation?: 'enqueue' | 'dequeue' | null;
 }
 
+type VisualizationStep = SortingStep | TreeStep | GraphStep | ListStep | StackStep | QueueStep;
 
 export function VisualizerPage() {
-
-  const { loading, error, runAlgorithm: runAlgorithmApi, generateData, clearError } = useAlgorithmApi();
   const { translations, sharedData, setSharedData } = useApp();
   const [dataStructure, setDataStructure] = useState<'array' | 'tree' | 'graph' | 'list' | 'stack' | 'queue'>('array');
   const [algorithm, setAlgorithm] = useState('bubblesort');
@@ -82,8 +88,7 @@ export function VisualizerPage() {
   const [originalGraphEdges, setOriginalGraphEdges] = useState<GraphEdge[]>([]);
   const [nodeCount, setNodeCount] = useState(6);
   const [graphType, setGraphType] = useState<'circular' | 'grid' | 'complete' | 'random'>('circular');
-    const [directedGraph, setDirectedGraph] = useState(false);
-    const [startNode, setStartNode] = useState(0);
+  const [directedGraph, setDirectedGraph] = useState(false);
 
   // List state
   const [listNodes, setListNodes] = useState<ListNode[]>([]);
@@ -129,44 +134,153 @@ export function VisualizerPage() {
     }
   }, [sharedData, setSharedData]);
 
-    const generateRandomArray = useCallback(async () => {
-        const newArray = await generateData('array', { size: arraySize });
-        if (newArray) {
-            setArray(newArray);
-            setOriginalArray([...newArray]);
-            setCurrentStep(0);
-            setSteps([]);
-            setStats({ comparisons: 0, swaps: 0, operations: 0 });
-            setIsPlaying(false);
-        }
-    }, [arraySize, generateData]);
+  const generateRandomArray = useCallback(() => {
+    const newArray = Array.from({ length: arraySize }, () =>
+      Math.floor(Math.random() * 100) + 1
+    );
+    setArray(newArray);
+    setOriginalArray([...newArray]);
+    setCurrentStep(0);
+    setSteps([]);
+    setStats({ comparisons: 0, swaps: 0, operations: 0 });
+    setIsPlaying(false);
+  }, [arraySize]);
 
-    const generateRandomTree = useCallback(async () => {
-        const newTree = await generateData('tree');
-        if (newTree) {
-            setTree(newTree);
-            setOriginalTree(JSON.parse(JSON.stringify(newTree)));
-            setCurrentStep(0);
-            setSteps([]);
-            setStats({ comparisons: 0, swaps: 0, operations: 0 });
-            setIsPlaying(false);
-        }
-    }, [generateData]);
+  const generateRandomTree = useCallback(() => {
+    const values = Array.from({ length: 10 }, () => Math.floor(Math.random() * 100) + 1);
+    let root: TreeNode | null = null;
 
-    const generateRandomGraph = useCallback(async (type: "circular" | "grid" | "complete" | "random" = graphType) => {
-        const graphData = await generateData('graph', {
-            graphType: type,
-            nodeCount
+    const insertNode = (node: TreeNode | null, value: number): TreeNode => {
+      if (!node) {
+        return { value };
+      }
+      if (value < node.value) {
+        node.left = insertNode(node.left || null, value);
+      } else {
+        node.right = insertNode(node.right || null, value);
+      }
+      return node;
+    };
+
+    values.forEach(value => {
+      root = insertNode(root, value);
+    });
+
+    setTree(root);
+    setOriginalTree(JSON.parse(JSON.stringify(root)));
+    setCurrentStep(0);
+    setSteps([]);
+    setStats({ comparisons: 0, swaps: 0, operations: 0 });
+    setIsPlaying(false);
+  }, []);
+
+const generateRandomGraph = useCallback((type: 'circular' | 'grid' | 'complete' | 'random' = graphType) => {
+  const nodes: GraphNode[] = [];
+  const edges: GraphEdge[] = [];
+  
+  const centerX = 400;
+  const centerY = 250;
+  const radius = 150;
+
+  if (type === 'circular') {
+    // Круговое расположение
+    for (let i = 0; i < nodeCount; i++) {
+      const angle = (i * 2 * Math.PI) / nodeCount;
+      nodes.push({
+        id: i,
+        x: centerX + radius * Math.cos(angle),
+        y: centerY + radius * Math.sin(angle),
+        label: String(i)
+      });
+    }
+    
+    // Создаем кольцевые связи
+    for (let i = 0; i < nodeCount; i++) {
+      const next = (i + 1) % nodeCount;
+      edges.push({
+        from: i,
+        to: next,
+        weight: Math.floor(Math.random() * 5) + 1,
+      });
+    }
+  } else if (type === 'grid') {
+    // Сеточное расположение
+    const cols = Math.ceil(Math.sqrt(nodeCount));
+    const rows = Math.ceil(nodeCount / cols);
+    const cellWidth = 250 / Math.max(cols - 1, 1);
+    const cellHeight = 250 / Math.max(rows - 1, 1);
+    
+    for (let i = 0; i < nodeCount; i++) {
+      const row = Math.floor(i / cols);
+      const col = i % cols;
+      nodes.push({
+        id: i,
+        x: 200 + col * cellWidth,
+        y: 150 + row * cellHeight,
+        label: String(i)
+      });
+    }
+    
+    // Горизонтальные связи
+    for (let i = 0; i < nodeCount; i++) {
+      const row = Math.floor(i / cols);
+      const col = i % cols;
+      
+      if (col < cols - 1 && i + 1 < nodeCount) {
+        edges.push({
+          from: i,
+          to: i + 1,
+          weight: Math.floor(Math.random() * 5) + 1,
         });
-        if (graphData) {
-            setGraphNodes(graphData.nodes);
-            setGraphEdges(graphData.edges);
-            setOriginalGraphNodes([...graphData.nodes]);
-            setOriginalGraphEdges([...graphData.edges]);
-            setCurrentStep(0);
-            setSteps([]);
-            setStats({ comparisons: 0, swaps: 0, operations: 0 });
-            setIsPlaying(false);
+      }
+    }
+    
+    // Вертикальные связи
+    for (let i = 0; i < nodeCount; i++) {
+      const row = Math.floor(i / cols);
+      const col = i % cols;
+      
+      if (row < rows - 1 && i + cols < nodeCount) {
+        edges.push({
+          from: i,
+          to: i + cols,
+          weight: Math.floor(Math.random() * 5) + 1,
+        });
+      }
+    }
+  } else if (type === 'complete') {
+    // Полный граф K_n
+    for (let i = 0; i < nodeCount; i++) {
+      const angle = (i * 2 * Math.PI) / nodeCount;
+      nodes.push({
+        id: i,
+        x: centerX + radius * Math.cos(angle),
+        y: centerY + radius * Math.sin(angle),
+        label: String(i)
+      });
+    }
+    
+    // Все узлы соединены со всеми
+    for (let i = 0; i < nodeCount; i++) {
+      for (let j = i + 1; j < nodeCount; j++) {
+        edges.push({
+          from: i,
+          to: j,
+          weight: Math.floor(Math.random() * 5) + 1,
+        });
+      }
+    }
+  } else if (type === 'random') {
+    // Свободное расположение узлов с улучшенной проверкой коллизий
+    const padding = 60;
+    const minDistance = 70; // Минимальное расстояние между узлами
+    
+    // Функция для проверки коллизий
+    const hasCollision = (x: number, y: number, existingNodes: GraphNode[]) => {
+      for (const node of existingNodes) {
+        const distance = Math.sqrt(Math.pow(x - node.x, 2) + Math.pow(y - node.y, 2));
+        if (distance < minDistance) {
+          return true;
         }
       }
       return false;
@@ -322,7 +436,7 @@ export function VisualizerPage() {
       edges.push({
         from: edge.from,
         to: edge.to,
-        weight: Math.floor(edge.distance / 50) + 1,
+        weight: Math.floor(edge.distance / 25) + 1,
       });
     }
   }
@@ -406,59 +520,217 @@ export function VisualizerPage() {
     }
   }, [listType, dataStructure, generateRandomList]);
 
-    
   // Sorting algorithms
-  const bubbleSort = async (arr: number[]): Promise<ArrayStep[]> => {
-    const steps: ArrayStep[] = [];
-      const array = [...arr];
-      const result: AlgorithmStepsResponse = await runAlgorithmApi(dataStructure, algorithm, array, {});
-      if (result) {
-          setSteps(result.steps);
-          setStats(result.stats);
-          setCurrentStep(0);
-          setIsPlaying(true);
+  const bubbleSort = (arr: number[]): SortingStep[] => {
+    const steps: SortingStep[] = [];
+    const array = [...arr];
+    let comparisons = 0;
+    let swaps = 0;
+
+    steps.push({ array: [...array] });
+
+    for (let i = 0; i < array.length - 1; i++) {
+      for (let j = 0; j < array.length - i - 1; j++) {
+        comparisons++;
+        steps.push({
+          array: [...array],
+          comparing: [j, j + 1],
+        });
+
+        if (array[j] > array[j + 1]) {
+          [array[j], array[j + 1]] = [array[j + 1], array[j]];
+          swaps++;
+          steps.push({
+            array: [...array],
+            swapping: [j, j + 1],
+          });
+        }
       }
+      steps.push({
+        array: [...array],
+        sorted: Array.from({ length: i + 1 }, (_, k) => array.length - 1 - k),
+      });
+    }
+
+    steps.push({
+      array: [...array],
+      sorted: Array.from({ length: array.length }, (_, i) => i),
+    });
+
+    setStats({ comparisons, swaps, operations: comparisons + swaps });
     return steps;
   };
 
-    const quickSort = async (arr: number[]): Promise<ArrayStep[]> => {
-      const steps: ArrayStep[] = [];
-      const array = [...arr];
-      const result: AlgorithmStepsResponse = await runAlgorithmApi(dataStructure, algorithm, array, {});
-      if (result) {
-          setSteps(result.steps);
-          setStats(result.stats);
-          setCurrentStep(0);
-          setIsPlaying(true);
+  const quickSort = (arr: number[]): SortingStep[] => {
+    const steps: SortingStep[] = [];
+    const array = [...arr];
+    let comparisons = 0;
+    let swaps = 0;
+
+    const partition = (low: number, high: number): number => {
+      const pivot = array[high];
+      let i = low - 1;
+
+      steps.push({
+        array: [...array],
+        pivotIndex: high,
+      });
+
+      for (let j = low; j < high; j++) {
+        comparisons++;
+        steps.push({
+          array: [...array],
+          comparing: [j, high],
+          pivotIndex: high,
+        });
+
+        if (array[j] < pivot) {
+          i++;
+          if (i !== j) {
+            [array[i], array[j]] = [array[j], array[i]];
+            swaps++;
+            steps.push({
+              array: [...array],
+              swapping: [i, j],
+              pivotIndex: high,
+            });
+          }
+        }
       }
-      return steps;
+
+      [array[i + 1], array[high]] = [array[high], array[i + 1]];
+      swaps++;
+      steps.push({
+        array: [...array],
+        swapping: [i + 1, high],
+      });
+
+      return i + 1;
     };
 
-    const insertionSort = async (arr: number[]): Promise<ArrayStep[]> => {
-        const steps: ArrayStep[] = [];
-        const array = [...arr];
-        const result: AlgorithmStepsResponse = await runAlgorithmApi(dataStructure, algorithm, array, {});
-        if (result) {
-            setSteps(result.steps);
-            setStats(result.stats);
-            setCurrentStep(0);
-            setIsPlaying(true);
-        }
-        return steps;
+    const quickSortHelper = (low: number, high: number) => {
+      if (low < high) {
+        const pi = partition(low, high);
+        quickSortHelper(low, pi - 1);
+        quickSortHelper(pi + 1, high);
+      }
     };
 
-    const selectionSort = async (arr: number[]): Promise<ArrayStep[]> => {
-        const steps: ArrayStep[] = [];
-        const array = [...arr];
-        const result: AlgorithmStepsResponse = await runAlgorithmApi(dataStructure, algorithm, array, {});
-        if (result) {
-            setSteps(result.steps);
-            setStats(result.stats);
-            setCurrentStep(0);
-            setIsPlaying(true);
+    steps.push({ array: [...array] });
+    quickSortHelper(0, array.length - 1);
+    steps.push({
+      array: [...array],
+      sorted: Array.from({ length: array.length }, (_, i) => i),
+    });
+
+    setStats({ comparisons, swaps, operations: comparisons + swaps });
+    return steps;
+  };
+
+  const insertionSort = (arr: number[]): SortingStep[] => {
+    const steps: SortingStep[] = [];
+    const array = [...arr];
+    let comparisons = 0;
+    let swaps = 0;
+
+    steps.push({ array: [...array] });
+
+    for (let i = 1; i < array.length; i++) {
+      const key = array[i];
+      let j = i - 1;
+
+      steps.push({
+        array: [...array],
+        comparing: [i],
+      });
+
+      while (j >= 0 && array[j] > key) {
+        comparisons++;
+        steps.push({
+          array: [...array],
+          comparing: [j, j + 1],
+        });
+
+        array[j + 1] = array[j];
+        swaps++;
+        steps.push({
+          array: [...array],
+          swapping: [j, j + 1],
+        });
+        j--;
+      }
+
+      if (j >= 0) {
+        comparisons++;
+      }
+
+      array[j + 1] = key;
+      steps.push({
+        array: [...array],
+        sorted: Array.from({ length: i + 1 }, (_, k) => k),
+      });
+    }
+
+    steps.push({
+      array: [...array],
+      sorted: Array.from({ length: array.length }, (_, i) => i),
+    });
+
+    setStats({ comparisons, swaps, operations: comparisons + swaps });
+    return steps;
+  };
+
+  const selectionSort = (arr: number[]): SortingStep[] => {
+    const steps: SortingStep[] = [];
+    const array = [...arr];
+    let comparisons = 0;
+    let swaps = 0;
+
+    steps.push({ array: [...array] });
+
+    for (let i = 0; i < array.length - 1; i++) {
+      let minIndex = i;
+
+      steps.push({
+        array: [...array],
+        comparing: [i],
+      });
+
+      for (let j = i + 1; j < array.length; j++) {
+        comparisons++;
+        steps.push({
+          array: [...array],
+          comparing: [minIndex, j],
+        });
+
+        if (array[j] < array[minIndex]) {
+          minIndex = j;
         }
-        return steps;
-    };
+      }
+
+      if (minIndex !== i) {
+        [array[i], array[minIndex]] = [array[minIndex], array[i]];
+        swaps++;
+        steps.push({
+          array: [...array],
+          swapping: [i, minIndex],
+        });
+      }
+
+      steps.push({
+        array: [...array],
+        sorted: Array.from({ length: i + 1 }, (_, k) => k),
+      });
+    }
+
+    steps.push({
+      array: [...array],
+      sorted: Array.from({ length: array.length }, (_, i) => i),
+    });
+
+    setStats({ comparisons, swaps, operations: comparisons + swaps });
+    return steps;
+  };
 
   // Tree algorithms
   const bstInsert = (root: TreeNode | null, value: number): TreeStep[] => {
@@ -1196,62 +1468,62 @@ export function VisualizerPage() {
     return steps;
   };
 
-  function runAlgorithm() {
-        let algorithmSteps: VisualizationStep[] = [];
+  const runAlgorithm = () => {
+    let algorithmSteps: VisualizationStep[] = [];
 
-        if (dataStructure === 'array') {
-            switch (algorithm) {
-                case 'bubblesort':
-                    algorithmSteps = bubbleSort(originalArray);
-                    break;
-                case 'quicksort':
-                    algorithmSteps = quickSort(originalArray);
-                    break;
-                case 'insertionsort':
-                    algorithmSteps = insertionSort(originalArray);
-                    break;
-                case 'selectionsort':
-                    algorithmSteps = selectionSort(originalArray);
-                    break;
-                default:
-                    algorithmSteps = bubbleSort(originalArray);
-            }
-        } else if (dataStructure === 'tree') {
-            switch (algorithm) {
-                case 'bst.inorder':
-                    algorithmSteps = bstInorder(originalTree);
-                    break;
-                case 'bst.preorder':
-                    algorithmSteps = bstPreorder(originalTree);
-                    break;
-                case 'bst.postorder':
-                    algorithmSteps = bstPostorder(originalTree);
-                    break;
-                case 'bst.levelorder':
-                    algorithmSteps = bstLevelorder(originalTree);
-                    break;
-                default:
-                    algorithmSteps = bstInorder(originalTree);
-            }
-        } else if (dataStructure === 'graph') {
-            switch (algorithm) {
-                case 'bfs':
-                    algorithmSteps = graphBFS(originalGraphNodes, originalGraphEdges);
-                    break;
-                case 'dfs':
-                    algorithmSteps = graphDFS(originalGraphNodes, originalGraphEdges);
-                    break;
-                case 'dijkstra':
-                    algorithmSteps = graphDijkstra(originalGraphNodes, originalGraphEdges);
-                    break;
-                default:
-                    algorithmSteps = graphBFS(originalGraphNodes, originalGraphEdges);
-            }
-        }
-
-        setSteps(algorithmSteps);
-        setCurrentStep(0);
+    if (dataStructure === 'array') {
+      switch (algorithm) {
+        case 'bubblesort':
+          algorithmSteps = bubbleSort(originalArray);
+          break;
+        case 'quicksort':
+          algorithmSteps = quickSort(originalArray);
+          break;
+        case 'insertionsort':
+          algorithmSteps = insertionSort(originalArray);
+          break;
+        case 'selectionsort':
+          algorithmSteps = selectionSort(originalArray);
+          break;
+        default:
+          algorithmSteps = bubbleSort(originalArray);
+      }
+    } else if (dataStructure === 'tree') {
+      switch (algorithm) {
+        case 'bst.inorder':
+          algorithmSteps = bstInorder(originalTree);
+          break;
+        case 'bst.preorder':
+          algorithmSteps = bstPreorder(originalTree);
+          break;
+        case 'bst.postorder':
+          algorithmSteps = bstPostorder(originalTree);
+          break;
+        case 'bst.levelorder':
+          algorithmSteps = bstLevelorder(originalTree);
+          break;
+        default:
+          algorithmSteps = bstInorder(originalTree);
+      }
+    } else if (dataStructure === 'graph') {
+      switch (algorithm) {
+        case 'bfs':
+          algorithmSteps = graphBFS(originalGraphNodes, originalGraphEdges);
+          break;
+        case 'dfs':
+          algorithmSteps = graphDFS(originalGraphNodes, originalGraphEdges);
+          break;
+        case 'dijkstra':
+          algorithmSteps = graphDijkstra(originalGraphNodes, originalGraphEdges);
+          break;
+        default:
+          algorithmSteps = graphBFS(originalGraphNodes, originalGraphEdges);
+      }
     }
+
+    setSteps(algorithmSteps);
+    setCurrentStep(0);
+  };
 
   const handleInsertValue = () => {
     const value = parseInt(insertValue);
@@ -1424,17 +1696,16 @@ export function VisualizerPage() {
   const renderVisualization = () => {
     const currentStepData = steps[currentStep];
 
-      if (dataStructure === 'array') {
-          const stepData = (currentStepData as ArrayStep) || {
+    if (dataStructure === 'array') {
+      const stepData = (currentStepData as SortingStep) || {
         array,
         comparing: [],
         swapping: [],
-        sorted: [],
-
+        sorted: []
       };
       return <ArrayVisualization {...stepData} />;
     } else if (dataStructure === 'tree') {
-      const stepData = (currentStepData as unknown as TreeStep) || {
+      const stepData = (currentStepData as TreeStep) || {
         tree,
         currentNode: undefined,
         highlightedNodes: [],
@@ -1473,7 +1744,7 @@ export function VisualizerPage() {
 
       if (currentStepData) {
         // Есть шаги анимации - используем данные из шага
-        stepData = currentStepData as unknown as GraphStep;
+        stepData = currentStepData as GraphStep;
       } else {
         // Нет шагов - создаем базовые данные с серыми узлами
         stepData = {
@@ -1494,7 +1765,7 @@ export function VisualizerPage() {
         />
       );
     } else if (dataStructure === 'list') {
-      const stepData = (currentStepData as unknown as ListStep) || {
+      const stepData = (currentStepData as ListStep) || {
         nodes: listNodes,
         head: 0,
         tail: listNodes.length > 0 ? listNodes.length - 1 : null,
@@ -1502,13 +1773,13 @@ export function VisualizerPage() {
       };
       return <ListVisualization {...stepData} />;
     } else if (dataStructure === 'stack') {
-      const stepData = (currentStepData as unknown as StackStep) || {
+      const stepData = (currentStepData as StackStep) || {
         items: stackItems,
         top: stackItems.length > 0 ? stackItems.length - 1 : undefined,
       };
       return <StackVisualization {...stepData} />;
     } else if (dataStructure === 'queue') {
-      const stepData = (currentStepData as unknown as QueueStep) || {
+      const stepData = (currentStepData as QueueStep) || {
         items: queueItems,
         front: 0,
         rear: queueItems.length > 0 ? queueItems.length - 1 : undefined,
@@ -1699,6 +1970,8 @@ export function VisualizerPage() {
                   <Slider
                     value={[listSize]}
                     onValueChange={(value) => setListSize(value[0])}
+                    max={10}
+                    min={1}
                     max={8}
                     min={2}
                     step={1}
@@ -1739,6 +2012,8 @@ export function VisualizerPage() {
                   <Slider
                     value={[stackSize]}
                     onValueChange={(value) => setStackSize(value[0])}
+                    max={10}
+                    min={1}
                     max={5}
                     min={2}
                     step={1}
@@ -1773,8 +2048,8 @@ export function VisualizerPage() {
                   <Slider
                     value={[queueSize]}
                     onValueChange={(value) => setQueueSize(value[0])}
-                    max={8}
-                    min={2}
+                    max={10}
+                    min={1}
                     step={1}
                   />
                 </div>

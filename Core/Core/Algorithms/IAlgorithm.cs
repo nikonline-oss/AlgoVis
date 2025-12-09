@@ -8,10 +8,10 @@ using System.Threading.Tasks;
 
 namespace AlgoVis.Core.Core.Algorithms
 {
-    public interface IAlgorithm<TStructure, TState>
+    public interface IAlgorithm<TStructure, TState, TStep>
         where TStructure : IDataStructure<TState>
     {
         string Name { get; }
-        AlgorithmResult Execute(AlgorithmConfig config, TStructure structure);
+        AlgorithmResult<TStep> Execute(AlgorithmConfig config, TStructure structure);
     }
 }

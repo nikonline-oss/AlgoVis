@@ -134,7 +134,7 @@ namespace AlgoVis.Core.Core
 
         private IVariableValue InitializePrimitiveVariable(VariableDefinition variableDef, ExecutionContext context)
         {
-            var initialValue = variableDef.initialValue?.ToString() ?? "";
+            var initialValue = variableDef.initialValue?.ToString().ToLower() ?? "";
 
             var result = EvaluateExpression(initialValue, context).ToValueString();
 
@@ -468,7 +468,7 @@ namespace AlgoVis.Core.Core
                     AlgorithmName = context.Request.name,
                     SessionId = Guid.NewGuid().ToString(),
                     StructureType = context.Structure.Type,
-                    Steps = context.VisualizationSteps,
+                    steps = context.VisualizationSteps,
                     Statistics = context.Statistics.Clone(),
                     ExecutionTime = executionTime,
                     OutputData = CreateOutputData(context)
@@ -563,7 +563,7 @@ namespace AlgoVis.Core.Core
                 {
                     AlgorithmName = context.Request.name,
                     ExecutionTime = executionTime,
-                    Steps = context.VisualizationSteps,
+                    steps = context.VisualizationSteps,
                     Statistics = context.Statistics
                 }
             };

@@ -24,9 +24,9 @@ namespace AlgoVis.Models.Models.Operations.Handlers
                 throw new ArgumentException("Swap operation requires 2 parameters");
 
             // Получаем имя массива и индексы
-            string arrayName = step.parameters.Count > 2 ? step.parameters[0] : "array";
-            var index1Value = EvaluateExpression(step.parameters[step.parameters.Count > 2 ? 1 : 0], context);
-            var index2Value = EvaluateExpression(step.parameters[step.parameters.Count > 2 ? 2 : 1], context);
+            string arrayName = step.parameters.Count > 2 ? step.parameters[0] : "struct";
+            var index1Value = EvaluateExpression(step.parameters[step.parameters.Count > 2 ? 1 : 0].ToLower(), context);
+            var index2Value = EvaluateExpression(step.parameters[step.parameters.Count > 2 ? 2 : 1].ToLower(), context);
 
             int index1 = index1Value.ToInt();
             int index2 = index2Value.ToInt();

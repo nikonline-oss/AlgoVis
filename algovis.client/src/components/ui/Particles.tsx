@@ -103,7 +103,7 @@ const Particles: React.FC<ParticlesProps> = ({
   particleCount = 200,
   particleSpread = 10,
   speed = 0.1,
-  particleColors,
+  particleColors = defaultColors,
   moveParticlesOnHover = false,
   particleHoverFactor = 1,
   alphaParticles = false,

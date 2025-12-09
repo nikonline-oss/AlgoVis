@@ -4,6 +4,7 @@ using AlgoVis.Models.Models.DataStructures;
 using AlgoVis.Models.Models.DataStructures.Interfaces;
 using AlgoVis.Models.Models.Suport;
 using AlgoVis.Server.DTO;
+using AlgoVis.Server.Models.enums;
 using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
 using System.Reflection;
@@ -83,66 +84,51 @@ namespace AlgoVis.Server.Controllers
         /// <summary>
         /// Сгенерировать структуру с заданными параметрами
         /// </summary>
-        [HttpPost("generate")]
-        public ActionResult<StructureGenerationResponse> GenerateStructure([FromBody] GenerateStructureRequest request)
+        [HttpGet("generate/{name}")]
+        public ActionResult<StructureGenerationResponse> GenerateStructure(string name, [FromQuery] int? size = null)
         {
-            var stopwatch = Stopwatch.StartNew();
-
             try
             {
-                _logger.LogInformation("Generating {StructureType} with parameters: {Parameters}",
-                    request.StructureType,
-                    System.Text.Json.JsonSerializer.Serialize(request.Parameters));
 
                 // Если указан seed, создаем фабрику с заданным seed
-                RandomStructureFactory factory = request.Seed.HasValue
-                    ? CreateSeededFactory(request.Seed.Value)
-                    : _factory;
+                RandomStructureFactory factory =  _factory;
+                Console.WriteLine(name);
+                var parameters = factory.GetDefaultParameters(name);
+                if (size != null)
+                    parameters["size"] = size;
 
-                var structure = factory.GenerateStructure(request.StructureType, request.Parameters);
-                var visualizationData = structure.ToVisualizationData();
+                var structure = factory.GenerateStructure(name, parameters);
                 var state = structure.GetState();
-
-                var metadata = CreateMetadata(structure, stopwatch.Elapsed);
 
                 var response = new StructureGenerationResponse
                 {
-                    Success = true,
-                    StructureType = request.StructureType,
-                    VisualizationData = visualizationData,
-                    UsedParameters = request.Parameters.Any() ? request.Parameters : _factory.GetDefaultParameters(request.StructureType),
-                    Metadata = metadata,
-                    State = state
+                    success = true,
+                    StructureType = name,
+                    UsedParameters = parameters,
+                    data = state
                 };
-
-                _logger.LogInformation("Successfully generated {StructureType} in {ElapsedMs}ms",
-                    request.StructureType, stopwatch.ElapsedMilliseconds);
 
                 return Ok(response);
             }
             catch (ArgumentException ex)
             {
-                _logger.LogWarning(ex, "Invalid structure type or parameters: {StructureType}", request.StructureType);
+                _logger.LogWarning(ex, "Invalid structure type or parameters: {StructureType}", name);
                 return BadRequest(new StructureGenerationResponse
                 {
-                    Success = false,
-                    StructureType = request.StructureType,
+                    success = false,
+                    StructureType = name,
                     Error = ex.Message
                 });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error generating structure {StructureType}", request.StructureType);
+                _logger.LogError(ex, "Error generating structure {StructureType}", name);
                 return StatusCode(500, new StructureGenerationResponse
                 {
-                    Success = false,
-                    StructureType = request.StructureType,
+                    success = false,
+                    StructureType = name,
                     Error = ex.Message
                 });
-            }
-            finally
-            {
-                stopwatch.Stop();
             }
         }
 
@@ -174,7 +160,7 @@ namespace AlgoVis.Server.Controllers
 
                         response.Results[structureType] = new StructureGenerationResponse
                         {
-                            Success = true,
+                            success = true,
                             StructureType = structureType,
                             VisualizationData = visualizationData,
                             UsedParameters = parameters,
@@ -187,7 +173,7 @@ namespace AlgoVis.Server.Controllers
                     {
                         response.Results[structureType] = new StructureGenerationResponse
                         {
-                            Success = false,
+                            success = false,
                             StructureType = structureType,
                             Error = ex.Message
                         };
@@ -250,7 +236,7 @@ namespace AlgoVis.Server.Controllers
 
                         response.Results[structureType] = new StructureGenerationResponse
                         {
-                            Success = true,
+                            success = true,
                             StructureType = structureType,
                             VisualizationData = visualizationData,
                             UsedParameters = defaultParameters,
@@ -263,7 +249,7 @@ namespace AlgoVis.Server.Controllers
                     {
                         response.Results[structureType] = new StructureGenerationResponse
                         {
-                            Success = false,
+                            success = false,
                             StructureType = structureType,
                             Error = ex.Message
                         };

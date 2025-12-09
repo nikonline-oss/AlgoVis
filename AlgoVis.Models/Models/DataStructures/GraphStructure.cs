@@ -27,9 +27,9 @@ namespace AlgoVis.Models.Models.DataStructures
             }).ToList(),
             Edges = Edges.Select(e => new GraphEdge
             {
-                FromId = e.FromId,
-                ToId = e.ToId,
-                Weight = e.Weight
+                from = e.from,
+                to = e.to,
+                weight = e.weight
             }).ToList()
         };
 
@@ -58,10 +58,10 @@ namespace AlgoVis.Models.Models.DataStructures
             {
                 data.connections.Add(new Connection
                 {
-                    FromId = edge.FromId,
-                    ToId = edge.ToId,
+                    FromId = edge.from,
+                    ToId = edge.to,
                     Type = "edge",
-                    Weight = edge.Weight
+                    Weight = edge.weight
                 });
             }
 

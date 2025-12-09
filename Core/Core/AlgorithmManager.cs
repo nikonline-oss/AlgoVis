@@ -1,6 +1,6 @@
-﻿using AlgoVis.Core.Core.Algorithms.Graph;
+﻿//using AlgoVis.Core.Core.Algorithms.Graph;
 using AlgoVis.Core.Core.Algorithms.Sorting;
-using AlgoVis.Core.Core.Algorithms.Tree;
+//using AlgoVis.Core.Core.Algorithms.Tree;
 using AlgoVis.Models.Models.Core;
 using AlgoVis.Models.Models.Custom;
 using AlgoVis.Models.Models.DataStructures;
@@ -25,8 +25,10 @@ namespace AlgoVis.Core.Core
 
             RegisterAlgorithm<ArrayStructure, int[]>("BubbleSort", typeof(BubbleSortAlgorithm));
             RegisterAlgorithm<ArrayStructure, int[]>("QuickSort", typeof(QuickSortAlgorithm));
-            RegisterAlgorithm<GraphStructure, GraphState>("GraphDFS", typeof(GraphDfsAlgorithm));
-            RegisterAlgorithm<BinaryTreeStructure, TreeNode>("TreeInOrder", typeof(TreeInOrderAlgorithm));
+            RegisterAlgorithm<ArrayStructure, int[]>("InsertionSort", typeof(InsertionSortAlgorithm));
+            RegisterAlgorithm<ArrayStructure, int[]>("SelectionSort", typeof(SelectionSortAlgorithm));
+            //RegisterAlgorithm<GraphStructure, GraphState>("GraphDFS", typeof(GraphDfsAlgorithm));
+            //RegisterAlgorithm<BinaryTreeStructure, TreeNode>("TreeInOrder", typeof(TreeInOrderAlgorithm));
         }
 
         public void RegisterAlgorithm<TStructure, TState>(string name, Type algorithmType)
@@ -46,6 +48,19 @@ namespace AlgoVis.Core.Core
             // Используем рефлексию для вызова метода Execute
             var executeMethod = algorithmType.GetMethod("Execute");
             return executeMethod?.Invoke(algorithmInstance, new object[] { config, structure }) as AlgorithmResult
+                ?? throw new InvalidOperationException("Failed to execute algorithm");
+        }
+        public AlgorithmResult<T> ExecuteAlgorithm<T>(AlgorithmConfig config, IDataStructure structure)
+        {
+            if (!_algorithms.ContainsKey(config.Name))
+                throw new ArgumentException($"Algorithm '{config.Name}' not found");
+
+            var algorithmType = _algorithms[config.Name];
+            var algorithmInstance = Activator.CreateInstance(algorithmType);
+
+            // Используем рефлексию для вызова метода Execute
+            var executeMethod = algorithmType.GetMethod("Execute");
+            return executeMethod?.Invoke(algorithmInstance, new object[] { config, structure }) as AlgorithmResult<T>
                 ?? throw new InvalidOperationException("Failed to execute algorithm");
         }
         public CustomAlgorithmResult ExecuteCustomAlgorithm(CustomAlgorithmRequest request, IDataStructure structure)

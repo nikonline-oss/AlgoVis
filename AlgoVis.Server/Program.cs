@@ -32,8 +32,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 
 
 
-builder.Services.AddSingleton<RandomStructureFactory>();
-
+builder.Services.AddScoped<RandomStructureFactory>();
 builder.Services.AddScoped<ISessionService, SessionService>();
 builder.Services.AddScoped<ICodeAnalysisService, CodeAnalysisService>();
 builder.Services.AddScoped<IGigaChatService, GigaChatService>();
@@ -61,7 +60,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
     {
-        policy.WithOrigins("http://localhost:8000")
+        policy.WithOrigins("http://localhost:3000")
                   .AllowAnyHeader()
                   .AllowAnyMethod()
                   .AllowCredentials();

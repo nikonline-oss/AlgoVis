@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace AlgoVis.Core.Core.Algorithms.Sorting
 {
-    public class QuickSortAlgorithm : BaseAlgorithm<ArrayStructure, int[]>
+    public class QuickSortAlgorithm : BaseAlgorithm<ArrayStructure, int[], SortingStep>
     {
         public override string Name => "QuickSort";
 
@@ -23,18 +23,13 @@ namespace AlgoVis.Core.Core.Algorithms.Sorting
                 ? (string)config.Parameters["PivotStrategy"]
                 : "last";
 
-            AddStep("start", "Начало быстрой сортировки", structure);
+            // Начальный шаг - показываем исходный массив
+            CustomAddStep(array);
 
             QuickSort(array, 0, array.Length - 1, structure, pivotStrategy, detailed);
 
-            AddStep("complete", "Быстрая сортировка завершена", structure,
-                highlights: Enumerable.Range(0, array.Length)
-                    .Select(i => new HighlightedElement
-                    {
-                        ElementId = i.ToString(),
-                        HighlightType = "sorted",
-                        Color = "green"
-                    }).ToList());
+            // Финальный шаг - показываем отсортированный массив
+            CustomAddStep(array, sorted: Enumerable.Range(0, array.Length).ToArray());
         }
 
         private void QuickSort(int[] array, int low, int high, ArrayStructure structure,
@@ -46,27 +41,16 @@ namespace AlgoVis.Core.Core.Algorithms.Sorting
 
                 if (detailed)
                 {
-                    AddStep("recursive_call",
-                        $"Рекурсивный вызов для диапазона [{low}, {high}]", structure,
-                        highlights: Enumerable.Range(low, high - low + 1)
-                            .Select(i => new HighlightedElement
-                            {
-                                ElementId = i.ToString(),
-                                HighlightType = "current_range",
-                                Color = "lightblue"
-                            }).ToList());
+                    // Показываем текущий диапазон
+                    CustomAddStep(array, comparing: Enumerable.Range(low, high - low + 1).ToArray());
                 }
 
                 int pivotIndex = Partition(array, low, high, structure, pivotStrategy, detailed);
 
                 if (detailed)
                 {
-                    AddStep("partition_complete",
-                        $"Разделение завершено. Опорный элемент [{pivotIndex}] = {array[pivotIndex]}", structure,
-                        highlights: new List<HighlightedElement>
-                        {
-                            new() { ElementId = pivotIndex.ToString(), HighlightType = "pivot_final", Color = "purple" }
-                        });
+                    // Показываем опорный элемент после разделения
+                    CustomAddStep(array, pivotIndex: pivotIndex, sorted: new[] { pivotIndex });
                 }
 
                 QuickSort(array, low, pivotIndex - 1, structure, pivotStrategy, detailed);
@@ -74,12 +58,8 @@ namespace AlgoVis.Core.Core.Algorithms.Sorting
             }
             else if (low == high && detailed)
             {
-                AddStep("base_case",
-                    $"Базовый случай - один элемент [{low}] = {array[low]}", structure,
-                    highlights: new List<HighlightedElement>
-                    {
-                        new() { ElementId = low.ToString(), HighlightType = "base_case", Color = "gray" }
-                    });
+                // Базовый случай - один элемент
+                CustomAddStep(array, comparing: new[] { low }, sorted: new[] { low });
             }
         }
 
@@ -89,44 +69,32 @@ namespace AlgoVis.Core.Core.Algorithms.Sorting
             int pivotIndex = ChoosePivot(array, low, high, pivotStrategy);
             int pivotValue = array[pivotIndex];
 
+            // Показываем выбранный опорный элемент
+            CustomAddStep(array, comparing: new[] { pivotIndex }, pivotIndex: pivotIndex);
+
             // Если опорный элемент не последний, перемещаем его в конец
             if (pivotIndex != high)
             {
-                Swap(array, pivotIndex, high, structure, "move_pivot",
-                    $"Перемещение опорного элемента [{pivotIndex}] в конец [{high}]");
+                Swap(array, pivotIndex, high, structure);
                 pivotIndex = high;
+                // Показываем перемещение опорного элемента
+                CustomAddStep(array, swapping: new[] { pivotIndex, high }, pivotIndex: pivotIndex);
             }
-
-            AddStep("select_pivot",
-                $"Выбор опорного элемента [{pivotIndex}] = {pivotValue}", structure,
-                highlights: new List<HighlightedElement>
-                {
-                    new() { ElementId = pivotIndex.ToString(), HighlightType = "pivot", Color = "orange" }
-                });
 
             int i = low - 1;
 
             if (detailed)
             {
-                AddStep("initialize",
-                    $"Инициализация: i = {i}, диапазон [{low}, {high}]", structure,
-                    highlights: new List<HighlightedElement>
-                    {
-                        new() { ElementId = pivotIndex.ToString(), HighlightType = "pivot", Color = "orange" }
-                    });
+                // Показываем инициализацию
+                CustomAddStep(array, comparing: new[] { low, high }, pivotIndex: pivotIndex);
             }
 
             for (int j = low; j < high; j++)
             {
                 RecordComparison();
 
-                AddStep("compare",
-                    $"Сравнение [{j}] = {array[j]} с опорным {pivotValue}", structure,
-                    highlights: new List<HighlightedElement>
-                    {
-                        new() { ElementId = j.ToString(), HighlightType = "comparing", Color = "yellow" },
-                        new() { ElementId = pivotIndex.ToString(), HighlightType = "pivot", Color = "orange" }
-                    });
+                // Показываем сравнение текущего элемента с опорным
+                CustomAddStep(array, comparing: new[] { j, pivotIndex }, pivotIndex: pivotIndex);
 
                 if (array[j] <= pivotValue)
                 {
@@ -134,46 +102,33 @@ namespace AlgoVis.Core.Core.Algorithms.Sorting
 
                     if (detailed)
                     {
-                        AddStep("move_pointer",
-                            $"Увеличиваем i до {i}", structure,
-                            highlights: new List<HighlightedElement>
-                            {
-                                new() { ElementId = i.ToString(), HighlightType = "pointer", Color = "cyan" },
-                                new() { ElementId = pivotIndex.ToString(), HighlightType = "pivot", Color = "orange" }
-                            });
+                        // Показываем перемещение указателя i
+                        CustomAddStep(array, comparing: new[] { i }, pivotIndex: pivotIndex);
                     }
 
                     if (i != j)
                     {
-                        Swap(array, i, j, structure, "swap",
-                            $"Обмен [{i}] и [{j}] так как {array[j]} <= {pivotValue}");
+                        Swap(array, i, j, structure);
+                        // Показываем обмен
+                        CustomAddStep(array, swapping: new[] { i, j }, pivotIndex: pivotIndex);
                     }
                     else if (detailed)
                     {
-                        AddStep("no_swap",
-                            $"Обмен не требуется: i = j = {i}", structure,
-                            highlights: new List<HighlightedElement>
-                            {
-                                new() { ElementId = i.ToString(), HighlightType = "pointer", Color = "cyan" },
-                                new() { ElementId = pivotIndex.ToString(), HighlightType = "pivot", Color = "orange" }
-                            });
+                        // Показываем, что обмен не требуется
+                        CustomAddStep(array, comparing: new[] { i }, pivotIndex: pivotIndex);
                     }
                 }
                 else if (detailed)
                 {
-                    AddStep("skip",
-                        $"Пропускаем [{j}] = {array[j]} (больше опорного)", structure,
-                        highlights: new List<HighlightedElement>
-                        {
-                            new() { ElementId = j.ToString(), HighlightType = "skipped", Color = "lightgray" },
-                            new() { ElementId = pivotIndex.ToString(), HighlightType = "pivot", Color = "orange" }
-                        });
+                    // Показываем пропуск элемента
+                    CustomAddStep(array, comparing: new[] { j }, pivotIndex: pivotIndex);
                 }
             }
 
             // Помещаем опорный элемент на правильную позицию
-            Swap(array, i + 1, high, structure, "place_pivot",
-                $"Размещение опорного элемента на позицию {i + 1}");
+            Swap(array, i + 1, high, structure);
+            // Показываем финальное размещение опорного элемента
+            CustomAddStep(array, swapping: new[] { i + 1, high }, pivotIndex: i + 1);
 
             return i + 1;
         }
@@ -206,19 +161,49 @@ namespace AlgoVis.Core.Core.Algorithms.Sorting
             return mid;
         }
 
-        private void Swap(int[] array, int i, int j, ArrayStructure structure, string operation, string description)
+        private void Swap(int[] array, int i, int j, ArrayStructure structure)
         {
             (array[i], array[j]) = (array[j], array[i]);
             RecordSwap();
-
             structure.ApplyState(array);
+        }
 
-            AddStep(operation, description, structure,
-                highlights: new List<HighlightedElement>
-                {
-                    new() { ElementId = i.ToString(), HighlightType = "swapping", Color = "red" },
-                    new() { ElementId = j.ToString(), HighlightType = "swapping", Color = "red" }
-                });
+        private void CustomAddStep(int[] array, int[] comparing = null, int[] swapping = null, int pivotIndex = -1, int[] sorted = null)
+        {
+            var new_step = new SortingStep
+            {
+                array = CloneArray(array)
+            };
+
+            if (comparing != null && comparing.Length > 0)
+            {
+                new_step.comparing = comparing;
+            }
+
+            if (swapping != null && swapping.Length > 0)
+            {
+                new_step.swapping = swapping;
+            }
+
+            if (pivotIndex != -1)
+            {
+                new_step.pivotIndex = pivotIndex;
+            }
+
+            if (sorted != null && sorted.Length > 0)
+            {
+                new_step.sorted = sorted;
+            }
+
+            RawAddStep(new_step);
+        }
+
+        private int[] CloneArray(int[] array)
+        {
+            if (array == null)
+                throw new ArgumentNullException(nameof(array));
+
+            return array.ToArray();
         }
 
         protected override Dictionary<string, object> GetOutputData(ArrayStructure structure)

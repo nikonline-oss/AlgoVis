@@ -12,7 +12,17 @@ namespace AlgoVis.Models.Models.Core
         public string AlgorithmName { get; set; } = string.Empty;
         public string SessionId { get; set; } = string.Empty;
         public string StructureType { get; set; } = string.Empty;
-        public List<VisualizationStep> Steps { get; set; } = new();
+        public List<VisualizationStep> steps { get; set; } = new();
+        public AlgorithmStatistics Statistics { get; set; } = new();
+        public TimeSpan ExecutionTime { get; set; }
+        public Dictionary<string, object> OutputData { get; set; } = new();
+    }
+    public class AlgorithmResult<TStep>
+    {
+        public string AlgorithmName { get; set; } = string.Empty;
+        public string SessionId { get; set; } = string.Empty;
+        public string StructureType { get; set; } = string.Empty;
+        public List<TStep> steps { get; set; } = new();
         public AlgorithmStatistics Statistics { get; set; } = new();
         public TimeSpan ExecutionTime { get; set; }
         public Dictionary<string, object> OutputData { get; set; } = new();

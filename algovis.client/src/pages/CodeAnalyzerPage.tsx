@@ -31,56 +31,57 @@ export function CodeAnalyzerPage() {
 
     // Симуляция вызова бэкенда
     // В реальном приложении здесь будет вызов API
-    setTimeout(() => {
-      // Пример результата анализа с визуализацией
-      setAnalysisResult({
-        success: true,
-        message: translations['analyzer.success'] || 'Анализ завершен успешно',
-        details: {
-          complexity: 'O(n²)',
-          warnings: 2,
-          suggestions: 3,
-          functionGraph: {
-            functions: [
-              { name: 'bubble_sort', complexity: 'O(n²)' },
-              { name: 'swap', complexity: 'O(1)' },
-              { name: 'compare', complexity: 'O(1)' },
-              { name: 'main', complexity: 'O(n²)' },
-            ],
-            calls: [
-              { from: 'main', to: 'bubble_sort' },
-              { from: 'bubble_sort', to: 'swap' },
-              { from: 'bubble_sort', to: 'compare' },
-            ],
-          },
-          metrics: {
-            lines: 15,
-            comments: 2,
-            functions: 3,
-            classes: 0,
-          },
-        },
-      });
-      setIsAnalyzing(false);
-    }, 2000);
+    //setTimeout(() => {
+    //  // Пример результата анализа с визуализацией
+    //  setAnalysisResult({
+    //    success: true,
+    //    message: translations['analyzer.success'] || 'Анализ завершен успешно',
+    //    details: {
+    //      complexity: 'O(n²)',
+    //      warnings: 2,
+    //      suggestions: 3,
+    //      functionGraph: {
+    //        functions: [
+    //          { name: 'bubble_sort', complexity: 'O(n²)' },
+    //          { name: 'swap', complexity: 'O(1)' },
+    //          { name: 'compare', complexity: 'O(1)' },
+    //          { name: 'main', complexity: 'O(n²)' },
+    //        ],
+    //        calls: [
+    //          { from: 'main', to: 'bubble_sort' },
+    //          { from: 'bubble_sort', to: 'swap' },
+    //          { from: 'bubble_sort', to: 'compare' },
+    //        ],
+    //      },
+    //      metrics: {
+    //        lines: 15,
+    //        comments: 2,
+    //        functions: 3,
+    //        classes: 0,
+    //      },
+    //    },
+    //  });
+    //  setIsAnalyzing(false);
+    //}, 2000);
 
-    // Реальный вызов API будет выглядеть так:
-    // try {
-    //   const response = await fetch('/api/analyze', {
-    //     method: 'POST',
-    //     headers: { 'Content-Type': 'application/json' },
-    //     body: JSON.stringify({ code, language: 'python' }),
-    //   });
-    //   const data = await response.json();
-    //   setAnalysisResult(data);
-    // } catch (error) {
-    //   setAnalysisResult({
-    //     success: false,
-    //     message: translations['analyzer.error'] || 'Ошибка при анализе кода',
-    //   });
-    // } finally {
-    //   setIsAnalyzing(false);
-    // }
+     //Реальный вызов API будет выглядеть так:
+     try {
+         const response = await fetch('http://localhost:5266/api/analyze', {
+         method: 'POST',
+         headers: { 'Content-Type': 'application/json' },
+         body: JSON.stringify({ code, language: 'python' }),
+       });
+         const data = await response.json();
+         console.log(data);
+       setAnalysisResult(data);
+     } catch (error) {
+       setAnalysisResult({
+         success: false,
+         message: translations['analyzer.error'] || 'Ошибка при анализе кода',
+       });
+     } finally {
+       setIsAnalyzing(false);
+     }
   };
 
   const handleClear = () => {

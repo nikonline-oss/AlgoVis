@@ -65,9 +65,9 @@ namespace AlgoVis.Core.Core.GenerateState
                 var next = (i + 1) % nodeCount;
                 structure.Edges.Add(new GraphEdge
                 {
-                    FromId = i.ToString(),
-                    ToId = next.ToString(),
-                    Weight = _random.Next(minWeight, maxWeight + 1)
+                    from = i.ToString(),
+                    to = next.ToString(),
+                    weight = _random.Next(minWeight, maxWeight + 1)
                 });
             }
 
@@ -106,9 +106,9 @@ namespace AlgoVis.Core.Core.GenerateState
                 {
                     structure.Edges.Add(new GraphEdge
                     {
-                        FromId = i.ToString(),
-                        ToId = (i + 1).ToString(),
-                        Weight = _random.Next(minWeight, maxWeight + 1)
+                        from = i.ToString(),
+                        to = (i + 1).ToString(),
+                        weight = _random.Next(minWeight, maxWeight + 1)
                     });
                 }
 
@@ -117,9 +117,9 @@ namespace AlgoVis.Core.Core.GenerateState
                 {
                     structure.Edges.Add(new GraphEdge
                     {
-                        FromId = i.ToString(),
-                        ToId = (i + cols).ToString(),
-                        Weight = _random.Next(minWeight, maxWeight + 1)
+                        from = i.ToString(),
+                        to = (i + cols).ToString(),
+                        weight = _random.Next(minWeight, maxWeight + 1)
                     });
                 }
             }
@@ -154,18 +154,18 @@ namespace AlgoVis.Core.Core.GenerateState
                 {
                     structure.Edges.Add(new GraphEdge
                     {
-                        FromId = i.ToString(),
-                        ToId = j.ToString(),
-                        Weight = _random.Next(minWeight, maxWeight + 1)
+                        from = i.ToString(),
+                        to = j.ToString(),
+                        weight = _random.Next(minWeight, maxWeight + 1)
                     });
 
                     if (directed == 1)
                     {
                         structure.Edges.Add(new GraphEdge
                         {
-                            FromId = j.ToString(),
-                            ToId = i.ToString(),
-                            Weight = _random.Next(minWeight, maxWeight + 1)
+                            from = j.ToString(),
+                            to = i.ToString(),
+                            weight = _random.Next(minWeight, maxWeight + 1)
                         });
                     }
                 }
@@ -323,9 +323,9 @@ namespace AlgoVis.Core.Core.GenerateState
                                 bestDistance = distance;
                                 bestEdge = new GraphEdge
                                 {
-                                    FromId = connectedId,
-                                    ToId = candidateNode.Id,
-                                    Weight = (int)(distance / 25) + 1
+                                    from = connectedId,
+                                    to = candidateNode.Id,
+                                    weight = (int)(distance / 25) + 1
                                 };
                             }
                         }
@@ -334,10 +334,10 @@ namespace AlgoVis.Core.Core.GenerateState
 
                 if (bestEdge != null)
                 {
-                    var edgeKey = $"{Math.Min(int.Parse(bestEdge.FromId), int.Parse(bestEdge.ToId))}-{Math.Max(int.Parse(bestEdge.FromId), int.Parse(bestEdge.ToId))}";
+                    var edgeKey = $"{Math.Min(int.Parse(bestEdge.from), int.Parse(bestEdge.to))}-{Math.Max(int.Parse(bestEdge.from), int.Parse(bestEdge.to))}";
                     addedEdges.Add(edgeKey);
                     structure.Edges.Add(bestEdge);
-                    connectedNodes.Add(bestEdge.ToId);
+                    connectedNodes.Add(bestEdge.to);
                 }
                 else
                 {
@@ -354,7 +354,7 @@ namespace AlgoVis.Core.Core.GenerateState
             // Mark existing edges
             foreach (var edge in structure.Edges)
             {
-                var edgeKey = $"{Math.Min(int.Parse(edge.FromId), int.Parse(edge.ToId))}-{Math.Max(int.Parse(edge.FromId), int.Parse(edge.ToId))}";
+                var edgeKey = $"{Math.Min(int.Parse(edge.from), int.Parse(edge.to))}-{Math.Max(int.Parse(edge.from), int.Parse(edge.to))}";
                 addedEdges.Add(edgeKey);
             }
 
@@ -391,18 +391,18 @@ namespace AlgoVis.Core.Core.GenerateState
                 var edge = shortEdges[i];
                 structure.Edges.Add(new GraphEdge
                 {
-                    FromId = edge.from,
-                    ToId = edge.to,
-                    Weight = _random.Next(minWeight, maxWeight + 1)
+                    from = edge.from,
+                    to = edge.to,
+                    weight = _random.Next(minWeight, maxWeight + 1)
                 });
 
                 if (directed == 1)
                 {
                     structure.Edges.Add(new GraphEdge
                     {
-                        FromId = edge.to,
-                        ToId = edge.from,
-                        Weight = _random.Next(minWeight, maxWeight + 1)
+                        from = edge.to,
+                        to = edge.from,
+                        weight = _random.Next(minWeight, maxWeight + 1)
                     });
                 }
             }

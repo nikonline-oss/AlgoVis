@@ -1,5 +1,4 @@
-// src/contexts/AppContext.tsx
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 
 type Language = 'ru' | 'en';
 type Theme = 'light' | 'dark';

@@ -9,16 +9,17 @@ using System.Threading.Tasks;
 
 namespace AlgoVis.Core.Core.Algorithms
 {
-    public abstract class BaseAlgorithm<TStructure, TState> : IAlgorithm<TStructure, TState>
-        where TStructure : IDataStructure<TState>
+    public abstract class BaseAlgorithm<TStructure, TState, TStep> : IAlgorithm<TStructure, TState, TStep>
+       where TStructure : IDataStructure<TState>
+       where TStep : IStep, new()
     {
         public abstract string Name { get; }
 
-        protected List<VisualizationStep> Steps { get; } = new();
+        protected List<TStep> Steps { get; } = new();
         protected AlgorithmStatistics Statistics { get; } = new();
         protected TStructure? CurrentStructure { get; private set; }
 
-        public AlgorithmResult Execute(AlgorithmConfig config, TStructure structure)
+        public AlgorithmResult<TStep> Execute(AlgorithmConfig config, TStructure structure)
         {
             var stopwatch = System.Diagnostics.Stopwatch.StartNew();
             Steps.Clear();
@@ -29,12 +30,12 @@ namespace AlgoVis.Core.Core.Algorithms
 
             stopwatch.Stop();
 
-            return new AlgorithmResult
+            return new AlgorithmResult<TStep>
             {
                 AlgorithmName = Name,
                 SessionId = config.SessionId,
                 StructureType = structure.Type,
-                Steps = new List<VisualizationStep>(Steps),
+                steps = Steps,
                 Statistics = Statistics.Clone(),
                 ExecutionTime = stopwatch.Elapsed,
                 OutputData = GetOutputData(structure)
@@ -44,8 +45,40 @@ namespace AlgoVis.Core.Core.Algorithms
         protected abstract void ExecuteAlgorithm(AlgorithmConfig config, TStructure structure);
         protected abstract Dictionary<string, object> GetOutputData(TStructure structure);
 
-        protected void AddStep(string operation, string description, TStructure structure, Dictionary<string, object>? metadata = null,
-            List<HighlightedElement>? highlights = null, List<Connection>? connections = null)
+        // Универсальный метод для добавления шагов с базовыми свойствами
+        protected TStep AddStep(string operation, string description, Dictionary<string, object>? metadata = null)
+        {
+            var step = new TStep
+            {
+                stepNumber = Steps.Count + 1,
+                operation = operation,
+                description = description,
+                metadata = metadata ?? new Dictionary<string, object>()
+            };
+
+            Steps.Add(step);
+            Statistics.Steps++;
+
+            return step;
+        }
+
+        // Метод для добавления кастомных шагов с дополнительной логикой
+        protected void AddCustomStep(Action<TStep> configureStep)
+        {
+            var step = new TStep
+            {
+                stepNumber = Steps.Count + 1
+            };
+
+            configureStep(step);
+            Steps.Add(step);
+            Statistics.Steps++;
+        }
+
+        // Обратная совместимость со старым кодом
+        protected void AddLegacyStep(string operation, string description, TStructure structure,
+            Dictionary<string, object>? metadata = null, List<HighlightedElement>? highlights = null,
+            List<Connection>? connections = null)
         {
             var step = new VisualizationStep
             {
@@ -68,8 +101,13 @@ namespace AlgoVis.Core.Core.Algorithms
             if (metadata != null)
                 step.metadata = metadata;
 
-            Steps.Add(step);
+            Steps.Add((TStep)(IStep)step);
             Statistics.Steps++;
+        }
+        protected void RawAddStep(TStep step)
+        {
+            step.stepNumber = Steps.Count + 1;
+            Steps.Add(step);
         }
 
         protected void RecordComparison() => Statistics.Comparisons++;

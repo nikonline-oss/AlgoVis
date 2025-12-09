@@ -14,7 +14,6 @@ import { QueueVisualization } from '../components/QueueVisualization';
 import { StatsPanel } from '../components/StatsPanel';
 import { useApp } from '../contexts/AppContext';
 
-
 interface SortingStep {
   array: number[];
   comparing?: number[];
@@ -80,7 +79,7 @@ export function VisualizerPage() {
   const [tree, setTree] = useState<TreeNode | null>(null);
   const [originalTree, setOriginalTree] = useState<TreeNode | null>(null);
   const [insertValue, setInsertValue] = useState('');
-
+  const [treeNodeCount, setTreeNodeCount] = useState(10);
   // Graph state
   const [graphNodes, setGraphNodes] = useState<GraphNode[]>([]);
   const [graphEdges, setGraphEdges] = useState<GraphEdge[]>([]);
@@ -146,310 +145,335 @@ export function VisualizerPage() {
     setIsPlaying(false);
   }, [arraySize]);
 
-  const generateRandomTree = useCallback(() => {
-    const values = Array.from({ length: 10 }, () => Math.floor(Math.random() * 100) + 1);
-    let root: TreeNode | null = null;
-
-    const insertNode = (node: TreeNode | null, value: number): TreeNode => {
-      if (!node) {
-        return { value };
-      }
-      if (value < node.value) {
-        node.left = insertNode(node.left || null, value);
-      } else {
-        node.right = insertNode(node.right || null, value);
-      }
-      return node;
-    };
-
-    values.forEach(value => {
-      root = insertNode(root, value);
-    });
-
-    setTree(root);
-    setOriginalTree(JSON.parse(JSON.stringify(root)));
-    setCurrentStep(0);
-    setSteps([]);
-    setStats({ comparisons: 0, swaps: 0, operations: 0 });
-    setIsPlaying(false);
-  }, []);
-
-const generateRandomGraph = useCallback((type: 'circular' | 'grid' | 'complete' | 'random' = graphType) => {
-  const nodes: GraphNode[] = [];
-  const edges: GraphEdge[] = [];
+const generateRandomTree = useCallback((count: number = 10) => {
+  let root: TreeNode | null = null;
   
-  const centerX = 400;
-  const centerY = 250;
-  const radius = 150;
+  // Функция для генерации уникальных значений (от 1 до 100)
+  const generateUniqueValues = (count: number): number[] => {
+    const values = new Set<number>();
+    const min = 1;
+    const max = 100;
+    
+    // Гарантируем уникальность значений
+    while (values.size < count) {
+      const value = Math.floor(Math.random() * (max - min + 1)) + min;
+      values.add(value);
+    }
+    
+    return Array.from(values);
+  };
 
-  if (type === 'circular') {
-    // Круговое расположение
-    for (let i = 0; i < nodeCount; i++) {
-      const angle = (i * 2 * Math.PI) / nodeCount;
-      nodes.push({
-        id: i,
-        x: centerX + radius * Math.cos(angle),
-        y: centerY + radius * Math.sin(angle),
-        label: String(i)
-      });
-    }
-    
-    // Создаем кольцевые связи
-    for (let i = 0; i < nodeCount; i++) {
-      const next = (i + 1) % nodeCount;
-      edges.push({
-        from: i,
-        to: next,
-        weight: Math.floor(Math.random() * 5) + 1,
-      });
-    }
-  } else if (type === 'grid') {
-    // Сеточное расположение
-    const cols = Math.ceil(Math.sqrt(nodeCount));
-    const rows = Math.ceil(nodeCount / cols);
-    const cellWidth = 250 / Math.max(cols - 1, 1);
-    const cellHeight = 250 / Math.max(rows - 1, 1);
-    
-    for (let i = 0; i < nodeCount; i++) {
-      const row = Math.floor(i / cols);
-      const col = i % cols;
-      nodes.push({
-        id: i,
-        x: 200 + col * cellWidth,
-        y: 150 + row * cellHeight,
-        label: String(i)
-      });
-    }
-    
-    // Горизонтальные связи
-    for (let i = 0; i < nodeCount; i++) {
-      const row = Math.floor(i / cols);
-      const col = i % cols;
-      
-      if (col < cols - 1 && i + 1 < nodeCount) {
-        edges.push({
-          from: i,
-          to: i + 1,
-          weight: Math.floor(Math.random() * 5) + 1,
-        });
-      }
-    }
-    
-    // Вертикальные связи
-    for (let i = 0; i < nodeCount; i++) {
-      const row = Math.floor(i / cols);
-      const col = i % cols;
-      
-      if (row < rows - 1 && i + cols < nodeCount) {
-        edges.push({
-          from: i,
-          to: i + cols,
-          weight: Math.floor(Math.random() * 5) + 1,
-        });
-      }
-    }
-  } else if (type === 'complete') {
-    // Полный граф K_n
-    for (let i = 0; i < nodeCount; i++) {
-      const angle = (i * 2 * Math.PI) / nodeCount;
-      nodes.push({
-        id: i,
-        x: centerX + radius * Math.cos(angle),
-        y: centerY + radius * Math.sin(angle),
-        label: String(i)
-      });
-    }
-    
-    // Все узлы соединены со всеми
-    for (let i = 0; i < nodeCount; i++) {
-      for (let j = i + 1; j < nodeCount; j++) {
-        edges.push({
-          from: i,
-          to: j,
-          weight: Math.floor(Math.random() * 5) + 1,
-        });
-      }
-    }
-  } else if (type === 'random') {
-    // Свободное расположение узлов с улучшенной проверкой коллизий
-    const padding = 60;
-    const minDistance = 70; // Минимальное расстояние между узлами
-    
-    // Функция для проверки коллизий
-    const hasCollision = (x: number, y: number, existingNodes: GraphNode[]) => {
-      for (const node of existingNodes) {
-        const distance = Math.sqrt(Math.pow(x - node.x, 2) + Math.pow(y - node.y, 2));
-        if (distance < minDistance) {
-          return true;
-        }
-      }
-      return false;
-    };
-    
-    // Размещаем узлы с улучшенным алгоритмом
-    for (let i = 0; i < nodeCount; i++) {
-      let attempts = 0;
-      let x, y;
-      
-      // Пытаемся найти свободную позицию
-      do {
-        x = padding + Math.random() * (800 - 2 * padding);
-        y = padding + Math.random() * (500 - 2 * padding);
-        attempts++;
-        
-        // После 50 попыток увеличиваем поисковое пространство
-        if (attempts > 50) {
-          // Пробуем позиции ближе к центру
-          x = 200 + Math.random() * 400;
-          y = 150 + Math.random() * 200;
-        }
-        
-        // После 100 попыток принимаем любую позицию
-        if (attempts > 100) {
-          break;
-        }
-      } while (hasCollision(x, y, nodes));
-      
-      nodes.push({
-        id: i,
-        x: x,
-        y: y,
-        label: String(i)
-      });
-    }
-
-    // Применяем простую силовую раскладку для финального выравнивания
-    const iterations = 30;
-    const repulsionForce = 80;
-    
-    for (let iter = 0; iter < iterations; iter++) {
-      for (let i = 0; i < nodeCount; i++) {
-        let forceX = 0;
-        let forceY = 0;
-        
-        // Отталкивание от других узлов
-        for (let j = 0; j < nodeCount; j++) {
-          if (i !== j) {
-            const dx = nodes[i].x - nodes[j].x;
-            const dy = nodes[i].y - nodes[j].y;
-            const distance = Math.sqrt(dx * dx + dy * dy);
-            
-            if (distance > 0 && distance < 150) {
-              const force = repulsionForce / distance;
-              forceX += (dx / distance) * force;
-              forceY += (dy / distance) * force;
-            }
-          }
-        }
-        
-        // Притяжение к центру (чтобы узлы не улетали за границы)
-        const centerX = 400;
-        const centerY = 250;
-        const toCenterX = centerX - nodes[i].x;
-        const toCenterY = centerY - nodes[i].y;
-        const toCenterDist = Math.sqrt(toCenterX * toCenterX + toCenterY * toCenterY);
-        
-        if (toCenterDist > 200) {
-          forceX += toCenterX * 0.1;
-          forceY += toCenterY * 0.1;
-        }
-        
-        // Применяем силы с ограничением
-        const forceMagnitude = Math.sqrt(forceX * forceX + forceY * forceY);
-        if (forceMagnitude > 15) {
-          forceX = (forceX / forceMagnitude) * 15;
-          forceY = (forceY / forceMagnitude) * 15;
-        }
-        
-        nodes[i].x += forceX;
-        nodes[i].y += forceY;
-        
-        // Ограничиваем границы
-        nodes[i].x = Math.max(padding, Math.min(800 - padding, nodes[i].x));
-        nodes[i].y = Math.max(padding, Math.min(500 - padding, nodes[i].y));
-      }
-    }
-
-    // Создаем минимальное остовное дерево для базовой связности
-    const addedEdges = new Set<string>();
-    const connectedNodes = new Set<number>([0]);
-    
-    while (connectedNodes.size < nodeCount) {
-      let bestEdge: {from: number, to: number, distance: number} | null = null;
-      
-      // Ищем ближайший неподключенный узел
-      for (const connectedNode of connectedNodes) {
-        for (let i = 0; i < nodeCount; i++) {
-          if (!connectedNodes.has(i)) {
-            const dx = nodes[connectedNode].x - nodes[i].x;
-            const dy = nodes[connectedNode].y - nodes[i].y;
-            const distance = Math.sqrt(dx * dx + dy * dy);
-            
-            if (!bestEdge || distance < bestEdge.distance) {
-              bestEdge = { from: connectedNode, to: i, distance };
-            }
-          }
-        }
-      }
-      
-      if (bestEdge) {
-        const edgeKey = `${Math.min(bestEdge.from, bestEdge.to)}-${Math.max(bestEdge.from, bestEdge.to)}`;
-        addedEdges.add(edgeKey);
-        edges.push({
-          from: bestEdge.from,
-          to: bestEdge.to,
-          weight: Math.floor(bestEdge.distance / 25) + 1,
-        });
-        connectedNodes.add(bestEdge.to);
-      } else {
-        break;
-      }
-    }
-
-    // Добавляем только очень короткие дополнительные ребра для читаемости
-    const shortEdges: {from: number, to: number, distance: number}[] = [];
-    
-    for (let i = 0; i < nodeCount; i++) {
-      for (let j = i + 1; j < nodeCount; j++) {
-        const edgeKey = `${i}-${j}`;
-        if (!addedEdges.has(edgeKey)) {
-          const dx = nodes[i].x - nodes[j].x;
-          const dy = nodes[i].y - nodes[j].y;
-          const distance = Math.sqrt(dx * dx + dy * dy);
-          
-          // Добавляем только очень короткие ребра (меньше 120px)
-          if (distance < 120) {
-            shortEdges.push({ from: i, to: j, distance });
-          }
-        }
-      }
-    }
-    
-    // Сортируем по расстоянию и добавляем самые короткие
-    shortEdges.sort((a, b) => a.distance - b.distance);
-    const maxExtraEdges = Math.min(shortEdges.length, Math.max(2, Math.floor(nodeCount * 0.4)));
-    
-    for (let i = 0; i < maxExtraEdges; i++) {
-      const edge = shortEdges[i];
-      const edgeKey = `${edge.from}-${edge.to}`;
-      addedEdges.add(edgeKey);
-      edges.push({
-        from: edge.from,
-        to: edge.to,
-        weight: Math.floor(edge.distance / 25) + 1,
-      });
-    }
-  }
+  // Генерируем уникальные значения
+  const values = generateUniqueValues(count);
   
-  setGraphNodes(nodes);
-  setGraphEdges(edges);
-  setOriginalGraphNodes([...nodes]);
-  setOriginalGraphEdges([...edges]);
+  // Функция вставки в BST
+  const insertNode = (node: TreeNode | null, value: number): TreeNode => {
+    if (!node) {
+      return { value };
+    }
+    
+    // Вставка в бинарное дерево поиска
+    if (value < node.value) {
+      node.left = insertNode(node.left || null, value);
+    } else {
+      node.right = insertNode(node.right || null, value);
+    }
+    
+    return node;
+  };
+
+  // Перемешиваем значения для лучшего баланса
+  const shuffledValues = [...values].sort(() => Math.random() - 0.5);
+  
+  // Вставляем все значения
+  shuffledValues.forEach(value => {
+    root = insertNode(root, value);
+  });
+  
+  setTree(root);
+  setOriginalTree(JSON.parse(JSON.stringify(root)));
   setCurrentStep(0);
   setSteps([]);
   setStats({ comparisons: 0, swaps: 0, operations: 0 });
   setIsPlaying(false);
-}, [nodeCount, graphType]);
+}, []);
+
+  const generateRandomGraph = useCallback((type: 'circular' | 'grid' | 'complete' | 'random' = graphType) => {
+    const nodes: GraphNode[] = [];
+    const edges: GraphEdge[] = [];
+
+    const centerX = 400;
+    const centerY = 250;
+    const radius = 150;
+
+    if (type === 'circular') {
+      // Круговое расположение
+      for (let i = 0; i < nodeCount; i++) {
+        const angle = (i * 2 * Math.PI) / nodeCount;
+        nodes.push({
+          id: i,
+          x: centerX + radius * Math.cos(angle),
+          y: centerY + radius * Math.sin(angle),
+          label: String(i)
+        });
+      }
+
+      // Создаем кольцевые связи
+      for (let i = 0; i < nodeCount; i++) {
+        const next = (i + 1) % nodeCount;
+        edges.push({
+          from: i,
+          to: next,
+          weight: Math.floor(Math.random() * 5) + 1,
+        });
+      }
+    } else if (type === 'grid') {
+      // Сеточное расположение
+      const cols = Math.ceil(Math.sqrt(nodeCount));
+      const rows = Math.ceil(nodeCount / cols);
+      const cellWidth = 250 / Math.max(cols - 1, 1);
+      const cellHeight = 250 / Math.max(rows - 1, 1);
+
+      for (let i = 0; i < nodeCount; i++) {
+        const row = Math.floor(i / cols);
+        const col = i % cols;
+        nodes.push({
+          id: i,
+          x: 200 + col * cellWidth,
+          y: 150 + row * cellHeight,
+          label: String(i)
+        });
+      }
+
+      // Горизонтальные связи
+      for (let i = 0; i < nodeCount; i++) {
+        const row = Math.floor(i / cols);
+        const col = i % cols;
+
+        if (col < cols - 1 && i + 1 < nodeCount) {
+          edges.push({
+            from: i,
+            to: i + 1,
+            weight: Math.floor(Math.random() * 5) + 1,
+          });
+        }
+      }
+
+      // Вертикальные связи
+      for (let i = 0; i < nodeCount; i++) {
+        const row = Math.floor(i / cols);
+        const col = i % cols;
+
+        if (row < rows - 1 && i + cols < nodeCount) {
+          edges.push({
+            from: i,
+            to: i + cols,
+            weight: Math.floor(Math.random() * 5) + 1,
+          });
+        }
+      }
+    } else if (type === 'complete') {
+      // Полный граф K_n
+      for (let i = 0; i < nodeCount; i++) {
+        const angle = (i * 2 * Math.PI) / nodeCount;
+        nodes.push({
+          id: i,
+          x: centerX + radius * Math.cos(angle),
+          y: centerY + radius * Math.sin(angle),
+          label: String(i)
+        });
+      }
+
+      // Все узлы соединены со всеми
+      for (let i = 0; i < nodeCount; i++) {
+        for (let j = i + 1; j < nodeCount; j++) {
+          edges.push({
+            from: i,
+            to: j,
+            weight: Math.floor(Math.random() * 5) + 1,
+          });
+        }
+      }
+    } else if (type === 'random') {
+      // Свободное расположение узлов с улучшенной проверкой коллизий
+      const padding = 60;
+      const minDistance = 70; // Минимальное расстояние между узлами
+
+      // Функция для проверки коллизий
+      const hasCollision = (x: number, y: number, existingNodes: GraphNode[]) => {
+        for (const node of existingNodes) {
+          const distance = Math.sqrt(Math.pow(x - node.x, 2) + Math.pow(y - node.y, 2));
+          if (distance < minDistance) {
+            return true;
+          }
+        }
+        return false;
+      };
+
+      // Размещаем узлы с улучшенным алгоритмом
+      for (let i = 0; i < nodeCount; i++) {
+        let attempts = 0;
+        let x, y;
+
+        // Пытаемся найти свободную позицию
+        do {
+          x = padding + Math.random() * (800 - 2 * padding);
+          y = padding + Math.random() * (500 - 2 * padding);
+          attempts++;
+
+          // После 50 попыток увеличиваем поисковое пространство
+          if (attempts > 50) {
+            // Пробуем позиции ближе к центру
+            x = 200 + Math.random() * 400;
+            y = 150 + Math.random() * 200;
+          }
+
+          // После 100 попыток принимаем любую позицию
+          if (attempts > 100) {
+            break;
+          }
+        } while (hasCollision(x, y, nodes));
+
+        nodes.push({
+          id: i,
+          x: x,
+          y: y,
+          label: String(i)
+        });
+      }
+
+      // Применяем простую силовую раскладку для финального выравнивания
+      const iterations = 30;
+      const repulsionForce = 80;
+
+      for (let iter = 0; iter < iterations; iter++) {
+        for (let i = 0; i < nodeCount; i++) {
+          let forceX = 0;
+          let forceY = 0;
+
+          // Отталкивание от других узлов
+          for (let j = 0; j < nodeCount; j++) {
+            if (i !== j) {
+              const dx = nodes[i].x - nodes[j].x;
+              const dy = nodes[i].y - nodes[j].y;
+              const distance = Math.sqrt(dx * dx + dy * dy);
+
+              if (distance > 0 && distance < 150) {
+                const force = repulsionForce / distance;
+                forceX += (dx / distance) * force;
+                forceY += (dy / distance) * force;
+              }
+            }
+          }
+
+          // Притяжение к центру (чтобы узлы не улетали за границы)
+          const centerX = 400;
+          const centerY = 250;
+          const toCenterX = centerX - nodes[i].x;
+          const toCenterY = centerY - nodes[i].y;
+          const toCenterDist = Math.sqrt(toCenterX * toCenterX + toCenterY * toCenterY);
+
+          if (toCenterDist > 200) {
+            forceX += toCenterX * 0.1;
+            forceY += toCenterY * 0.1;
+          }
+
+          // Применяем силы с ограничением
+          const forceMagnitude = Math.sqrt(forceX * forceX + forceY * forceY);
+          if (forceMagnitude > 15) {
+            forceX = (forceX / forceMagnitude) * 15;
+            forceY = (forceY / forceMagnitude) * 15;
+          }
+
+          nodes[i].x += forceX;
+          nodes[i].y += forceY;
+
+          // Ограничиваем границы
+          nodes[i].x = Math.max(padding, Math.min(800 - padding, nodes[i].x));
+          nodes[i].y = Math.max(padding, Math.min(500 - padding, nodes[i].y));
+        }
+      }
+
+      // Создаем минимальное остовное дерево для базовой связности
+      const addedEdges = new Set<string>();
+      const connectedNodes = new Set<number>([0]);
+
+      while (connectedNodes.size < nodeCount) {
+        let bestEdge: { from: number, to: number, distance: number } | null = null;
+
+        // Ищем ближайший неподключенный узел
+        for (const connectedNode of connectedNodes) {
+          for (let i = 0; i < nodeCount; i++) {
+            if (!connectedNodes.has(i)) {
+              const dx = nodes[connectedNode].x - nodes[i].x;
+              const dy = nodes[connectedNode].y - nodes[i].y;
+              const distance = Math.sqrt(dx * dx + dy * dy);
+
+              if (!bestEdge || distance < bestEdge.distance) {
+                bestEdge = { from: connectedNode, to: i, distance };
+              }
+            }
+          }
+        }
+
+        if (bestEdge) {
+          const edgeKey = `${Math.min(bestEdge.from, bestEdge.to)}-${Math.max(bestEdge.from, bestEdge.to)}`;
+          addedEdges.add(edgeKey);
+          edges.push({
+            from: bestEdge.from,
+            to: bestEdge.to,
+            weight: Math.floor(bestEdge.distance / 25) + 1,
+          });
+          connectedNodes.add(bestEdge.to);
+        } else {
+          break;
+        }
+      }
+
+      // Добавляем только очень короткие дополнительные ребра для читаемости
+      const shortEdges: { from: number, to: number, distance: number }[] = [];
+
+      for (let i = 0; i < nodeCount; i++) {
+        for (let j = i + 1; j < nodeCount; j++) {
+          const edgeKey = `${i}-${j}`;
+          if (!addedEdges.has(edgeKey)) {
+            const dx = nodes[i].x - nodes[j].x;
+            const dy = nodes[i].y - nodes[j].y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+
+            // Добавляем только очень короткие ребра (меньше 120px)
+            if (distance < 120) {
+              shortEdges.push({ from: i, to: j, distance });
+            }
+          }
+        }
+      }
+
+      // Сортируем по расстоянию и добавляем самые короткие
+      shortEdges.sort((a, b) => a.distance - b.distance);
+      const maxExtraEdges = Math.min(shortEdges.length, Math.max(2, Math.floor(nodeCount * 0.4)));
+
+      for (let i = 0; i < maxExtraEdges; i++) {
+        const edge = shortEdges[i];
+        const edgeKey = `${edge.from}-${edge.to}`;
+        addedEdges.add(edgeKey);
+        edges.push({
+          from: edge.from,
+          to: edge.to,
+          weight: Math.floor(edge.distance / 25) + 1,
+        });
+      }
+    }
+
+    setGraphNodes(nodes);
+    setGraphEdges(edges);
+    setOriginalGraphNodes([...nodes]);
+    setOriginalGraphEdges([...edges]);
+    setCurrentStep(0);
+    setSteps([]);
+    setStats({ comparisons: 0, swaps: 0, operations: 0 });
+    setIsPlaying(false);
+  }, [nodeCount, graphType]);
 
   const generateRandomList = useCallback(() => {
     const nodes: ListNode[] = [];
@@ -495,7 +519,7 @@ const generateRandomGraph = useCallback((type: 'circular' | 'grid' | 'complete' 
       generateRandomArray();
       setAlgorithm('bubblesort');
     } else if (dataStructure === 'tree') {
-      generateRandomTree();
+      generateRandomTree(10);
       setAlgorithm('bst.inorder');
     } else if (dataStructure === 'graph') {
       generateRandomGraph();
@@ -732,80 +756,112 @@ const generateRandomGraph = useCallback((type: 'circular' | 'grid' | 'complete' 
     return steps;
   };
 
-  // Tree algorithms
-  const bstInsert = (root: TreeNode | null, value: number): TreeStep[] => {
-    const steps: TreeStep[] = [];
-    let operations = 0;
-
-    const copyTree = (node: TreeNode | null): TreeNode | null => {
-      if (!node) return null;
-      return {
-        value: node.value,
-        left: copyTree(node.left || null),
-        right: copyTree(node.right || null),
-      };
+  // Tree algorithms - ВАЖНО: создаем глубокие копии на каждом шаге
+  const deepCopyTree = (node: TreeNode | null): TreeNode | null => {
+    if (!node) return null;
+    const copy: TreeNode = {
+      value: node.value,
+      x: node.x,
+      y: node.y
     };
+    if (node.left) copy.left = deepCopyTree(node.left);
+    if (node.right) copy.right = deepCopyTree(node.right);
+    return copy;
+  };
 
-    let newRoot = copyTree(root);
-    steps.push({ tree: copyTree(newRoot) });
+const bstInsert = (root: TreeNode | null, value: number): TreeStep[] => {
+  const steps: TreeStep[] = [];
+  let operations = 0;
 
-    const insert = (node: TreeNode | null, val: number, path: number[] = []): TreeNode => {
-      operations++;
+  // Проверяем диапазон значения
+  if (value < 1 || value > 100) {
+    // Показываем ошибку
+    steps.push({
+      tree: deepCopyTree(root),
+      currentNode: value,
+      highlightedNodes: [],
+      visitedNodes: [],
+    });
+    
+    setStats({ comparisons: 0, swaps: 0, operations: 1 });
+    return steps;
+  }
 
-      if (!node) {
-        const newNode = { value: val };
-        steps.push({
-          tree: copyTree(newRoot),
-          highlightedNodes: [val],
-          visitedNodes: path,
-        });
-        return newNode;
-      }
+  // Создаем глубокую копию для работы
+  const workingTree = deepCopyTree(root);
+  
+  steps.push({ tree: deepCopyTree(workingTree) });
 
+  const insert = (node: TreeNode | null, val: number, path: number[] = []): TreeNode => {
+    operations++;
+
+    if (!node) {
+      const newNode = { value: val };
       steps.push({
-        tree: copyTree(newRoot),
-        currentNode: node.value,
+        tree: deepCopyTree(workingTree),
+        highlightedNodes: [val],
         visitedNodes: path,
       });
-
-      if (val < node.value) {
-        node.left = insert(node.left || null, val, [...path, node.value]);
-      } else {
-        node.right = insert(node.right || null, val, [...path, node.value]);
-      }
-
-      return node;
-    };
-
-    if (newRoot) {
-      insert(newRoot, value);
-    } else {
-      newRoot = { value };
+      return newNode;
     }
 
-    steps.push({ tree: copyTree(newRoot), visitedNodes: [], highlightedNodes: [value] });
+    steps.push({
+      tree: deepCopyTree(workingTree),
+      currentNode: node.value,
+      visitedNodes: path,
+    });
 
-    setTree(newRoot);
-    setOriginalTree(copyTree(newRoot));
-    setStats({ comparisons: 0, swaps: 0, operations });
-    return steps;
+    // Если значение уже существует в дереве
+    if (val === node.value) {
+      steps.push({
+        tree: deepCopyTree(workingTree),
+        currentNode: node.value,
+        highlightedNodes: [val],
+        visitedNodes: [...path, node.value],
+      });
+      return node; // Не вставляем дубликат
+    }
+
+    if (val < node.value) {
+      node.left = insert(node.left || null, val, [...path, node.value]);
+    } else {
+      node.right = insert(node.right || null, val, [...path, node.value]);
+    }
+
+    return node;
   };
+
+  let newRoot;
+  if (workingTree) {
+    newRoot = insert(workingTree, value);
+  } else {
+    newRoot = { value };
+  }
+
+  steps.push({ 
+    tree: deepCopyTree(newRoot), 
+    visitedNodes: [], 
+    highlightedNodes: [value] 
+  });
+
+  // Обновляем оба дерева
+  setTree(deepCopyTree(newRoot));
+  setOriginalTree(deepCopyTree(newRoot));
+  
+  setStats({ comparisons: 0, swaps: 0, operations });
+  return steps;
+};
 
   const bstInorder = (root: TreeNode | null): TreeStep[] => {
     const steps: TreeStep[] = [];
     const visited: number[] = [];
     let operations = 0;
 
-    const copyTree = (node: TreeNode | null): TreeNode | null => {
-      if (!node) return null;
-      return {
-        value: node.value,
-        left: copyTree(node.left || null),
-        right: copyTree(node.right || null),
-      };
-    };
+    if (!root) {
+      return steps;
+    }
 
-    steps.push({ tree: copyTree(root), visitedNodes: [] });
+    steps.push({ tree: deepCopyTree(root), visitedNodes: [] });
 
     const traverse = (node: TreeNode | null) => {
       if (!node) return;
@@ -813,7 +869,7 @@ const generateRandomGraph = useCallback((type: 'circular' | 'grid' | 'complete' 
       operations++;
       // Показываем, что мы посещаем узел (красный)
       steps.push({
-        tree: copyTree(root),
+        tree: deepCopyTree(root),
         currentNode: node.value,
         visitedNodes: [...visited],
       });
@@ -823,7 +879,7 @@ const generateRandomGraph = useCallback((type: 'circular' | 'grid' | 'complete' 
 
       // Обрабатываем текущий узел (зеленый)
       steps.push({
-        tree: copyTree(root),
+        tree: deepCopyTree(root),
         highlightedNodes: [node.value],
         visitedNodes: [...visited],
       });
@@ -831,7 +887,7 @@ const generateRandomGraph = useCallback((type: 'circular' | 'grid' | 'complete' 
       // Добавляем в посещенные (светло-зеленый)
       visited.push(node.value);
       steps.push({
-        tree: copyTree(root),
+        tree: deepCopyTree(root),
         visitedNodes: [...visited],
       });
 
@@ -840,7 +896,7 @@ const generateRandomGraph = useCallback((type: 'circular' | 'grid' | 'complete' 
     };
 
     traverse(root);
-    steps.push({ tree: copyTree(root), visitedNodes: [...visited] });
+    steps.push({ tree: deepCopyTree(root), visitedNodes: [...visited] });
 
     setStats({ comparisons: 0, swaps: 0, operations });
     return steps;
@@ -851,16 +907,11 @@ const generateRandomGraph = useCallback((type: 'circular' | 'grid' | 'complete' 
     const visited: number[] = [];
     let operations = 0;
 
-    const copyTree = (node: TreeNode | null): TreeNode | null => {
-      if (!node) return null;
-      return {
-        value: node.value,
-        left: copyTree(node.left || null),
-        right: copyTree(node.right || null),
-      };
-    };
+    if (!root) {
+      return steps;
+    }
 
-    steps.push({ tree: copyTree(root), visitedNodes: [] });
+    steps.push({ tree: deepCopyTree(root), visitedNodes: [] });
 
     const traverse = (node: TreeNode | null) => {
       if (!node) return;
@@ -868,14 +919,14 @@ const generateRandomGraph = useCallback((type: 'circular' | 'grid' | 'complete' 
       operations++;
       // Показываем, что мы посещаем узел (красный)
       steps.push({
-        tree: copyTree(root),
+        tree: deepCopyTree(root),
         currentNode: node.value,
         visitedNodes: [...visited],
       });
 
       // Обрабатываем узел сразу (зеленый)
       steps.push({
-        tree: copyTree(root),
+        tree: deepCopyTree(root),
         highlightedNodes: [node.value],
         visitedNodes: [...visited],
       });
@@ -883,7 +934,7 @@ const generateRandomGraph = useCallback((type: 'circular' | 'grid' | 'complete' 
       // Добавляем в посещенные (светло-зеленый)
       visited.push(node.value);
       steps.push({
-        tree: copyTree(root),
+        tree: deepCopyTree(root),
         visitedNodes: [...visited],
       });
 
@@ -893,7 +944,7 @@ const generateRandomGraph = useCallback((type: 'circular' | 'grid' | 'complete' 
     };
 
     traverse(root);
-    steps.push({ tree: copyTree(root), visitedNodes: [...visited] });
+    steps.push({ tree: deepCopyTree(root), visitedNodes: [...visited] });
 
     setStats({ comparisons: 0, swaps: 0, operations });
     return steps;
@@ -904,16 +955,11 @@ const generateRandomGraph = useCallback((type: 'circular' | 'grid' | 'complete' 
     const visited: number[] = [];
     let operations = 0;
 
-    const copyTree = (node: TreeNode | null): TreeNode | null => {
-      if (!node) return null;
-      return {
-        value: node.value,
-        left: copyTree(node.left || null),
-        right: copyTree(node.right || null),
-      };
-    };
+    if (!root) {
+      return steps;
+    }
 
-    steps.push({ tree: copyTree(root), visitedNodes: [] });
+    steps.push({ tree: deepCopyTree(root), visitedNodes: [] });
 
     const traverse = (node: TreeNode | null) => {
       if (!node) return;
@@ -921,7 +967,7 @@ const generateRandomGraph = useCallback((type: 'circular' | 'grid' | 'complete' 
       operations++;
       // Показываем, что мы посещаем узел (красный)
       steps.push({
-        tree: copyTree(root),
+        tree: deepCopyTree(root),
         currentNode: node.value,
         visitedNodes: [...visited],
       });
@@ -932,7 +978,7 @@ const generateRandomGraph = useCallback((type: 'circular' | 'grid' | 'complete' 
 
       // Обрабатываем узел после поддеревьев (зеленый)
       steps.push({
-        tree: copyTree(root),
+        tree: deepCopyTree(root),
         highlightedNodes: [node.value],
         visitedNodes: [...visited],
       });
@@ -940,13 +986,13 @@ const generateRandomGraph = useCallback((type: 'circular' | 'grid' | 'complete' 
       // Добавляем в посещенные (светло-зеленый)
       visited.push(node.value);
       steps.push({
-        tree: copyTree(root),
+        tree: deepCopyTree(root),
         visitedNodes: [...visited],
       });
     };
 
     traverse(root);
-    steps.push({ tree: copyTree(root), visitedNodes: [...visited] });
+    steps.push({ tree: deepCopyTree(root), visitedNodes: [...visited] });
 
     setStats({ comparisons: 0, swaps: 0, operations });
     return steps;
@@ -957,20 +1003,11 @@ const generateRandomGraph = useCallback((type: 'circular' | 'grid' | 'complete' 
     const visited: number[] = [];
     let operations = 0;
 
-    const copyTree = (node: TreeNode | null): TreeNode | null => {
-      if (!node) return null;
-      return {
-        value: node.value,
-        left: copyTree(node.left || null),
-        right: copyTree(node.right || null),
-      };
-    };
-
     if (!root) {
       return steps;
     }
 
-    steps.push({ tree: copyTree(root), visitedNodes: [] });
+    steps.push({ tree: deepCopyTree(root), visitedNodes: [] });
 
     const queue: TreeNode[] = [root];
 
@@ -980,14 +1017,14 @@ const generateRandomGraph = useCallback((type: 'circular' | 'grid' | 'complete' 
 
       // Показываем, что мы посещаем узел (красный)
       steps.push({
-        tree: copyTree(root),
+        tree: deepCopyTree(root),
         currentNode: node.value,
         visitedNodes: [...visited],
       });
 
       // Обрабатываем узел (зеленый)
       steps.push({
-        tree: copyTree(root),
+        tree: deepCopyTree(root),
         highlightedNodes: [node.value],
         visitedNodes: [...visited],
       });
@@ -995,7 +1032,7 @@ const generateRandomGraph = useCallback((type: 'circular' | 'grid' | 'complete' 
       // Добавляем в посещенные (светло-зеленый)
       visited.push(node.value);
       steps.push({
-        tree: copyTree(root),
+        tree: deepCopyTree(root),
         visitedNodes: [...visited],
       });
 
@@ -1007,7 +1044,7 @@ const generateRandomGraph = useCallback((type: 'circular' | 'grid' | 'complete' 
       }
     }
 
-    steps.push({ tree: copyTree(root), visitedNodes: [...visited] });
+    steps.push({ tree: deepCopyTree(root), visitedNodes: [...visited] });
 
     setStats({ comparisons: 0, swaps: 0, operations });
     return steps;
@@ -1106,6 +1143,7 @@ const generateRandomGraph = useCallback((type: 'circular' | 'grid' | 'complete' 
     setStats({ comparisons: 0, swaps: 0, operations });
     return steps;
   };
+
   const graphDijkstra = (nodes: GraphNode[], edges: GraphEdge[], startNode: number = 0): GraphStep[] => {
     const steps: GraphStep[] = [];
     const distances: number[] = new Array(nodes.length).fill(Infinity);
@@ -1381,93 +1419,6 @@ const generateRandomGraph = useCallback((type: 'circular' | 'grid' | 'complete' 
     return steps;
   };
 
-  // Heap algorithms
-  const heapInsert = (nodes: HeapNode[], value: number): HeapStep[] => {
-    const steps: HeapStep[] = [];
-    const newNodes = [...nodes, { value, index: nodes.length }];
-    let operations = 0;
-
-    steps.push({ nodes: [...nodes], type: heapType });
-    steps.push({
-      nodes: newNodes,
-      highlightedIndices: [newNodes.length - 1],
-      type: heapType
-    });
-
-    // Bubble up
-    let currentIndex = newNodes.length - 1;
-    while (currentIndex > 0) {
-      const parentIndex = Math.floor((currentIndex - 1) / 2);
-      operations++;
-
-      steps.push({
-        nodes: newNodes,
-        currentIndex,
-        comparedIndices: [parentIndex],
-        type: heapType
-      });
-
-      const shouldSwap = heapType === 'max'
-        ? newNodes[currentIndex].value > newNodes[parentIndex].value
-        : newNodes[currentIndex].value < newNodes[parentIndex].value;
-
-      if (shouldSwap) {
-        [newNodes[currentIndex], newNodes[parentIndex]] = [newNodes[parentIndex], newNodes[currentIndex]];
-        steps.push({
-          nodes: newNodes,
-          highlightedIndices: [parentIndex, currentIndex],
-          type: heapType
-        });
-        currentIndex = parentIndex;
-      } else {
-        break;
-      }
-    }
-
-    steps.push({ nodes: newNodes, type: heapType });
-
-    setHeapNodes(newNodes);
-    setOriginalHeapNodes(JSON.parse(JSON.stringify(newNodes)));
-    setStats({ comparisons: 0, swaps: 0, operations });
-    return steps;
-  };
-
-  // Hash Table algorithms
-  const hashTableInsert = (buckets: (HashBucket | null)[], key: string, value: number): HashTableStep[] => {
-    const steps: HashTableStep[] = [];
-    const newBuckets = [...buckets];
-    let operations = 1;
-
-    const hash = key.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % hashTableSize;
-
-    steps.push({ buckets: newBuckets, size: hashTableSize });
-    steps.push({
-      buckets: newBuckets,
-      size: hashTableSize,
-      currentBucket: hash
-    });
-
-    if (newBuckets[hash]) {
-      steps.push({
-        buckets: newBuckets,
-        size: hashTableSize,
-        collisionBuckets: [hash]
-      });
-    }
-
-    newBuckets[hash] = { key, value, hash };
-    steps.push({
-      buckets: newBuckets,
-      size: hashTableSize,
-      highlightedBuckets: [hash]
-    });
-
-    setHashBuckets(newBuckets);
-    setOriginalHashBuckets(JSON.parse(JSON.stringify(newBuckets)));
-    setStats({ comparisons: 0, swaps: 0, operations });
-    return steps;
-  };
-
   const runAlgorithm = () => {
     let algorithmSteps: VisualizationStep[] = [];
 
@@ -1489,6 +1440,7 @@ const generateRandomGraph = useCallback((type: 'circular' | 'grid' | 'complete' 
           algorithmSteps = bubbleSort(originalArray);
       }
     } else if (dataStructure === 'tree') {
+      // Используем originalTree для анимации
       switch (algorithm) {
         case 'bst.inorder':
           algorithmSteps = bstInorder(originalTree);
@@ -1523,19 +1475,29 @@ const generateRandomGraph = useCallback((type: 'circular' | 'grid' | 'complete' 
 
     setSteps(algorithmSteps);
     setCurrentStep(0);
-  };
-
-  const handleInsertValue = () => {
-    const value = parseInt(insertValue);
-    if (!isNaN(value)) {
-      const insertSteps = bstInsert(tree, value);
-      setSteps(insertSteps);
-      setCurrentStep(0);
-      setInsertValue('');
+    if (algorithmSteps.length > 0) {
       setIsPlaying(true);
     }
   };
 
+const handleInsertValue = () => {
+  const value = parseInt(insertValue);
+  if (!isNaN(value)) {
+    // Проверяем диапазон
+    if (value < 1 || value > 100) {
+      alert('Пожалуйста, введите значение от 1 до 100');
+      return;
+    }
+    
+    const insertSteps = bstInsert(tree, value);
+    setSteps(insertSteps);
+    setCurrentStep(0);
+    setInsertValue('');
+    setIsPlaying(true);
+  } else {
+    alert('Пожалуйста, введите корректное число');
+  }
+};
   const handleListInsert = () => {
     const value = parseInt(listValue);
     const position = listPosition === '' ? listNodes.length : parseInt(listPosition);
@@ -1602,30 +1564,6 @@ const generateRandomGraph = useCallback((type: 'circular' | 'grid' | 'complete' 
     }
   };
 
-  const handleHeapInsert = () => {
-    const value = parseInt(heapValue);
-    if (!isNaN(value)) {
-      const insertSteps = heapInsert(heapNodes, value);
-      setSteps(insertSteps);
-      setCurrentStep(0);
-      setHeapValue('');
-      setIsPlaying(true);
-    }
-  };
-
-  const handleHashInsert = () => {
-    const key = hashKey.trim();
-    const value = parseInt(hashValue);
-    if (key && !isNaN(value)) {
-      const insertSteps = hashTableInsert(hashBuckets, key, value);
-      setSteps(insertSteps);
-      setCurrentStep(0);
-      setHashKey('');
-      setHashValue('');
-      setIsPlaying(true);
-    }
-  };
-
   useEffect(() => {
     if (isPlaying && steps.length > 0) {
       const timer = setTimeout(() => {
@@ -1643,8 +1581,9 @@ const generateRandomGraph = useCallback((type: 'circular' | 'grid' | 'complete' 
   const handlePlay = () => {
     if (steps.length === 0) {
       runAlgorithm();
+    } else {
+      setIsPlaying(true);
     }
-    setIsPlaying(true);
   };
 
   const handlePause = () => {
@@ -1668,30 +1607,27 @@ const generateRandomGraph = useCallback((type: 'circular' | 'grid' | 'complete' 
   };
 
   const handleReset = () => {
-    setCurrentStep(0);
-    setIsPlaying(false);
+  setCurrentStep(0);
+  setIsPlaying(false);
 
-    if (dataStructure === 'array') {
-      setArray([...originalArray]);
-    } else if (dataStructure === 'tree') {
-      setTree(JSON.parse(JSON.stringify(originalTree)));
-    } else if (dataStructure === 'graph') {
-      setGraphNodes([...originalGraphNodes]);
-      setGraphEdges([...originalGraphEdges]);
-    } else if (dataStructure === 'list') {
-      setListNodes(JSON.parse(JSON.stringify(originalListNodes)));
-    } else if (dataStructure === 'stack') {
-      setStackItems([...originalStackItems]);
-    } else if (dataStructure === 'queue') {
-      setQueueItems([...originalQueueItems]);
-    } else if (dataStructure === 'heap') {
-      setHeapNodes(JSON.parse(JSON.stringify(originalHeapNodes)));
-    } else if (dataStructure === 'hashtable') {
-      setHashBuckets(JSON.parse(JSON.stringify(originalHashBuckets)));
-    }
+  if (dataStructure === 'array') {
+    setArray([...originalArray]);
+  } else if (dataStructure === 'tree') {
+    setTree(deepCopyTree(originalTree));
+  } else if (dataStructure === 'graph') {
+    setGraphNodes([...originalGraphNodes]);
+    setGraphEdges([...originalGraphEdges]);
+  } else if (dataStructure === 'list') {
+    setListNodes(JSON.parse(JSON.stringify(originalListNodes)));
+  } else if (dataStructure === 'stack') {
+    setStackItems([...originalStackItems]);
+  } else if (dataStructure === 'queue') {
+    setQueueItems([...originalQueueItems]);
+  }
 
-    setSteps([]);
-  };
+  setSteps([]);
+  setStats({ comparisons: 0, swaps: 0, operations: 0 });
+};
 
   const renderVisualization = () => {
     const currentStepData = steps[currentStep];
@@ -1743,16 +1679,14 @@ const generateRandomGraph = useCallback((type: 'circular' | 'grid' | 'complete' 
       let stepData: GraphStep;
 
       if (currentStepData) {
-        // Есть шаги анимации - используем данные из шага
         stepData = currentStepData as GraphStep;
       } else {
-        // Нет шагов - создаем базовые данные с серыми узлами
         stepData = {
           nodes: graphNodes,
           edges: graphEdges,
           currentNode: undefined,
           highlightedNodes: [],
-          visitedNodes: [], // Пустой массив = все узлы не посещены (серые)
+          visitedNodes: [],
           highlightedEdges: [],
         };
       }
@@ -1792,26 +1726,27 @@ const generateRandomGraph = useCallback((type: 'circular' | 'grid' | 'complete' 
     if (dataStructure === 'array') {
       return (
         <>
-          <SelectItem value="bubblesort">{translations['algorithm.bubblesort']}</SelectItem>
-          <SelectItem value="quicksort">{translations['algorithm.quicksort']}</SelectItem>
-          <SelectItem value="insertionsort">{translations['algorithm.insertionsort']}</SelectItem>
-          <SelectItem value="selectionsort">{translations['algorithm.selectionsort']}</SelectItem>
+          <SelectItem value="bubblesort">{translations['algorithm.bubblesort'] || 'Bubble Sort'}</SelectItem>
+          <SelectItem value="quicksort">{translations['algorithm.quicksort'] || 'Quick Sort'}</SelectItem>
+          <SelectItem value="insertionsort">{translations['algorithm.insertionsort'] || 'Insertion Sort'}</SelectItem>
+          <SelectItem value="selectionsort">{translations['algorithm.selectionsort'] || 'Selection Sort'}</SelectItem>
         </>
       );
     } else if (dataStructure === 'tree') {
       return (
         <>
-          <SelectItem value="bst.inorder">{translations['algorithm.bst.inorder']}</SelectItem>
-          <SelectItem value="bst.preorder">{translations['algorithm.bst.preorder']}</SelectItem>
-          <SelectItem value="bst.postorder">{translations['algorithm.bst.postorder']}</SelectItem>
-          <SelectItem value="bst.levelorder">{translations['algorithm.bst.levelorder']}</SelectItem>
+          <SelectItem value="bst.inorder">{translations['algorithm.bst.inorder'] || 'In-order Traversal'}</SelectItem>
+          <SelectItem value="bst.preorder">{translations['algorithm.bst.preorder'] || 'Pre-order Traversal'}</SelectItem>
+          <SelectItem value="bst.postorder">{translations['algorithm.bst.postorder'] || 'Post-order Traversal'}</SelectItem>
+          <SelectItem value="bst.levelorder">{translations['algorithm.bst.levelorder'] || 'Level-order Traversal'}</SelectItem>
         </>
       );
     } else if (dataStructure === 'graph') {
       return (
         <>
-          <SelectItem value="bfs">{translations['algorithm.bfs']}</SelectItem>
-          <SelectItem value="dfs">{translations['algorithm.dfs']}</SelectItem>
+          <SelectItem value="bfs">{translations['algorithm.bfs'] || 'Breadth-First Search'}</SelectItem>
+          <SelectItem value="dfs">{translations['algorithm.dfs'] || 'Depth-First Search'}</SelectItem>
+          <SelectItem value="dijkstra">{translations['algorithm.dijkstra'] || "Dijkstra's Algorithm"}</SelectItem>
         </>
       );
     }
@@ -1829,29 +1764,29 @@ const generateRandomGraph = useCallback((type: 'circular' | 'grid' | 'complete' 
       <div className="grid lg:grid-cols-5 gap-6">
         <Card className="lg:col-span-1">
           <CardHeader>
-            <CardTitle>{translations['structure.select']}</CardTitle>
+            <CardTitle>{translations['structure.select'] || 'Data Structure'}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <label className="text-sm">{translations['structure.select']}</label>
+              <label className="text-sm">{translations['structure.select'] || 'Select Structure'}</label>
               <Select value={dataStructure} onValueChange={(v) => setDataStructure(v as any)}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="array">{translations['structure.array']}</SelectItem>
-                  <SelectItem value="tree">{translations['structure.tree']}</SelectItem>
-                  <SelectItem value="graph">{translations['structure.graph']}</SelectItem>
-                  <SelectItem value="list">{translations['structure.list']}</SelectItem>
-                  <SelectItem value="stack">{translations['structure.stack']}</SelectItem>
-                  <SelectItem value="queue">{translations['structure.queue']}</SelectItem>
+                  <SelectItem value="array">{translations['structure.array'] || 'Array'}</SelectItem>
+                  <SelectItem value="tree">{translations['structure.tree'] || 'Binary Tree'}</SelectItem>
+                  <SelectItem value="graph">{translations['structure.graph'] || 'Graph'}</SelectItem>
+                  <SelectItem value="list">{translations['structure.list'] || 'Linked List'}</SelectItem>
+                  <SelectItem value="stack">{translations['structure.stack'] || 'Stack'}</SelectItem>
+                  <SelectItem value="queue">{translations['structure.queue'] || 'Queue'}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             {(dataStructure === 'array' || dataStructure === 'tree' || dataStructure === 'graph') && (
               <div className="space-y-2">
-                <label className="text-sm">{translations['algorithm.select']}</label>
+                <label className="text-sm">{translations['algorithm.select'] || 'Algorithm'}</label>
                 <Select value={algorithm} onValueChange={setAlgorithm}>
                   <SelectTrigger>
                     <SelectValue />
@@ -1866,7 +1801,7 @@ const generateRandomGraph = useCallback((type: 'circular' | 'grid' | 'complete' 
             {dataStructure === 'array' && (
               <>
                 <div className="space-y-2">
-                  <label className="text-sm">{translations['data.size']}: {arraySize}</label>
+                  <label className="text-sm">{translations['data.size'] || 'Size'}: {arraySize}</label>
                   <Slider
                     value={[arraySize]}
                     onValueChange={(value) => setArraySize(value[0])}
@@ -1876,80 +1811,98 @@ const generateRandomGraph = useCallback((type: 'circular' | 'grid' | 'complete' 
                   />
                 </div>
                 <Button onClick={generateRandomArray} variant="outline" className="w-full">
-                  {translations['data.generate']}
+                  {translations['data.generate'] || 'Generate Random'}
                 </Button>
               </>
             )}
 
-            {dataStructure === 'tree' && (
-              <>
-                <Button onClick={generateRandomTree} variant="outline" className="w-full">
-                  {translations['data.generate']}
-                </Button>
-                <div className="flex space-x-2">
-                  <Input
-                    type="number"
-                    placeholder={translations['data.value']}
-                    value={insertValue}
-                    onChange={(e) => setInsertValue(e.target.value)}
-                  />
-                  <Button onClick={handleInsertValue}>
-                    {translations['data.insert']}
-                  </Button>
-                </div>
-              </>
-            )}
-
-      {dataStructure === 'graph' && (
+          {dataStructure === 'tree' && (
   <>
     <div className="space-y-2">
-      <label className="text-sm">Тип графа</label>
-      <Select value={graphType} onValueChange={(v: 'circular' | 'grid' | 'complete' | 'random') => {
-        setGraphType(v);
-        generateRandomGraph(v);
-      }}>
-        <SelectTrigger>
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="circular">Круговой (замкнутый)</SelectItem>
-          <SelectItem value="grid">Сетка</SelectItem>
-          <SelectItem value="complete">Полный граф</SelectItem>
-          <SelectItem value="random">Случайный граф</SelectItem>
-        </SelectContent>
-      </Select>
-    </div>
-    
-    <div className="space-y-2">
-      <label className="text-sm">Направление</label>
-      <Select value={directedGraph ? 'directed' : 'undirected'} 
-              onValueChange={(v) => setDirectedGraph(v === 'directed')}>
-        <SelectTrigger>
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="undirected">Неориентированный</SelectItem>
-          <SelectItem value="directed">Ориентированный</SelectItem>
-        </SelectContent>
-      </Select>
-    </div>
-    
-    <div className="space-y-2">
-      <label className="text-sm">{translations['data.size']}: {nodeCount}</label>
+      <label className="text-sm">Количество вершин: {treeNodeCount}</label>
       <Slider
-        value={[nodeCount]}
-        onValueChange={(value) => setNodeCount(value[0])}
-        max={8}
-        min={4}
+        value={[treeNodeCount]}
+        onValueChange={(value) => {
+          setTreeNodeCount(value[0]);
+          generateRandomTree(value[0]); // Просто передаем новое количество
+        }}
+        max={20}
+        min={3}
         step={1}
       />
     </div>
     
-    <Button onClick={() => generateRandomGraph()} variant="outline" className="w-full">
-      {translations['data.generate']}
+    {/* Кнопка генерации - упростить */}
+    <Button onClick={() => generateRandomTree(treeNodeCount)} variant="outline" className="w-full">
+      {translations['data.generate'] || 'Сгенерировать дерево'}
     </Button>
+    
+    {/* Форма вставки - оставить как было */}
+    <div className="flex space-x-2">
+      <Input
+        type="number"
+        placeholder={translations['data.value'] || 'Значение (1-100)'}
+        value={insertValue}
+        onChange={(e) => setInsertValue(e.target.value)}
+        min="1"
+        max="100"
+      />
+      <Button onClick={handleInsertValue}>
+        {translations['data.insert'] || 'Вставить'}
+      </Button>
+    </div>
   </>
 )}
+            {dataStructure === 'graph' && (
+              <>
+                <div className="space-y-2">
+                  <label className="text-sm">Тип графа</label>
+                  <Select value={graphType} onValueChange={(v: 'circular' | 'grid' | 'complete' | 'random') => {
+                    setGraphType(v);
+                    generateRandomGraph(v);
+                  }}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="circular">Круговой (замкнутый)</SelectItem>
+                      <SelectItem value="grid">Сетка</SelectItem>
+                      <SelectItem value="complete">Полный граф</SelectItem>
+                      <SelectItem value="random">Случайный граф</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm">Направление</label>
+                  <Select value={directedGraph ? 'directed' : 'undirected'}
+                    onValueChange={(v) => setDirectedGraph(v === 'directed')}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="undirected">Неориентированный</SelectItem>
+                      <SelectItem value="directed">Ориентированный</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm">{translations['data.size'] || 'Количество узлов'}: {nodeCount}</label>
+                  <Slider
+                    value={[nodeCount]}
+                    onValueChange={(value) => setNodeCount(value[0])}
+                    max={8}
+                    min={3}
+                    step={1}
+                  />
+                </div>
+
+                <Button onClick={() => generateRandomGraph()} variant="outline" className="w-full">
+                  {translations['data.generate'] || 'Сгенерировать граф'}
+                </Button>
+              </>
+            )}
 
             {dataStructure === 'list' && (
               <>
@@ -1966,24 +1919,22 @@ const generateRandomGraph = useCallback((type: 'circular' | 'grid' | 'complete' 
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm">{translations['data.size']}: {listSize}</label>
+                  <label className="text-sm">{translations['data.size'] || 'Size'}: {listSize}</label>
                   <Slider
                     value={[listSize]}
                     onValueChange={(value) => setListSize(value[0])}
                     max={10}
                     min={1}
-                    max={8}
-                    min={2}
                     step={1}
                   />
                 </div>
                 <Button onClick={generateRandomList} variant="outline" className="w-full">
-                  {translations['data.generate']}
+                  {translations['data.generate'] || 'Generate Random List'}
                 </Button>
                 <div className="space-y-2">
                   <Input
                     type="number"
-                    placeholder={translations['data.value']}
+                    placeholder={translations['data.value'] || 'Value'}
                     value={listValue}
                     onChange={(e) => setListValue(e.target.value)}
                   />
@@ -1995,10 +1946,10 @@ const generateRandomGraph = useCallback((type: 'circular' | 'grid' | 'complete' 
                   />
                   <div className="grid grid-cols-2 gap-2">
                     <Button onClick={handleListInsert} variant="outline" className="w-full">
-                      {translations['data.insert']}
+                      {translations['data.insert'] || 'Insert'}
                     </Button>
                     <Button onClick={handleListDelete} variant="outline" className="w-full">
-                      {translations['data.delete']}
+                      {translations['data.delete'] || 'Delete'}
                     </Button>
                   </div>
                 </div>
@@ -2008,24 +1959,22 @@ const generateRandomGraph = useCallback((type: 'circular' | 'grid' | 'complete' 
             {dataStructure === 'stack' && (
               <>
                 <div className="space-y-2">
-                  <label className="text-sm">{translations['data.size']}: {stackSize}</label>
+                  <label className="text-sm">{translations['data.size'] || 'Size'}: {stackSize}</label>
                   <Slider
                     value={[stackSize]}
                     onValueChange={(value) => setStackSize(value[0])}
                     max={10}
                     min={1}
-                    max={5}
-                    min={2}
                     step={1}
                   />
                 </div>
                 <Button onClick={generateRandomStack} variant="outline" className="w-full">
-                  {translations['data.generate']}
+                  {translations['data.generate'] || 'Generate Random Stack'}
                 </Button>
                 <div className="space-y-2">
                   <Input
                     type="number"
-                    placeholder={translations['data.value']}
+                    placeholder={translations['data.value'] || 'Value'}
                     value={stackValue}
                     onChange={(e) => setStackValue(e.target.value)}
                   />
@@ -2044,7 +1993,7 @@ const generateRandomGraph = useCallback((type: 'circular' | 'grid' | 'complete' 
             {dataStructure === 'queue' && (
               <>
                 <div className="space-y-2">
-                  <label className="text-sm">{translations['data.size']}: {queueSize}</label>
+                  <label className="text-sm">{translations['data.size'] || 'Size'}: {queueSize}</label>
                   <Slider
                     value={[queueSize]}
                     onValueChange={(value) => setQueueSize(value[0])}
@@ -2054,12 +2003,12 @@ const generateRandomGraph = useCallback((type: 'circular' | 'grid' | 'complete' 
                   />
                 </div>
                 <Button onClick={generateRandomQueue} variant="outline" className="w-full">
-                  {translations['data.generate']}
+                  {translations['data.generate'] || 'Generate Random Queue'}
                 </Button>
                 <div className="space-y-2">
                   <Input
                     type="number"
-                    placeholder={translations['data.value']}
+                    placeholder={translations['data.value'] || 'Value'}
                     value={queueValue}
                     onChange={(e) => setQueueValue(e.target.value)}
                   />
@@ -2074,83 +2023,6 @@ const generateRandomGraph = useCallback((type: 'circular' | 'grid' | 'complete' 
                 </div>
               </>
             )}
-
-            {dataStructure === 'heap' && (
-              <>
-                <div className="space-y-2">
-                  <label className="text-sm">{translations['heap.type'] || 'Heap Type'}</label>
-                  <Select value={heapType} onValueChange={(v) => setHeapType(v as 'max' | 'min')}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="max">{translations['heap.max'] || 'Max Heap'}</SelectItem>
-                      <SelectItem value="min">{translations['heap.min'] || 'Min Heap'}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm">{translations['data.size']}: {heapSize}</label>
-                  <Slider
-                    value={[heapSize]}
-                    onValueChange={(value) => setHeapSize(value[0])}
-                    max={15}
-                    min={3}
-                    step={1}
-                  />
-                </div>
-                <Button onClick={generateRandomHeap} variant="outline" className="w-full">
-                  {translations['data.generate']}
-                </Button>
-                <div className="space-y-2">
-                  <Input
-                    type="number"
-                    placeholder={translations['data.value']}
-                    value={heapValue}
-                    onChange={(e) => setHeapValue(e.target.value)}
-                  />
-                  <Button onClick={handleHeapInsert} variant="outline" className="w-full">
-                    {translations['data.insert']}
-                  </Button>
-                </div>
-              </>
-            )}
-
-            {dataStructure === 'hashtable' && (
-              <>
-                <div className="space-y-2">
-                  <label className="text-sm">{translations['hashtable.size'] || 'Table Size'}: {hashTableSize}</label>
-                  <Slider
-                    value={[hashTableSize]}
-                    onValueChange={(value) => setHashTableSize(value[0])}
-                    max={20}
-                    min={5}
-                    step={1}
-                  />
-                </div>
-                <Button onClick={generateRandomHashTable} variant="outline" className="w-full">
-                  {translations['data.generate']}
-                </Button>
-                <div className="space-y-2">
-                  <Input
-                    type="text"
-                    placeholder={translations['hashtable.key'] || 'Key'}
-                    value={hashKey}
-                    onChange={(e) => setHashKey(e.target.value)}
-                  />
-                  <Input
-                    type="number"
-                    placeholder={translations['data.value']}
-                    value={hashValue}
-                    onChange={(e) => setHashValue(e.target.value)}
-                  />
-                  <Button onClick={handleHashInsert} variant="outline" className="w-full">
-                    {translations['data.insert']}
-                  </Button>
-                </div>
-              </>
-            )}
-
           </CardContent>
         </Card>
 

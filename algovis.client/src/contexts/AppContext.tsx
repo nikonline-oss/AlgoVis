@@ -1,3 +1,4 @@
+// src/contexts/AppContext.tsx
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
 type Language = 'ru' | 'en';
@@ -65,6 +66,7 @@ const translations = {
     'algorithm.quicksort': 'Быстрая сортировка',
     'algorithm.insertionsort': 'Сортировка вставками',
     'algorithm.selectionsort': 'Сортировка выбором',
+    'algorithm.mergesort': 'Сортировка слиянием',
     'algorithm.bst.inorder': 'Инордерный обход',
     'algorithm.bst.preorder': 'Прямой обход',
     'algorithm.bst.postorder': 'Обратный обход',
@@ -95,7 +97,6 @@ const translations = {
     'profiler.comparisons': 'Сравнения',
     'profiler.swaps': 'Перестановки',
     'profiler.operations': 'Операции',
-    'profiler.sendToVisualizer': 'Отправить в визуализатор',
     'analyzer.title': 'Анализатор кода',
     'analyzer.description': 'Анализируйте сложность и производительность вашего Python кода',
     'analyzer.codeInput': 'Ввод кода',
@@ -160,6 +161,7 @@ const translations = {
     'algorithm.quicksort': 'Quick Sort',
     'algorithm.insertionsort': 'Insertion Sort',
     'algorithm.selectionsort': 'Selection Sort',
+    'algorithm.mergesort': 'Merge Sort',
     'algorithm.bst.inorder': 'Inorder Traversal',
     'algorithm.bst.preorder': 'Preorder Traversal',
     'algorithm.bst.postorder': 'Postorder Traversal',

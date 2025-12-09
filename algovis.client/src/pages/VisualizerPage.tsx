@@ -436,7 +436,7 @@ const generateRandomGraph = useCallback((type: 'circular' | 'grid' | 'complete' 
       edges.push({
         from: edge.from,
         to: edge.to,
-        weight: Math.floor(edge.distance / 25) + 1,
+        weight: Math.floor(edge.distance / 50) + 1,
       });
     }
   }
@@ -2044,8 +2044,8 @@ const generateRandomGraph = useCallback((type: 'circular' | 'grid' | 'complete' 
                   <Slider
                     value={[queueSize]}
                     onValueChange={(value) => setQueueSize(value[0])}
-                    max={10}
-                    min={1}
+                    max={8}
+                    min={2}
                     step={1}
                   />
                 </div>

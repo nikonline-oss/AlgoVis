@@ -1,10 +1,11 @@
-﻿using AlgoVis.Evaluator.Evaluator.Interfaces;
+﻿using AlgoVis.Core.Core;
+using AlgoVis.Evaluator.Evaluator.Interfaces;
 using AlgoVis.Evaluator.Evaluator.Types;
 using AlgoVis.Evaluator.Evaluator.VariableValues;
 using AlgoVis.Evaluator.Evaluator.VariableValues.Base;
 using AlgoVis.Models.Models.Custom;
+using AlgoVis.Models.Models.DataStructures;
 using AlgoVis.Models.Models.Operations.Base;
-using AlgoVis.;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -85,26 +86,41 @@ namespace AlgoVis.Models.Models.Operations.Handlers
             ArrayValue array = context.Variables.Get(arrayName) as ArrayValue;
 
             if (array == null)
-            {
                 array = arrayValue.GetProperty("values") as ArrayValue;
 
-                IVariableValue[] args1 = [index, value];
-
-                array.CallMethod("set", args1);
-
-                arrayValue.SetProperty("values", array);
-
-                var converterStruct = new ArrayStructureConverter();
-
-                return;
-            }
 
             IVariableValue[] args = [index, value];
 
             array.CallMethod("set",args);
 
+            if(arrayName == "struct")
+                FromArrayValue(array, context);
 
             context.Variables.Set(arrayName, array);
+        }
+
+        /// <summary>
+        /// Обновляет состояние ArrayStructure из ArrayValue через конвертер
+        /// </summary>
+        public void FromArrayValue(ArrayValue arrayValue, ExecutionContext context)
+        {
+            if (arrayValue == null)
+                throw new ArgumentNullException(nameof(arrayValue));
+
+            // Создаем ObjectValue с данными массива
+            var obj = new ObjectValue(new Dictionary<string, IVariableValue>
+            {
+                ["values"] = arrayValue
+            });
+
+            var converter = new UniversalStructureConverter();
+            var newStructure = converter.ConvertFromVariableValue(obj, "array");
+
+            if (newStructure is ArrayStructure newArrayStructure)
+            {
+                // Копируем состояние из нового ArrayStructure
+                context.Structure.ApplyState(newArrayStructure.GetState());
+            }
         }
 
         private void SetProperty(string propertyAccess, IVariableValue value, ExecutionContext context)

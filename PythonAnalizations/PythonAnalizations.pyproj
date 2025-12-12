@@ -4,13 +4,14 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>514c26da-53ee-4890-bbfb-5b0178151413</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>GigaChatService.py</StartupFile>
+    <StartupFile>python_java_translator\test_translator.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
     <OutputPath>.</OutputPath>
     <Name>PythonAnalizations</Name>
     <RootNamespace>PythonAnalizations</RootNamespace>
+    <SuppressConfigureTestFrameworkPrompt>true</SuppressConfigureTestFrameworkPrompt>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugSymbols>true</DebugSymbols>
@@ -22,18 +23,25 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="GigaChatService.py" />
-    <Compile Include="python_java_translator\data_structures.py" />
+    <Compile Include="python_java_translator\python_java_translator\data_structures.py" />
     <Compile Include="python_java_translator\examples.py" />
-    <Compile Include="python_java_translator\java_translator.py" />
-    <Compile Include="python_java_translator\variable_collector.py" />
-    <Compile Include="python_java_translator\visualization_config.py" />
-    <Compile Include="python_java_translator\__init__.py" />
+    <Compile Include="python_java_translator\python_java_translator\error_handler.py" />
+    <Compile Include="python_java_translator\python_java_translator\java_translator.py" />
+    <Compile Include="python_java_translator\python_java_translator\structure_registry.py" />
+    <Compile Include="python_java_translator\python_java_translator\translation_config.py" />
+    <Compile Include="python_java_translator\python_java_translator\variable_collector.py" />
+    <Compile Include="python_java_translator\python_java_translator\visualization_config.py" />
+    <Compile Include="python_java_translator\python_java_translator\__init__.py" />
+    <Compile Include="python_java_translator\test_translator.py" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="python_java_translator\" />
+    <Folder Include="python_java_translator\python_java_translator\" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="python_java_translator\README.md" />
+    <Content Include="python_java_translator\requirements.txt" />
+    <Content Include="поиск_максимума.java.json" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
   <!-- Uncomment the CoreCompile target to enable the Build command in

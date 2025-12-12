@@ -1,5 +1,5 @@
-"""
-Конфигурация визуализации операций ЯВА
+п»ї"""
+РљРѕРЅС„РёРіСѓСЂР°С†РёСЏ РІРёР·СѓР°Р»РёР·Р°С†РёРё РѕРїРµСЂР°С†РёР№ РЇР’Рђ
 """
 
 from dataclasses import dataclass
@@ -7,20 +7,20 @@ from typing import Optional
 
 @dataclass
 class VisualizationConfig:
-    """Конфигурация визуализации операций ЯВА"""
+    """РљРѕРЅС„РёРіСѓСЂР°С†РёСЏ РІРёР·СѓР°Р»РёР·Р°С†РёРё РѕРїРµСЂР°С†РёР№ РЇР’Рђ"""
     
-    # Флаги для включения/отключения визуализации разных типов операций
-    visualize_assign: bool = True          # Присваивания (x = y)
-    visualize_condition: bool = True       # Условия (if, while)
-    visualize_compare: bool = True         # Сравнения элементов
-    visualize_swap: bool = True            # Обмен элементов
-    visualize_call: bool = True            # Вызовы функций
-    visualize_generic: bool = True         # Универсальные операции
-    visualize_loop_init: bool = False      # Инициализация циклов (обычно скрываем)
-    visualize_loop_increment: bool = False # Инкременты в циклах (обычно скрываем)
-    visualize_start_end: bool = True       # Старт и конец алгоритма
+    # Р¤Р»Р°РіРё РґР»СЏ РІРєР»СЋС‡РµРЅРёСЏ/РѕС‚РєР»СЋС‡РµРЅРёСЏ РІРёР·СѓР°Р»РёР·Р°С†РёРё СЂР°Р·РЅС‹С… С‚РёРїРѕРІ РѕРїРµСЂР°С†РёР№
+    visualize_assign: bool = True          # РџСЂРёСЃРІР°РёРІР°РЅРёСЏ (x = y)
+    visualize_condition: bool = True       # РЈСЃР»РѕРІРёСЏ (if, while)
+    visualize_compare: bool = True         # РЎСЂР°РІРЅРµРЅРёСЏ СЌР»РµРјРµРЅС‚РѕРІ
+    visualize_swap: bool = True            # РћР±РјРµРЅ СЌР»РµРјРµРЅС‚РѕРІ
+    visualize_call: bool = True            # Р’С‹Р·РѕРІС‹ С„СѓРЅРєС†РёР№
+    visualize_generic: bool = True         # РЈРЅРёРІРµСЂСЃР°Р»СЊРЅС‹Рµ РѕРїРµСЂР°С†РёРё
+    visualize_loop_init: bool = False      # РРЅРёС†РёР°Р»РёР·Р°С†РёСЏ С†РёРєР»РѕРІ (РѕР±С‹С‡РЅРѕ СЃРєСЂС‹РІР°РµРј)
+    visualize_loop_increment: bool = False # РРЅРєСЂРµРјРµРЅС‚С‹ РІ С†РёРєР»Р°С… (РѕР±С‹С‡РЅРѕ СЃРєСЂС‹РІР°РµРј)
+    visualize_start_end: bool = True       # РЎС‚Р°СЂС‚ Рё РєРѕРЅРµС† Р°Р»РіРѕСЂРёС‚РјР°
     
-    # Настройки подсветки
+    # РќР°СЃС‚СЂРѕР№РєРё РїРѕРґСЃРІРµС‚РєРё
     highlight_enabled: bool = True
     highlight_color_assign: str = "blue"
     highlight_color_condition: str = "orange"
@@ -28,19 +28,24 @@ class VisualizationConfig:
     highlight_color_swap: str = "red"
     highlight_color_call: str = "green"
     
+    # Р”РѕРїРѕР»РЅРёС‚РµР»СЊРЅС‹Рµ РЅР°СЃС‚СЂРѕР№РєРё РІРёР·СѓР°Р»РёР·Р°С†РёРё
+    show_step_numbers: bool = True
+    show_variable_values: bool = True
+    animation_speed: int = 1000  # РјСЃ РЅР° С€Р°Рі
+    
     def should_visualize(self, step_type: str, description: str = "") -> bool:
-        """Определяет, нужно ли визуализировать шаг данного типа"""
+        """РћРїСЂРµРґРµР»СЏРµС‚, РЅСѓР¶РЅРѕ Р»Рё РІРёР·СѓР°Р»РёР·РёСЂРѕРІР°С‚СЊ С€Р°Рі РґР°РЅРЅРѕРіРѕ С‚РёРїР°"""
         step_type_lower = step_type.lower()
         description_lower = description.lower()
         
-        # Проверяем специальные случаи для циклов
-        if "инициализация счетчика" in description_lower or "init" in description_lower:
+        # РџСЂРѕРІРµСЂСЏРµРј СЃРїРµС†РёР°Р»СЊРЅС‹Рµ СЃР»СѓС‡Р°Рё РґР»СЏ С†РёРєР»РѕРІ
+        if "РёРЅРёС†РёР°Р»РёР·Р°С†РёСЏ СЃС‡РµС‚С‡РёРєР°" in description_lower or "init" in description_lower:
             return self.visualize_loop_init
         
-        if "инкремент" in description_lower or "увеличение счетчика" in description_lower:
+        if "РёРЅРєСЂРµРјРµРЅС‚" in description_lower or "СѓРІРµР»РёС‡РµРЅРёРµ СЃС‡РµС‚С‡РёРєР°" in description_lower:
             return self.visualize_loop_increment
         
-        # Базовые проверки по типу
+        # Р‘Р°Р·РѕРІС‹Рµ РїСЂРѕРІРµСЂРєРё РїРѕ С‚РёРїСѓ
         if step_type_lower == "assign":
             return self.visualize_assign
         elif step_type_lower == "condition":
@@ -50,8 +55,8 @@ class VisualizationConfig:
         elif step_type_lower == "swap":
             return self.visualize_swap
         elif step_type_lower in ["call_function", "generic"]:
-            # Проверяем описание для различения call и generic
-            if "вызов функции" in description_lower or "call" in description_lower:
+            # РџСЂРѕРІРµСЂСЏРµРј РѕРїРёСЃР°РЅРёРµ РґР»СЏ СЂР°Р·Р»РёС‡РµРЅРёСЏ call Рё generic
+            if "РІС‹Р·РѕРІ С„СѓРЅРєС†РёРё" in description_lower or "call" in description_lower:
                 return self.visualize_call
             else:
                 return self.visualize_generic
@@ -60,10 +65,10 @@ class VisualizationConfig:
         elif "start" in description_lower or "end" in description_lower:
             return self.visualize_start_end
         
-        return True  # По умолчанию визуализируем
+        return True  # РџРѕ СѓРјРѕР»С‡Р°РЅРёСЋ РІРёР·СѓР°Р»РёР·РёСЂСѓРµРј
     
     def get_highlight_color(self, step_type: str) -> Optional[str]:
-        """Возвращает цвет подсветки для типа шага"""
+        """Р’РѕР·РІСЂР°С‰Р°РµС‚ С†РІРµС‚ РїРѕРґСЃРІРµС‚РєРё РґР»СЏ С‚РёРїР° С€Р°РіР°"""
         if not self.highlight_enabled:
             return None
             
@@ -84,11 +89,11 @@ class VisualizationConfig:
 
 
 def create_preset_configs():
-    """Создание предустановленных конфигураций визуализации"""
+    """РЎРѕР·РґР°РЅРёРµ РїСЂРµРґСѓСЃС‚Р°РЅРѕРІР»РµРЅРЅС‹С… РєРѕРЅС„РёРіСѓСЂР°С†РёР№ РІРёР·СѓР°Р»РёР·Р°С†РёРё"""
     
     presets = {}
     
-    # 1. Полная визуализация (все шаги)
+    # 1. РџРѕР»РЅР°СЏ РІРёР·СѓР°Р»РёР·Р°С†РёСЏ (РІСЃРµ С€Р°РіРё)
     presets["full"] = VisualizationConfig(
         visualize_assign=True,
         visualize_condition=True,
@@ -102,7 +107,7 @@ def create_preset_configs():
         highlight_enabled=True
     )
     
-    # 2. Минимальная визуализация (только ключевые шаги)
+    # 2. РњРёРЅРёРјР°Р»СЊРЅР°СЏ РІРёР·СѓР°Р»РёР·Р°С†РёСЏ (С‚РѕР»СЊРєРѕ РєР»СЋС‡РµРІС‹Рµ С€Р°РіРё)
     presets["minimal"] = VisualizationConfig(
         visualize_assign=True,
         visualize_condition=True,
@@ -116,7 +121,7 @@ def create_preset_configs():
         highlight_enabled=False
     )
     
-    # 3. Отладка (только присваивания и условия)
+    # 3. РћС‚Р»Р°РґРєР° (С‚РѕР»СЊРєРѕ РїСЂРёСЃРІР°РёРІР°РЅРёСЏ Рё СѓСЃР»РѕРІРёСЏ)
     presets["debug"] = VisualizationConfig(
         visualize_assign=True,
         visualize_condition=True,
@@ -132,7 +137,7 @@ def create_preset_configs():
         highlight_color_condition="orange"
     )
     
-    # 4. Производительность (минимум визуализации)
+    # 4. РџСЂРѕРёР·РІРѕРґРёС‚РµР»СЊРЅРѕСЃС‚СЊ (РјРёРЅРёРјСѓРј РІРёР·СѓР°Р»РёР·Р°С†РёРё)
     presets["performance"] = VisualizationConfig(
         visualize_assign=False,
         visualize_condition=False,
@@ -146,7 +151,7 @@ def create_preset_configs():
         highlight_enabled=False
     )
     
-    # 5. Обучение (подробная визуализация с подсветкой)
+    # 5. РћР±СѓС‡РµРЅРёРµ (РїРѕРґСЂРѕР±РЅР°СЏ РІРёР·СѓР°Р»РёР·Р°С†РёСЏ СЃ РїРѕРґСЃРІРµС‚РєРѕР№)
     presets["educational"] = VisualizationConfig(
         visualize_assign=True,
         visualize_condition=True,

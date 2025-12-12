@@ -23,6 +23,51 @@ text
 
 ## Быстрый старт
 
+# Python → ЯВА Транслятор с Безопасностью и Валидацией
+
+Улучшенный модуль для трансляции Python-кода в формат ЯВА с:
+- Настройками визуализации операций
+- Проверкой безопасности
+- Валидацией результата
+- Защитой от бесконечных циклов
+
+## 🚀 Быстрый старт
+
+```python
+from python_java_translator import JavaTranslator, TranslationConfig
+
+# Конфигурация безопасности
+config = TranslationConfig(
+    max_code_size=5000,
+    max_steps=1000,
+    max_recursion_depth=30,
+    safe_mode=True
+)
+
+# Создание транслятора
+translator = JavaTranslator(translation_config=config)
+
+# Трансляция кода
+python_code = """
+sum = 0
+for i in range(10):
+    sum = sum + i
+result = sum
+"""
+
+result = translator.translate_python_code(
+    python_code, 
+    "Сумма чисел",
+    structure_type="array"
+)
+
+# Проверка на ошибки
+if result.get("error"):
+    print(f"Ошибка: {result['errorMessage']}")
+else:
+    translator.save_to_file(result, "алгоритм.java.json")
+    print("Алгоритм успешно сгенерирован!")
+
 ```python
 from python_java_translator import JavaTranslator, VisualizationConfig
 

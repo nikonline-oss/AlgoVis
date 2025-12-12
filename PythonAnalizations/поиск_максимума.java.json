@@ -1,0 +1,194 @@
+{
+  "name": "Поиск максимума",
+  "description": "Алгоритм, сгенерированный из Python кода",
+  "structureType": "array",
+  "variables": [
+    {
+      "name": "i",
+      "type": "int",
+      "initialValue": 0
+    },
+    {
+      "name": "n",
+      "type": "int",
+      "initialValue": 0
+    },
+    {
+      "name": "j",
+      "type": "int",
+      "initialValue": 0
+    },
+    {
+      "name": "temp",
+      "type": "int",
+      "initialValue": 0
+    },
+    {
+      "name": "range",
+      "type": "int",
+      "initialValue": 0
+    }
+  ],
+  "functions": [],
+  "steps": [
+    {
+      "id": "start",
+      "type": "assign",
+      "description": "Присвоение n = struct.len",
+      "parameters": [
+        "n",
+        "struct.len"
+      ],
+      "visualize": true,
+      "nextStep": "assign_8",
+      "highlightElements": [
+        "n"
+      ],
+      "highlightColor": "blue"
+    },
+    {
+      "id": "assign_8",
+      "type": "assign",
+      "description": "Инициализация счетчика цикла i",
+      "parameters": [
+        "i",
+        "0"
+      ],
+      "visualize": false,
+      "nextStep": "condition_9",
+      "highlightElements": [
+        "i"
+      ],
+      "highlightColor": "blue"
+    },
+    {
+      "id": "condition_9",
+      "type": "condition",
+      "description": "Проверка i < n",
+      "parameters": [
+        "i < n"
+      ],
+      "visualize": true,
+      "conditionCases": [
+        {
+          "condition": "true",
+          "nextStep": "assign_5"
+        },
+        {
+          "condition": "false",
+          "nextStep": "end"
+        }
+      ],
+      "highlightColor": "orange"
+    },
+    {
+      "id": "assign_5",
+      "type": "assign",
+      "description": "Инициализация счетчика цикла j",
+      "parameters": [
+        "j",
+        "0"
+      ],
+      "visualize": false,
+      "nextStep": "condition_6",
+      "highlightElements": [
+        "j"
+      ],
+      "highlightColor": "blue"
+    },
+    {
+      "id": "condition_6",
+      "type": "condition",
+      "description": "Проверка j < n - i - 1",
+      "parameters": [
+        "j < n - i - 1"
+      ],
+      "visualize": true,
+      "conditionCases": [
+        {
+          "condition": "true",
+          "nextStep": "end"
+        },
+        {
+          "condition": "false",
+          "nextStep": "end"
+        }
+      ],
+      "highlightColor": "orange"
+    },
+    {
+      "id": "end",
+      "type": "condition",
+      "description": "Условие: struct[j] > struct[j + 1]",
+      "parameters": [
+        "struct[j] > struct[j + 1]"
+      ],
+      "visualize": true,
+      "conditionCases": [
+        {
+          "condition": "true",
+          "nextStep": "assign_2"
+        },
+        {
+          "condition": "false",
+          "nextStep": "generic_3"
+        }
+      ],
+      "highlightColor": "orange"
+    },
+    {
+      "id": "assign_2",
+      "type": "assign",
+      "description": "Присвоение temp = struct[j]",
+      "parameters": [
+        "temp",
+        "struct[j]"
+      ],
+      "visualize": true,
+      "nextStep": "generic_3",
+      "highlightElements": [
+        "temp"
+      ],
+      "highlightColor": "blue"
+    },
+    {
+      "id": "generic_3",
+      "type": "generic",
+      "description": "Переход к следующему шагу",
+      "parameters": [],
+      "visualize": false,
+      "nextStep": "assign_7",
+      "highlightColor": "green"
+    },
+    {
+      "id": "assign_7",
+      "type": "assign",
+      "description": "Инкремент j",
+      "parameters": [
+        "j",
+        "j + 1"
+      ],
+      "visualize": false,
+      "nextStep": "assign_10",
+      "highlightElements": [
+        "j"
+      ],
+      "highlightColor": "blue"
+    },
+    {
+      "id": "assign_10",
+      "type": "assign",
+      "description": "Инкремент i",
+      "parameters": [
+        "i",
+        "i + 1"
+      ],
+      "visualize": false,
+      "nextStep": "condition_9",
+      "highlightElements": [
+        "i"
+      ],
+      "highlightColor": "blue"
+    }
+  ]
+}

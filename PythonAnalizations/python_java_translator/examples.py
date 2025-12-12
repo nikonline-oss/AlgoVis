@@ -2,257 +2,306 @@
 Примеры использования транслятора Python -> ЯВА
 """
 
-from .visualization_config import VisualizationConfig, create_preset_configs
-from .java_translator import JavaTranslator
+import sys
+import os
 
-def test_visualization_configs():
-    """Тестирование разных конфигураций визуализации"""
-    
-    python_code = '''
-result = x + y
+# Добавляем родительскую директорию в путь для импорта
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-if condition:
-    result = result * 2
+from python_java_translator.visualization_config import VisualizationConfig, create_preset_configs
+from python_java_translator.translation_config import TranslationConfig
+from python_java_translator.error_handler import ErrorType
+from python_java_translator.java_translator import JavaTranslator
 
-for i in range(3):
-    result = result + i
-
-message = "Результат: " + str(result)
-'''
+def test_safe_translation():
+    """Тестирование безопасной трансляции с обработкой ошибок"""
     
-    # 1. Конфигурация по умолчанию (все визуализируется)
-    print("1. Конфигурация по умолчанию (все визуализируется):")
-    config_default = VisualizationConfig()
-    translator = JavaTranslator(config_default)
-    result_default = translator.translate_python_code(python_code, "DefaultConfig")
-    
-    # Подсчитываем визуализируемые шаги
-    visualized_steps = [s for s in result_default['steps'] if s.get('visualize', True)]
-    print(f"   Всего шагов: {len(result_default['steps'])}")
-    print(f"   Визуализируется: {len(visualized_steps)}")
-    
-    # 2. Только условия и вызовы
-    print("\n2. Только условия и вызовы:")
-    config_minimal = VisualizationConfig(
-        visualize_assign=False,
-        visualize_condition=True,
-        visualize_generic=False,
-        visualize_loop_init=False,
-        visualize_loop_increment=False,
-        visualize_start_end=True
-    )
-    translator = JavaTranslator(config_minimal)
-    result_minimal = translator.translate_python_code(python_code, "MinimalConfig")
-    
-    visualized_steps = [s for s in result_minimal['steps'] if s.get('visualize', True)]
-    print(f"   Всего шагов: {len(result_minimal['steps'])}")
-    print(f"   Визуализируется: {len(visualized_steps)}")
-    
-    # 3. Только присваивания и конец
-    print("\n3. Только присваивания и конец:")
-    config_assign_only = VisualizationConfig(
-        visualize_assign=True,
-        visualize_condition=False,
-        visualize_generic=False,
-        visualize_loop_init=False,
-        visualize_loop_increment=False,
-        visualize_start_end=True
-    )
-    translator = JavaTranslator(config_assign_only)
-    result_assign = translator.translate_python_code(python_code, "AssignOnly")
-    
-    visualized_steps = [s for s in result_assign['steps'] if s.get('visualize', True)]
-    print(f"   Всего шагов: {len(result_assign['steps'])}")
-    print(f"   Визуализируется: {len(visualized_steps)}")
-    
-    # 4. Визуализация с подсветкой разных цветов
-    print("\n4. Визуализация с цветной подсветкой:")
-    config_colored = VisualizationConfig(
-        visualize_assign=True,
-        visualize_condition=True,
-        visualize_generic=True,
-        highlight_enabled=True,
-        highlight_color_assign="blue",
-        highlight_color_condition="orange",
-        highlight_color_swap="red",
-        highlight_color_call="green"
-    )
-    translator = JavaTranslator(config_colored)
-    result_colored = translator.translate_python_code(python_code, "Colored")
-    
-    # Проверяем цвета подсветки
-    colored_steps = [s for s in result_colored['steps'] if s.get('highlightColor')]
-    print(f"   Шагов с подсветкой: {len(colored_steps)}")
-    
-    return {
-        "default": result_default,
-        "minimal": result_minimal,
-        "assign_only": result_assign,
-        "colored": result_colored
-    }
-
-
-def interactive_visualization_config():
-    """Интерактивная настройка визуализации"""
-    
-    print("Интерактивная настройка визуализации операций ЯВА")
+    print("Тестирование безопасной трансляции")
     print("=" * 60)
     
-    # Создаем конфигурацию по умолчанию
-    config = VisualizationConfig()
+    # Конфигурация с ограничениями
+    safe_config = TranslationConfig(
+        max_code_size=1000,
+        max_steps=100,
+        max_recursion_depth=10,
+        safe_mode=True
+    )
     
-    # Список опций для настройки
-    options = [
-        ("visualize_assign", "Визуализация присваиваний (x = y)", config.visualize_assign),
-        ("visualize_condition", "Визуализация условий (if, while)", config.visualize_condition),
-        ("visualize_compare", "Визуализация сравнений", config.visualize_compare),
-        ("visualize_swap", "Визуализация обменов", config.visualize_swap),
-        ("visualize_call", "Визуализация вызовов функций", config.visualize_call),
-        ("visualize_generic", "Визуализация универсальных операций", config.visualize_generic),
-        ("visualize_loop_init", "Визуализация инициализации циклов", config.visualize_loop_init),
-        ("visualize_loop_increment", "Визуализация инкрементов в циклах", config.visualize_loop_increment),
-        ("visualize_start_end", "Визуализация старта и конца алгоритма", config.visualize_start_end),
-        ("highlight_enabled", "Включить подсветку элементов", config.highlight_enabled),
-    ]
+    translator = JavaTranslator(translation_config=safe_config)
     
-    # Отображаем текущие настройки
-    print("Текущие настройки визуализации:")
-    for i, (key, description, value) in enumerate(options, 1):
-        status = "✓" if value else "✗"
-        print(f"{i:2}. {status} {description}")
-    
-    # Пример кода для тестирования
-    test_code = '''
-# Пример алгоритма для тестирования
+    # 1. Корректный код
+    print("\n1. Корректный код:")
+    good_code = '''
 sum = 0
 for i in range(5):
-    if i % 2 == 0:
-        sum = sum + i
+    sum = sum + i
 result = sum
 '''
+    result = translator.translate_python_code(good_code, "Сумма")
+    if result.get("error"):
+        print(f"   Ошибка: {result['errorMessage']}")
+    else:
+        print(f"   Успешно! Шагов: {len(result['steps'])}")
     
-    # Создаем транслятор с текущей конфигурацией
-    translator = JavaTranslator(config)
-    result = translator.translate_python_code(test_code, "InteractiveTest")
+    # 2. Опасный код
+    print("\n2. Опасный код:")
+    dangerous_code = '''
+import os
+os.system("rm -rf /")
+'''
+    result = translator.translate_python_code(dangerous_code, "Опасный")
+    if result.get("error"):
+        print(f"   Обнаружена угроза: {result['errorType']}")
+    else:
+        print("   Пропущена опасность!")
     
-    # Анализируем результат
-    print(f"\nПример алгоритма сгенерирован:")
-    print(f"Всего шагов: {len(result['steps'])}")
+    # 3. Слишком большой код
+    print("\n3. Слишком большой код:")
+    big_code = "x = 0\n" * 1000
+    result = translator.translate_python_code(big_code, "Большой")
+    if result.get("error"):
+        print(f"   Превышен лимит: {result['errorMessage']}")
     
-    visualized_by_type = {}
-    for step in result['steps']:
-        step_type = step['type']
-        if step.get('visualize', True):
-            visualized_by_type[step_type] = visualized_by_type.get(step_type, 0) + 1
-    
-    print("Визуализированные шаги по типам:")
-    for step_type, count in visualized_by_type.items():
-        print(f"  - {step_type}: {count}")
-    
-    # Сохраняем результат
-    translator.save_to_file(result, "interactive_visualization_test.java.json")
-    print(f"\nРезультат сохранен в 'interactive_visualization_test.java.json'")
-    
-    return config, result
-
-
-def test_with_preset(preset_name: str, python_code: str, algorithm_name: str = None):
-    """Тестирование с предустановленной конфигурацией"""
-    
-    presets = create_preset_configs()
-    
-    if preset_name not in presets:
-        print(f"Пресет '{preset_name}' не найден. Доступные пресеты: {list(presets.keys())}")
-        return None
-    
-    config = presets[preset_name]
-    algorithm_name = algorithm_name or f"{preset_name.capitalize()}Preset"
-    
-    print(f"\nТестирование пресета '{preset_name}':")
-    print(f"Алгоритм: {algorithm_name}")
-    
-    translator = JavaTranslator(config)
-    result = translator.translate_python_code(python_code, algorithm_name)
-    
-    # Анализ
-    total_steps = len(result['steps'])
-    visualized_steps = [s for s in result['steps'] if s.get('visualize', True)]
-    visualization_percentage = (len(visualized_steps) / total_steps * 100) if total_steps > 0 else 0
-    
-    print(f"Всего шагов: {total_steps}")
-    print(f"Визуализируется: {len(visualized_steps)} ({visualization_percentage:.1f}%)")
-    
-    # Сохраняем результат
-    filename = f"{algorithm_name.lower().replace(' ', '_')}.java.json"
-    translator.save_to_file(result, filename)
-    print(f"Файл сохранен: {filename}")
+    # 4. Синтаксическая ошибка
+    print("\n4. Синтаксическая ошибка:")
+    bad_syntax = '''
+x = 
+if x > 0
+    print("ok")
+'''
+    result = translator.translate_python_code(bad_syntax, "Синтаксис")
+    if result.get("error"):
+        print(f"   Синтаксическая ошибка: {result['errorMessage']}")
     
     return result
 
-
-if __name__ == "__main__":
-    print("Система настройки визуализации операций ЯВА")
+def test_structure_types():
+    """Тестирование разных типов структур"""
+    
+    print("\n\nТестирование типов структур")
     print("=" * 60)
     
-    # Тестируем разные конфигурации
-    test_results = test_visualization_configs()
-    
-    print("\n" + "=" * 60)
-    
-    # Интерактивная настройка
-    config, result = interactive_visualization_config()
-    
-    print("\n" + "=" * 60)
-    print("Тестирование предустановленных конфигураций:")
-    
-    # Пример кода для тестирования пресетов
-    test_algorithm = '''
-# Алгоритм сортировки пузырьком (упрощенный)
-n = struct.len
-for i in range(n):
-    for j in range(n - i - 1):
-        if struct[j] > struct[j + 1]:
-            # Обмен элементов
-            temp = struct[j]
-            struct[j] = struct[j + 1]
-            struct[j + 1] = temp
+    # Код для работы с массивом
+    array_code = '''
+for i in range(struct.len):
+    struct[i] = struct[i] * 2
 '''
     
-    # Тестируем все пресеты
-    for preset_name in ["full", "minimal", "debug", "performance", "educational"]:
-        test_with_preset(preset_name, test_algorithm)
+    # Код для работы с деревом
+    tree_code = '''
+if struct.hasLeft:
+    left_value = struct.left.value
+if struct.hasRight:
+    right_value = struct.right.value
+'''
+    
+    translator = JavaTranslator()
+    
+    print("1. Массив:")
+    result = translator.translate_python_code(array_code, "Обработка массива", "array")
+    print(f"   Переменные: {[v['name'] for v in result['variables']]}")
+    
+    print("\n2. Бинарное дерево:")
+    result = translator.translate_python_code(tree_code, "Обход дерева", "binarytree")
+    print(f"   Переменные: {[v['name'] for v in result['variables']]}")
+    
+    print("\n3. Неподдерживаемая структура:")
+    try:
+        result = translator.translate_python_code("x=1", "Тест", "unknown")
+    except Exception as e:
+        print(f"   Ошибка: {e}")
+
+def test_custom_mods():
+    """Тестирование пользовательских модов"""
+    
+    print("\n\nТестирование пользовательских модов")
+    print("=" * 60)
+    
+    translator = JavaTranslator()
+    
+    # Добавляем пользовательскую функцию
+    def custom_sum_handler(*args):
+        expr = " + ".join(args)
+        return translator._create_expression_result(f"custom_sum({expr})")
+    
+    translator.add_custom_mod("custom", {
+        "custom_sum": custom_sum_handler,
+        "average": lambda *args: translator._create_expression_result(f"average({', '.join(args)})")
+    })
+    
+    # Код с пользовательской функцией
+    code = '''
+result = custom_sum(1, 2, 3, 4, 5)
+avg = average(10, 20, 30)
+'''
+    
+    result = translator.translate_python_code(code, "Пользовательские функции")
+    
+    # Ищем вызовы custom функций
+    custom_calls = [s for s in result['steps'] if "custom" in str(s.get('parameters'))]
+    print(f"   Найдено вызовов custom функций: {len(custom_calls)}")
+    
+    return result
+
+def test_validation():
+    """Тестирование валидации результата"""
+    
+    print("\n\nТестирование валидации результата")
+    print("=" * 60)
+    
+    from python_java_translator.error_handler import ErrorHandler
+    
+    # 1. Корректный алгоритм
+    correct_algo = {
+        "name": "Test",
+        "description": "Test",
+        "structureType": "array",
+        "variables": [{"name": "x", "type": "int", "initialValue": 0}],
+        "steps": [
+            {"id": "start", "type": "generic", "description": "Start", "parameters": [], "nextStep": "end", "visualize": True},
+            {"id": "end", "type": "generic", "description": "End", "parameters": [], "visualize": True}
+        ]
+    }
+    
+    errors = ErrorHandler.validate_java_output(correct_algo)
+    print(f"1. Корректный алгоритм: {len(errors)} ошибок")
+    if errors:
+        for err in errors:
+            print(f"   - {err}")
+    
+    # 2. Алгоритм без start
+    no_start = {
+        "name": "Test",
+        "description": "Test",
+        "structureType": "array",
+        "variables": [],
+        "steps": [
+            {"id": "middle", "type": "generic", "description": "Middle", "parameters": []},
+            {"id": "end", "type": "generic", "description": "End", "parameters": []}
+        ]
+    }
+    
+    errors = ErrorHandler.validate_java_output(no_start)
+    print(f"\n2. Алгоритм без start: {len(errors)} ошибок")
+    for err in errors:
+        print(f"   - {err}")
+    
+    # 3. Алгоритм с циклом без выхода
+    infinite_loop = {
+        "name": "Test",
+        "description": "Test",
+        "structureType": "array",
+        "variables": [{"name": "x", "type": "int", "initialValue": 0}],
+        "steps": [
+            {"id": "start", "type": "generic", "description": "Start", "parameters": [], "nextStep": "loop", "visualize": True},
+            {"id": "loop", "type": "condition", "description": "Loop", "parameters": ["true"], 
+             "conditionCases": [{"condition": "true", "nextStep": "loop"}, {"condition": "false", "nextStep": "end"}]},
+            {"id": "end", "type": "generic", "description": "End", "parameters": [], "visualize": True}
+        ]
+    }
+    
+    errors = ErrorHandler.validate_java_output(infinite_loop)
+    print(f"\n3. Алгоритм с потенциальным бесконечным циклом: {len(errors)} ошибок")
+    for err in errors:
+        print(f"   - {err}")
+
+def test_performance():
+    """Тестирование производительности"""
+    
+    print("\n\nТестирование производительности")
+    print("=" * 60)
+    
+    import time
+    
+    # Создаем большой код
+    code_lines = []
+    for i in range(100):
+        code_lines.append(f"x{i} = {i}")
+        code_lines.append(f"if x{i} % 2 == 0:")
+        code_lines.append(f"    result = result + x{i}")
+    
+    big_code = "\n".join(code_lines)
+    
+    # Конфигурация с лимитами
+    perf_config = TranslationConfig(
+        max_code_size=5000,
+        max_steps=500,
+        max_recursion_depth=20
+    )
+    
+    translator = JavaTranslator(translation_config=perf_config)
+    
+    start_time = time.time()
+    result = translator.translate_python_code(big_code, "Производительность")
+    elapsed = time.time() - start_time
+    
+    if result.get("error"):
+        print(f"   Ошибка: {result['errorMessage']}")
+    else:
+        print(f"   Время трансляции: {elapsed:.2f} сек")
+        print(f"   Количество шагов: {len(result['steps'])}")
+        print(f"   Количество переменных: {len(result['variables'])}")
+
+def main():
+    """Основная функция для запуска примеров"""
+    print("Система трансляции Python -> ЯВА с безопасностью и валидацией")
+    print("=" * 60)
+    
+    # Тестируем безопасную трансляцию
+    test_safe_translation()
+    
+    # Тестируем типы структур
+    test_structure_types()
+    
+    # Тестируем пользовательские моды
+    test_custom_mods()
+    
+    # Тестируем валидацию
+    test_validation()
+    
+    # Тестируем производительность
+    test_performance()
     
     print("\n" + "=" * 60)
-    print("Использование системы в коде:")
+    print("Пример использования в продакшене:")
     
     usage_example = '''
-# Пример использования в вашем коде
-from python_java_translator import JavaTranslator, VisualizationConfig
+# Пример использования с безопасностью
+from python_java_translator import JavaTranslator, TranslationConfig
 
-# Создаем кастомную конфигурацию
-config = VisualizationConfig(
-    visualize_assign=True,
-    visualize_condition=True,
-    visualize_generic=False,
-    visualize_loop_init=False,
-    visualize_loop_increment=False,
-    highlight_enabled=True,
-    highlight_color_assign="blue"
+# Конфигурация безопасности
+config = TranslationConfig(
+    max_code_size=5000,
+    max_steps=1000,
+    max_recursion_depth=30,
+    safe_mode=True,
+    validate_output=True
 )
 
-# Создаем транслятор с этой конфигурацией
-translator = JavaTranslator(config)
+# Создание транслятора
+translator = JavaTranslator(translation_config=config)
 
-# Транслируем Python код
-python_code = """
-sum = 0
-for i in range(10):
-    sum = sum + i
-result = sum
-"""
+# Трансляция пользовательского кода
+user_code = input("Введите алгоритм на Python: ")
 
-java_algorithm = translator.translate_python_code(python_code, "CustomVisualization")
-translator.save_to_file(java_algorithm, "custom_visualization.java.json")
+try:
+    result = translator.translate_python_code(
+        user_code, 
+        "Пользовательский алгоритм",
+        structure_type="array"
+    )
+    
+    if result.get("error"):
+        print(f"Ошибка трансляции: {result['errorMessage']}")
+    else:
+        translator.save_to_file(result, "algorithm.java.json")
+        print("Алгоритм успешно сгенерирован!")
+        
+except Exception as e:
+    print(f"Критическая ошибка: {e}")
 '''
     
     print(usage_example)
+
+if __name__ == "__main__":
+    main()

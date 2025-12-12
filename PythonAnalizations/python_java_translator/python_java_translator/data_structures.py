@@ -1,5 +1,5 @@
-"""
-Структуры данных для трансляции Python в ЯВА
+п»ї"""
+РЎС‚СЂСѓРєС‚СѓСЂС‹ РґР°РЅРЅС‹С… РґР»СЏ С‚СЂР°РЅСЃР»СЏС†РёРё Python РІ РЇР’Рђ
 """
 
 from dataclasses import dataclass, field
@@ -7,14 +7,14 @@ from typing import Dict, List, Any, Optional
 
 @dataclass
 class VariableInfo:
-    """Информация о переменной ЯВА"""
+    """РРЅС„РѕСЂРјР°С†РёСЏ Рѕ РїРµСЂРµРјРµРЅРЅРѕР№ РЇР’Рђ"""
     name: str
     type: str  # 'int', 'float', 'bool', 'string', 'array', 'object'
     initial_value: Any = None
 
 @dataclass
 class StepInfo:
-    """Информация о шаге ЯВА"""
+    """РРЅС„РѕСЂРјР°С†РёСЏ Рѕ С€Р°РіРµ РЇР’Рђ"""
     id: str
     type: str  # 'assign', 'condition', 'compare', 'swap', 'call_function', 'return', 'generic'
     description: str
@@ -29,7 +29,7 @@ class StepInfo:
     highlightColor: Optional[str] = None
     
     def to_dict(self) -> Dict:
-        """Преобразование в словарь"""
+        """РџСЂРµРѕР±СЂР°Р·РѕРІР°РЅРёРµ РІ СЃР»РѕРІР°СЂСЊ"""
         result = {
             "id": self.id,
             "type": self.type,

@@ -13,6 +13,8 @@ import { StackVisualization } from '../components/StackVisualization';
 import { QueueVisualization } from '../components/QueueVisualization';
 import { StatsPanel } from '../components/StatsPanel';
 import { useApp } from '../contexts/AppContext';
+import { TheoryPanel } from '../components/TheoryPanel';
+import { AlgorithmComparison } from '../components/AlgorithmComparison';
 
 interface SortingStep {
   array: number[];
@@ -80,6 +82,7 @@ export function VisualizerPage() {
   const [originalTree, setOriginalTree] = useState<TreeNode | null>(null);
   const [insertValue, setInsertValue] = useState('');
   const [treeNodeCount, setTreeNodeCount] = useState(10);
+  
   // Graph state
   const [graphNodes, setGraphNodes] = useState<GraphNode[]>([]);
   const [graphEdges, setGraphEdges] = useState<GraphEdge[]>([]);
@@ -116,6 +119,10 @@ export function VisualizerPage() {
   const [steps, setSteps] = useState<VisualizationStep[]>([]);
   const [stats, setStats] = useState({ comparisons: 0, swaps: 0, operations: 0 });
 
+  // Educational state
+  const [showTheory, setShowTheory] = useState(true);
+  const [showComparison, setShowComparison] = useState(true);
+
   // Load shared data from profiler
   useEffect(() => {
     if (sharedData) {
@@ -145,58 +152,51 @@ export function VisualizerPage() {
     setIsPlaying(false);
   }, [arraySize]);
 
-const generateRandomTree = useCallback((count: number = 10) => {
-  let root: TreeNode | null = null;
-  
-  // Функция для генерации уникальных значений (от 1 до 100)
-  const generateUniqueValues = (count: number): number[] => {
-    const values = new Set<number>();
-    const min = 1;
-    const max = 100;
+  const generateRandomTree = useCallback((count: number = 10) => {
+    let root: TreeNode | null = null;
     
-    // Гарантируем уникальность значений
-    while (values.size < count) {
-      const value = Math.floor(Math.random() * (max - min + 1)) + min;
-      values.add(value);
-    }
-    
-    return Array.from(values);
-  };
+    const generateUniqueValues = (count: number): number[] => {
+      const values = new Set<number>();
+      const min = 1;
+      const max = 100;
+      
+      while (values.size < count) {
+        const value = Math.floor(Math.random() * (max - min + 1)) + min;
+        values.add(value);
+      }
+      
+      return Array.from(values);
+    };
 
-  // Генерируем уникальные значения
-  const values = generateUniqueValues(count);
-  
-  // Функция вставки в BST
-  const insertNode = (node: TreeNode | null, value: number): TreeNode => {
-    if (!node) {
-      return { value };
-    }
+    const values = generateUniqueValues(count);
     
-    // Вставка в бинарное дерево поиска
-    if (value < node.value) {
-      node.left = insertNode(node.left || null, value);
-    } else {
-      node.right = insertNode(node.right || null, value);
-    }
-    
-    return node;
-  };
+    const insertNode = (node: TreeNode | null, value: number): TreeNode => {
+      if (!node) {
+        return { value };
+      }
+      
+      if (value < node.value) {
+        node.left = insertNode(node.left || null, value);
+      } else {
+        node.right = insertNode(node.right || null, value);
+      }
+      
+      return node;
+    };
 
-  // Перемешиваем значения для лучшего баланса
-  const shuffledValues = [...values].sort(() => Math.random() - 0.5);
-  
-  // Вставляем все значения
-  shuffledValues.forEach(value => {
-    root = insertNode(root, value);
-  });
-  
-  setTree(root);
-  setOriginalTree(JSON.parse(JSON.stringify(root)));
-  setCurrentStep(0);
-  setSteps([]);
-  setStats({ comparisons: 0, swaps: 0, operations: 0 });
-  setIsPlaying(false);
-}, []);
+    const shuffledValues = [...values].sort(() => Math.random() - 0.5);
+    
+    shuffledValues.forEach(value => {
+      root = insertNode(root, value);
+    });
+    
+    setTree(root);
+    setOriginalTree(JSON.parse(JSON.stringify(root)));
+    setCurrentStep(0);
+    setSteps([]);
+    setStats({ comparisons: 0, swaps: 0, operations: 0 });
+    setIsPlaying(false);
+  }, []);
 
   const generateRandomGraph = useCallback((type: 'circular' | 'grid' | 'complete' | 'random' = graphType) => {
     const nodes: GraphNode[] = [];
@@ -207,7 +207,6 @@ const generateRandomTree = useCallback((count: number = 10) => {
     const radius = 150;
 
     if (type === 'circular') {
-      // Круговое расположение
       for (let i = 0; i < nodeCount; i++) {
         const angle = (i * 2 * Math.PI) / nodeCount;
         nodes.push({
@@ -218,7 +217,6 @@ const generateRandomTree = useCallback((count: number = 10) => {
         });
       }
 
-      // Создаем кольцевые связи
       for (let i = 0; i < nodeCount; i++) {
         const next = (i + 1) % nodeCount;
         edges.push({
@@ -228,7 +226,6 @@ const generateRandomTree = useCallback((count: number = 10) => {
         });
       }
     } else if (type === 'grid') {
-      // Сеточное расположение
       const cols = Math.ceil(Math.sqrt(nodeCount));
       const rows = Math.ceil(nodeCount / cols);
       const cellWidth = 250 / Math.max(cols - 1, 1);
@@ -245,7 +242,6 @@ const generateRandomTree = useCallback((count: number = 10) => {
         });
       }
 
-      // Горизонтальные связи
       for (let i = 0; i < nodeCount; i++) {
         const row = Math.floor(i / cols);
         const col = i % cols;
@@ -259,7 +255,6 @@ const generateRandomTree = useCallback((count: number = 10) => {
         }
       }
 
-      // Вертикальные связи
       for (let i = 0; i < nodeCount; i++) {
         const row = Math.floor(i / cols);
         const col = i % cols;
@@ -273,7 +268,6 @@ const generateRandomTree = useCallback((count: number = 10) => {
         }
       }
     } else if (type === 'complete') {
-      // Полный граф K_n
       for (let i = 0; i < nodeCount; i++) {
         const angle = (i * 2 * Math.PI) / nodeCount;
         nodes.push({
@@ -284,7 +278,6 @@ const generateRandomTree = useCallback((count: number = 10) => {
         });
       }
 
-      // Все узлы соединены со всеми
       for (let i = 0; i < nodeCount; i++) {
         for (let j = i + 1; j < nodeCount; j++) {
           edges.push({
@@ -295,11 +288,9 @@ const generateRandomTree = useCallback((count: number = 10) => {
         }
       }
     } else if (type === 'random') {
-      // Свободное расположение узлов с улучшенной проверкой коллизий
       const padding = 60;
-      const minDistance = 70; // Минимальное расстояние между узлами
+      const minDistance = 70;
 
-      // Функция для проверки коллизий
       const hasCollision = (x: number, y: number, existingNodes: GraphNode[]) => {
         for (const node of existingNodes) {
           const distance = Math.sqrt(Math.pow(x - node.x, 2) + Math.pow(y - node.y, 2));
@@ -310,25 +301,20 @@ const generateRandomTree = useCallback((count: number = 10) => {
         return false;
       };
 
-      // Размещаем узлы с улучшенным алгоритмом
       for (let i = 0; i < nodeCount; i++) {
         let attempts = 0;
         let x, y;
 
-        // Пытаемся найти свободную позицию
         do {
           x = padding + Math.random() * (800 - 2 * padding);
           y = padding + Math.random() * (500 - 2 * padding);
           attempts++;
 
-          // После 50 попыток увеличиваем поисковое пространство
           if (attempts > 50) {
-            // Пробуем позиции ближе к центру
             x = 200 + Math.random() * 400;
             y = 150 + Math.random() * 200;
           }
 
-          // После 100 попыток принимаем любую позицию
           if (attempts > 100) {
             break;
           }
@@ -342,7 +328,6 @@ const generateRandomTree = useCallback((count: number = 10) => {
         });
       }
 
-      // Применяем простую силовую раскладку для финального выравнивания
       const iterations = 30;
       const repulsionForce = 80;
 
@@ -351,7 +336,6 @@ const generateRandomTree = useCallback((count: number = 10) => {
           let forceX = 0;
           let forceY = 0;
 
-          // Отталкивание от других узлов
           for (let j = 0; j < nodeCount; j++) {
             if (i !== j) {
               const dx = nodes[i].x - nodes[j].x;
@@ -366,7 +350,6 @@ const generateRandomTree = useCallback((count: number = 10) => {
             }
           }
 
-          // Притяжение к центру (чтобы узлы не улетали за границы)
           const centerX = 400;
           const centerY = 250;
           const toCenterX = centerX - nodes[i].x;
@@ -378,7 +361,6 @@ const generateRandomTree = useCallback((count: number = 10) => {
             forceY += toCenterY * 0.1;
           }
 
-          // Применяем силы с ограничением
           const forceMagnitude = Math.sqrt(forceX * forceX + forceY * forceY);
           if (forceMagnitude > 15) {
             forceX = (forceX / forceMagnitude) * 15;
@@ -388,20 +370,17 @@ const generateRandomTree = useCallback((count: number = 10) => {
           nodes[i].x += forceX;
           nodes[i].y += forceY;
 
-          // Ограничиваем границы
           nodes[i].x = Math.max(padding, Math.min(800 - padding, nodes[i].x));
           nodes[i].y = Math.max(padding, Math.min(500 - padding, nodes[i].y));
         }
       }
 
-      // Создаем минимальное остовное дерево для базовой связности
       const addedEdges = new Set<string>();
       const connectedNodes = new Set<number>([0]);
 
       while (connectedNodes.size < nodeCount) {
         let bestEdge: { from: number, to: number, distance: number } | null = null;
 
-        // Ищем ближайший неподключенный узел
         for (const connectedNode of connectedNodes) {
           for (let i = 0; i < nodeCount; i++) {
             if (!connectedNodes.has(i)) {
@@ -430,7 +409,6 @@ const generateRandomTree = useCallback((count: number = 10) => {
         }
       }
 
-      // Добавляем только очень короткие дополнительные ребра для читаемости
       const shortEdges: { from: number, to: number, distance: number }[] = [];
 
       for (let i = 0; i < nodeCount; i++) {
@@ -441,7 +419,6 @@ const generateRandomTree = useCallback((count: number = 10) => {
             const dy = nodes[i].y - nodes[j].y;
             const distance = Math.sqrt(dx * dx + dy * dy);
 
-            // Добавляем только очень короткие ребра (меньше 120px)
             if (distance < 120) {
               shortEdges.push({ from: i, to: j, distance });
             }
@@ -449,7 +426,6 @@ const generateRandomTree = useCallback((count: number = 10) => {
         }
       }
 
-      // Сортируем по расстоянию и добавляем самые короткие
       shortEdges.sort((a, b) => a.distance - b.distance);
       const maxExtraEdges = Math.min(shortEdges.length, Math.max(2, Math.floor(nodeCount * 0.4)));
 
@@ -537,7 +513,6 @@ const generateRandomTree = useCallback((count: number = 10) => {
   }, [dataStructure, generateRandomArray, generateRandomTree, generateRandomGraph,
     generateRandomList, generateRandomStack, generateRandomQueue]);
 
-  // Regenerate data when type or size changes
   useEffect(() => {
     if (dataStructure === 'list') {
       generateRandomList();
@@ -756,7 +731,7 @@ const generateRandomTree = useCallback((count: number = 10) => {
     return steps;
   };
 
-  // Tree algorithms - ВАЖНО: создаем глубокие копии на каждом шаге
+  // Tree algorithms
   const deepCopyTree = (node: TreeNode | null): TreeNode | null => {
     if (!node) return null;
     const copy: TreeNode = {
@@ -769,88 +744,83 @@ const generateRandomTree = useCallback((count: number = 10) => {
     return copy;
   };
 
-const bstInsert = (root: TreeNode | null, value: number): TreeStep[] => {
-  const steps: TreeStep[] = [];
-  let operations = 0;
+  const bstInsert = (root: TreeNode | null, value: number): TreeStep[] => {
+    const steps: TreeStep[] = [];
+    let operations = 0;
 
-  // Проверяем диапазон значения
-  if (value < 1 || value > 100) {
-    // Показываем ошибку
-    steps.push({
-      tree: deepCopyTree(root),
-      currentNode: value,
-      highlightedNodes: [],
-      visitedNodes: [],
-    });
-    
-    setStats({ comparisons: 0, swaps: 0, operations: 1 });
-    return steps;
-  }
-
-  // Создаем глубокую копию для работы
-  const workingTree = deepCopyTree(root);
-  
-  steps.push({ tree: deepCopyTree(workingTree) });
-
-  const insert = (node: TreeNode | null, val: number, path: number[] = []): TreeNode => {
-    operations++;
-
-    if (!node) {
-      const newNode = { value: val };
+    if (value < 1 || value > 100) {
       steps.push({
-        tree: deepCopyTree(workingTree),
-        highlightedNodes: [val],
-        visitedNodes: path,
+        tree: deepCopyTree(root),
+        currentNode: value,
+        highlightedNodes: [],
+        visitedNodes: [],
       });
-      return newNode;
+      
+      setStats({ comparisons: 0, swaps: 0, operations: 1 });
+      return steps;
     }
 
-    steps.push({
-      tree: deepCopyTree(workingTree),
-      currentNode: node.value,
-      visitedNodes: path,
-    });
+    const workingTree = deepCopyTree(root);
+    
+    steps.push({ tree: deepCopyTree(workingTree) });
 
-    // Если значение уже существует в дереве
-    if (val === node.value) {
+    const insert = (node: TreeNode | null, val: number, path: number[] = []): TreeNode => {
+      operations++;
+
+      if (!node) {
+        const newNode = { value: val };
+        steps.push({
+          tree: deepCopyTree(workingTree),
+          highlightedNodes: [val],
+          visitedNodes: path,
+        });
+        return newNode;
+      }
+
       steps.push({
         tree: deepCopyTree(workingTree),
         currentNode: node.value,
-        highlightedNodes: [val],
-        visitedNodes: [...path, node.value],
+        visitedNodes: path,
       });
-      return node; // Не вставляем дубликат
-    }
 
-    if (val < node.value) {
-      node.left = insert(node.left || null, val, [...path, node.value]);
+      if (val === node.value) {
+        steps.push({
+          tree: deepCopyTree(workingTree),
+          currentNode: node.value,
+          highlightedNodes: [val],
+          visitedNodes: [...path, node.value],
+        });
+        return node;
+      }
+
+      if (val < node.value) {
+        node.left = insert(node.left || null, val, [...path, node.value]);
+      } else {
+        node.right = insert(node.right || null, val, [...path, node.value]);
+      }
+
+      return node;
+    };
+
+    let newRoot;
+    if (workingTree) {
+      newRoot = insert(workingTree, value);
     } else {
-      node.right = insert(node.right || null, val, [...path, node.value]);
+      newRoot = { value };
     }
 
-    return node;
+    steps.push({ 
+      tree: deepCopyTree(newRoot), 
+      visitedNodes: [], 
+      highlightedNodes: [value] 
+    });
+
+    setTree(deepCopyTree(newRoot));
+    setOriginalTree(deepCopyTree(newRoot));
+    
+    setStats({ comparisons: 0, swaps: 0, operations });
+    return steps;
   };
-
-  let newRoot;
-  if (workingTree) {
-    newRoot = insert(workingTree, value);
-  } else {
-    newRoot = { value };
-  }
-
-  steps.push({ 
-    tree: deepCopyTree(newRoot), 
-    visitedNodes: [], 
-    highlightedNodes: [value] 
-  });
-
-  // Обновляем оба дерева
-  setTree(deepCopyTree(newRoot));
-  setOriginalTree(deepCopyTree(newRoot));
-  
-  setStats({ comparisons: 0, swaps: 0, operations });
-  return steps;
-};
 
   const bstInorder = (root: TreeNode | null): TreeStep[] => {
     const steps: TreeStep[] = [];
@@ -867,31 +837,26 @@ const bstInsert = (root: TreeNode | null, value: number): TreeStep[] => {
       if (!node) return;
 
       operations++;
-      // Показываем, что мы посещаем узел (красный)
       steps.push({
         tree: deepCopyTree(root),
         currentNode: node.value,
         visitedNodes: [...visited],
       });
 
-      // Обходим левое поддерево
       traverse(node.left || null);
 
-      // Обрабатываем текущий узел (зеленый)
       steps.push({
         tree: deepCopyTree(root),
         highlightedNodes: [node.value],
         visitedNodes: [...visited],
       });
 
-      // Добавляем в посещенные (светло-зеленый)
       visited.push(node.value);
       steps.push({
         tree: deepCopyTree(root),
         visitedNodes: [...visited],
       });
 
-      // Обходим правое поддерево
       traverse(node.right || null);
     };
 
@@ -917,28 +882,24 @@ const bstInsert = (root: TreeNode | null, value: number): TreeStep[] => {
       if (!node) return;
 
       operations++;
-      // Показываем, что мы посещаем узел (красный)
       steps.push({
         tree: deepCopyTree(root),
         currentNode: node.value,
         visitedNodes: [...visited],
       });
 
-      // Обрабатываем узел сразу (зеленый)
       steps.push({
         tree: deepCopyTree(root),
         highlightedNodes: [node.value],
         visitedNodes: [...visited],
       });
 
-      // Добавляем в посещенные (светло-зеленый)
       visited.push(node.value);
       steps.push({
         tree: deepCopyTree(root),
         visitedNodes: [...visited],
       });
 
-      // Обходим поддеревья
       traverse(node.left || null);
       traverse(node.right || null);
     };
@@ -965,25 +926,21 @@ const bstInsert = (root: TreeNode | null, value: number): TreeStep[] => {
       if (!node) return;
 
       operations++;
-      // Показываем, что мы посещаем узел (красный)
       steps.push({
         tree: deepCopyTree(root),
         currentNode: node.value,
         visitedNodes: [...visited],
       });
 
-      // Обходим поддеревья
       traverse(node.left || null);
       traverse(node.right || null);
 
-      // Обрабатываем узел после поддеревьев (зеленый)
       steps.push({
         tree: deepCopyTree(root),
         highlightedNodes: [node.value],
         visitedNodes: [...visited],
       });
 
-      // Добавляем в посещенные (светло-зеленый)
       visited.push(node.value);
       steps.push({
         tree: deepCopyTree(root),
@@ -1015,21 +972,18 @@ const bstInsert = (root: TreeNode | null, value: number): TreeStep[] => {
       const node = queue.shift()!;
       operations++;
 
-      // Показываем, что мы посещаем узел (красный)
       steps.push({
         tree: deepCopyTree(root),
         currentNode: node.value,
         visitedNodes: [...visited],
       });
 
-      // Обрабатываем узел (зеленый)
       steps.push({
         tree: deepCopyTree(root),
         highlightedNodes: [node.value],
         visitedNodes: [...visited],
       });
 
-      // Добавляем в посещенные (светло-зеленый)
       visited.push(node.value);
       steps.push({
         tree: deepCopyTree(root),
@@ -1074,7 +1028,6 @@ const bstInsert = (root: TreeNode | null, value: number): TreeStep[] => {
         visitedNodes: Array.from(visited),
       });
 
-      // Find neighbors
       const neighbors = edges
         .filter(e => e.from === current || e.to === current)
         .map(e => e.from === current ? e.to : e.from)
@@ -1153,7 +1106,7 @@ const bstInsert = (root: TreeNode | null, value: number): TreeStep[] => {
     distances[startNode] = 0;
     steps.push({ nodes, edges, currentNode: startNode });
 
-    const priorityQueue: [number, number][] = [[0, startNode]]; // [distance, node]
+    const priorityQueue: [number, number][] = [[0, startNode]];
 
     while (priorityQueue.length > 0) {
       priorityQueue.sort((a, b) => a[0] - b[0]);
@@ -1171,7 +1124,6 @@ const bstInsert = (root: TreeNode | null, value: number): TreeStep[] => {
         visitedNodes: Array.from(visited),
       });
 
-      // Находим соседей
       const neighbors = edges
         .filter(e => e.from === current || (!directedGraph && e.to === current))
         .map(e => {
@@ -1288,7 +1240,6 @@ const bstInsert = (root: TreeNode | null, value: number): TreeStep[] => {
 
     steps.push({ nodes: JSON.parse(JSON.stringify(nodes)), type: listType });
 
-    // Highlight the node to be deleted
     steps.push({
       nodes: JSON.parse(JSON.stringify(nodes)),
       highlightedIndices: [position],
@@ -1298,7 +1249,6 @@ const bstInsert = (root: TreeNode | null, value: number): TreeStep[] => {
     operations++;
     const newNodes: ListNode[] = [];
 
-    // Build new list without the deleted node
     for (let i = 0; i < nodes.length; i++) {
       if (i !== position) {
         const node: ListNode = {
@@ -1310,7 +1260,6 @@ const bstInsert = (root: TreeNode | null, value: number): TreeStep[] => {
       }
     }
 
-    // Reconnect the links
     for (let i = 0; i < newNodes.length; i++) {
       if (i < newNodes.length - 1) {
         newNodes[i].next = i + 1;
@@ -1440,7 +1389,6 @@ const bstInsert = (root: TreeNode | null, value: number): TreeStep[] => {
           algorithmSteps = bubbleSort(originalArray);
       }
     } else if (dataStructure === 'tree') {
-      // Используем originalTree для анимации
       switch (algorithm) {
         case 'bst.inorder':
           algorithmSteps = bstInorder(originalTree);
@@ -1480,24 +1428,24 @@ const bstInsert = (root: TreeNode | null, value: number): TreeStep[] => {
     }
   };
 
-const handleInsertValue = () => {
-  const value = parseInt(insertValue);
-  if (!isNaN(value)) {
-    // Проверяем диапазон
-    if (value < 1 || value > 100) {
-      alert('Пожалуйста, введите значение от 1 до 100');
-      return;
+  const handleInsertValue = () => {
+    const value = parseInt(insertValue);
+    if (!isNaN(value)) {
+      if (value < 1 || value > 100) {
+        alert('Пожалуйста, введите значение от 1 до 100');
+        return;
+      }
+      
+      const insertSteps = bstInsert(tree, value);
+      setSteps(insertSteps);
+      setCurrentStep(0);
+      setInsertValue('');
+      setIsPlaying(true);
+    } else {
+      alert('Пожалуйста, введите корректное число');
     }
-    
-    const insertSteps = bstInsert(tree, value);
-    setSteps(insertSteps);
-    setCurrentStep(0);
-    setInsertValue('');
-    setIsPlaying(true);
-  } else {
-    alert('Пожалуйста, введите корректное число');
-  }
-};
+  };
+
   const handleListInsert = () => {
     const value = parseInt(listValue);
     const position = listPosition === '' ? listNodes.length : parseInt(listPosition);
@@ -1607,27 +1555,27 @@ const handleInsertValue = () => {
   };
 
   const handleReset = () => {
-  setCurrentStep(0);
-  setIsPlaying(false);
+    setCurrentStep(0);
+    setIsPlaying(false);
 
-  if (dataStructure === 'array') {
-    setArray([...originalArray]);
-  } else if (dataStructure === 'tree') {
-    setTree(deepCopyTree(originalTree));
-  } else if (dataStructure === 'graph') {
-    setGraphNodes([...originalGraphNodes]);
-    setGraphEdges([...originalGraphEdges]);
-  } else if (dataStructure === 'list') {
-    setListNodes(JSON.parse(JSON.stringify(originalListNodes)));
-  } else if (dataStructure === 'stack') {
-    setStackItems([...originalStackItems]);
-  } else if (dataStructure === 'queue') {
-    setQueueItems([...originalQueueItems]);
-  }
+    if (dataStructure === 'array') {
+      setArray([...originalArray]);
+    } else if (dataStructure === 'tree') {
+      setTree(deepCopyTree(originalTree));
+    } else if (dataStructure === 'graph') {
+      setGraphNodes([...originalGraphNodes]);
+      setGraphEdges([...originalGraphEdges]);
+    } else if (dataStructure === 'list') {
+      setListNodes(JSON.parse(JSON.stringify(originalListNodes)));
+    } else if (dataStructure === 'stack') {
+      setStackItems([...originalStackItems]);
+    } else if (dataStructure === 'queue') {
+      setQueueItems([...originalQueueItems]);
+    }
 
-  setSteps([]);
-  setStats({ comparisons: 0, swaps: 0, operations: 0 });
-};
+    setSteps([]);
+    setStats({ comparisons: 0, swaps: 0, operations: 0 });
+  };
 
   const renderVisualization = () => {
     const currentStepData = steps[currentStep];
@@ -1726,27 +1674,27 @@ const handleInsertValue = () => {
     if (dataStructure === 'array') {
       return (
         <>
-          <SelectItem value="bubblesort">{translations['algorithm.bubblesort'] || 'Bubble Sort'}</SelectItem>
-          <SelectItem value="quicksort">{translations['algorithm.quicksort'] || 'Quick Sort'}</SelectItem>
-          <SelectItem value="insertionsort">{translations['algorithm.insertionsort'] || 'Insertion Sort'}</SelectItem>
-          <SelectItem value="selectionsort">{translations['algorithm.selectionsort'] || 'Selection Sort'}</SelectItem>
+          <SelectItem value="bubblesort">{translations['algorithm.bubblesort']}</SelectItem>
+          <SelectItem value="quicksort">{translations['algorithm.quicksort']}</SelectItem>
+          <SelectItem value="insertionsort">{translations['algorithm.insertionsort']}</SelectItem>
+          <SelectItem value="selectionsort">{translations['algorithm.selectionsort']}</SelectItem>
         </>
       );
     } else if (dataStructure === 'tree') {
       return (
         <>
-          <SelectItem value="bst.inorder">{translations['algorithm.bst.inorder'] || 'In-order Traversal'}</SelectItem>
-          <SelectItem value="bst.preorder">{translations['algorithm.bst.preorder'] || 'Pre-order Traversal'}</SelectItem>
-          <SelectItem value="bst.postorder">{translations['algorithm.bst.postorder'] || 'Post-order Traversal'}</SelectItem>
-          <SelectItem value="bst.levelorder">{translations['algorithm.bst.levelorder'] || 'Level-order Traversal'}</SelectItem>
+          <SelectItem value="bst.inorder">{translations['algorithm.bst.inorder']}</SelectItem>
+          <SelectItem value="bst.preorder">{translations['algorithm.bst.preorder']}</SelectItem>
+          <SelectItem value="bst.postorder">{translations['algorithm.bst.postorder']}</SelectItem>
+          <SelectItem value="bst.levelorder">{translations['algorithm.bst.levelorder']}</SelectItem>
         </>
       );
     } else if (dataStructure === 'graph') {
       return (
         <>
-          <SelectItem value="bfs">{translations['algorithm.bfs'] || 'Breadth-First Search'}</SelectItem>
-          <SelectItem value="dfs">{translations['algorithm.dfs'] || 'Depth-First Search'}</SelectItem>
-          <SelectItem value="dijkstra">{translations['algorithm.dijkstra'] || "Dijkstra's Algorithm"}</SelectItem>
+          <SelectItem value="bfs">{translations['algorithm.bfs']}</SelectItem>
+          <SelectItem value="dfs">{translations['algorithm.dfs']}</SelectItem>
+          <SelectItem value="dijkstra">{translations['algorithm.dijkstra']}</SelectItem>
         </>
       );
     }
@@ -1759,34 +1707,38 @@ const handleInsertValue = () => {
     return undefined;
   };
 
-  return (
+     // Добавьте новое состояние для переключения между статистикой и теорией
+  const [rightPanelMode, setRightPanelMode] = useState<'stats' | 'theory'>('stats');
+
+   return (
     <div className="space-y-6">
       <div className="grid lg:grid-cols-5 gap-6">
-        <Card className="lg:col-span-1">
+        {/* Левая панель настроек */}
+        <Card className="lg:col-span-1  self-start">
           <CardHeader>
-            <CardTitle>{translations['structure.select'] || 'Data Structure'}</CardTitle>
+            <CardTitle>{translations['structure.select']}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <label className="text-sm">{translations['structure.select'] || 'Select Structure'}</label>
+              <label className="text-sm">{translations['structure.select']}</label>
               <Select value={dataStructure} onValueChange={(v) => setDataStructure(v as any)}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="array">{translations['structure.array'] || 'Array'}</SelectItem>
-                  <SelectItem value="tree">{translations['structure.tree'] || 'Binary Tree'}</SelectItem>
-                  <SelectItem value="graph">{translations['structure.graph'] || 'Graph'}</SelectItem>
-                  <SelectItem value="list">{translations['structure.list'] || 'Linked List'}</SelectItem>
-                  <SelectItem value="stack">{translations['structure.stack'] || 'Stack'}</SelectItem>
-                  <SelectItem value="queue">{translations['structure.queue'] || 'Queue'}</SelectItem>
+                  <SelectItem value="array">{translations['structure.array']}</SelectItem>
+                  <SelectItem value="tree">{translations['structure.tree']}</SelectItem>
+                  <SelectItem value="graph">{translations['structure.graph']}</SelectItem>
+                  <SelectItem value="list">{translations['structure.list']}</SelectItem>
+                  <SelectItem value="stack">{translations['structure.stack']}</SelectItem>
+                  <SelectItem value="queue">{translations['structure.queue']}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             {(dataStructure === 'array' || dataStructure === 'tree' || dataStructure === 'graph') && (
               <div className="space-y-2">
-                <label className="text-sm">{translations['algorithm.select'] || 'Algorithm'}</label>
+                <label className="text-sm">{translations['algorithm.select']}</label>
                 <Select value={algorithm} onValueChange={setAlgorithm}>
                   <SelectTrigger>
                     <SelectValue />
@@ -1801,7 +1753,7 @@ const handleInsertValue = () => {
             {dataStructure === 'array' && (
               <>
                 <div className="space-y-2">
-                  <label className="text-sm">{translations['data.size'] || 'Size'}: {arraySize}</label>
+                  <label className="text-sm">{translations['data.size']}: {arraySize}</label>
                   <Slider
                     value={[arraySize]}
                     onValueChange={(value) => setArraySize(value[0])}
@@ -1811,48 +1763,47 @@ const handleInsertValue = () => {
                   />
                 </div>
                 <Button onClick={generateRandomArray} variant="outline" className="w-full">
-                  {translations['data.generate'] || 'Generate Random'}
+                  {translations['data.generate']}
                 </Button>
               </>
             )}
 
-          {dataStructure === 'tree' && (
-  <>
-    <div className="space-y-2">
-      <label className="text-sm">Количество вершин: {treeNodeCount}</label>
-      <Slider
-        value={[treeNodeCount]}
-        onValueChange={(value) => {
-          setTreeNodeCount(value[0]);
-          generateRandomTree(value[0]); // Просто передаем новое количество
-        }}
-        max={20}
-        min={3}
-        step={1}
-      />
-    </div>
-    
-    {/* Кнопка генерации - упростить */}
-    <Button onClick={() => generateRandomTree(treeNodeCount)} variant="outline" className="w-full">
-      {translations['data.generate'] || 'Сгенерировать дерево'}
-    </Button>
-    
-    {/* Форма вставки - оставить как было */}
-    <div className="flex space-x-2">
-      <Input
-        type="number"
-        placeholder={translations['data.value'] || 'Значение (1-100)'}
-        value={insertValue}
-        onChange={(e) => setInsertValue(e.target.value)}
-        min="1"
-        max="100"
-      />
-      <Button onClick={handleInsertValue}>
-        {translations['data.insert'] || 'Вставить'}
-      </Button>
-    </div>
-  </>
-)}
+            {dataStructure === 'tree' && (
+              <>
+                <div className="space-y-2">
+                  <label className="text-sm">Количество вершин: {treeNodeCount}</label>
+                  <Slider
+                    value={[treeNodeCount]}
+                    onValueChange={(value) => {
+                      setTreeNodeCount(value[0]);
+                      generateRandomTree(value[0]);
+                    }}
+                    max={20}
+                    min={3}
+                    step={1}
+                  />
+                </div>
+                
+                <Button onClick={() => generateRandomTree(treeNodeCount)} variant="outline" className="w-full">
+                  {translations['data.generate']}
+                </Button>
+                
+                <div className="flex space-x-2">
+                  <Input
+                    type="number"
+                    placeholder={translations['data.value']}
+                    value={insertValue}
+                    onChange={(e) => setInsertValue(e.target.value)}
+                    min="1"
+                    max="100"
+                  />
+                  <Button onClick={handleInsertValue}>
+                    {translations['data.insert']}
+                  </Button>
+                </div>
+              </>
+            )}
+
             {dataStructure === 'graph' && (
               <>
                 <div className="space-y-2">
@@ -1888,7 +1839,7 @@ const handleInsertValue = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm">{translations['data.size'] || 'Количество узлов'}: {nodeCount}</label>
+                  <label className="text-sm">{translations['data.size']}: {nodeCount}</label>
                   <Slider
                     value={[nodeCount]}
                     onValueChange={(value) => setNodeCount(value[0])}
@@ -1899,7 +1850,7 @@ const handleInsertValue = () => {
                 </div>
 
                 <Button onClick={() => generateRandomGraph()} variant="outline" className="w-full">
-                  {translations['data.generate'] || 'Сгенерировать граф'}
+                  {translations['data.generate']}
                 </Button>
               </>
             )}
@@ -1907,19 +1858,19 @@ const handleInsertValue = () => {
             {dataStructure === 'list' && (
               <>
                 <div className="space-y-2">
-                  <label className="text-sm">{translations['list.type'] || 'Type'}</label>
+                  <label className="text-sm">{translations['list.type']}</label>
                   <Select value={listType} onValueChange={(v) => setListType(v as 'singly' | 'doubly')}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="singly">{translations['list.singly'] || 'Singly Linked'}</SelectItem>
-                      <SelectItem value="doubly">{translations['list.doubly'] || 'Doubly Linked'}</SelectItem>
+                      <SelectItem value="singly">{translations['list.singly']}</SelectItem>
+                      <SelectItem value="doubly">{translations['list.doubly']}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm">{translations['data.size'] || 'Size'}: {listSize}</label>
+                  <label className="text-sm">{translations['data.size']}: {listSize}</label>
                   <Slider
                     value={[listSize]}
                     onValueChange={(value) => setListSize(value[0])}
@@ -1929,27 +1880,27 @@ const handleInsertValue = () => {
                   />
                 </div>
                 <Button onClick={generateRandomList} variant="outline" className="w-full">
-                  {translations['data.generate'] || 'Generate Random List'}
+                  {translations['data.generate']}
                 </Button>
                 <div className="space-y-2">
                   <Input
                     type="number"
-                    placeholder={translations['data.value'] || 'Value'}
+                    placeholder={translations['data.value']}
                     value={listValue}
                     onChange={(e) => setListValue(e.target.value)}
                   />
                   <Input
                     type="number"
-                    placeholder={translations['list.position'] || 'Position (optional)'}
+                    placeholder={translations['list.position']}
                     value={listPosition}
                     onChange={(e) => setListPosition(e.target.value)}
                   />
                   <div className="grid grid-cols-2 gap-2">
                     <Button onClick={handleListInsert} variant="outline" className="w-full">
-                      {translations['data.insert'] || 'Insert'}
+                      {translations['data.insert']}
                     </Button>
                     <Button onClick={handleListDelete} variant="outline" className="w-full">
-                      {translations['data.delete'] || 'Delete'}
+                      {translations['data.delete']}
                     </Button>
                   </div>
                 </div>
@@ -1959,7 +1910,7 @@ const handleInsertValue = () => {
             {dataStructure === 'stack' && (
               <>
                 <div className="space-y-2">
-                  <label className="text-sm">{translations['data.size'] || 'Size'}: {stackSize}</label>
+                  <label className="text-sm">{translations['data.size']}: {stackSize}</label>
                   <Slider
                     value={[stackSize]}
                     onValueChange={(value) => setStackSize(value[0])}
@@ -1969,12 +1920,12 @@ const handleInsertValue = () => {
                   />
                 </div>
                 <Button onClick={generateRandomStack} variant="outline" className="w-full">
-                  {translations['data.generate'] || 'Generate Random Stack'}
+                  {translations['data.generate']}
                 </Button>
                 <div className="space-y-2">
                   <Input
                     type="number"
-                    placeholder={translations['data.value'] || 'Value'}
+                    placeholder={translations['data.value']}
                     value={stackValue}
                     onChange={(e) => setStackValue(e.target.value)}
                   />
@@ -1993,7 +1944,7 @@ const handleInsertValue = () => {
             {dataStructure === 'queue' && (
               <>
                 <div className="space-y-2">
-                  <label className="text-sm">{translations['data.size'] || 'Size'}: {queueSize}</label>
+                  <label className="text-sm">{translations['data.size']}: {queueSize}</label>
                   <Slider
                     value={[queueSize]}
                     onValueChange={(value) => setQueueSize(value[0])}
@@ -2003,12 +1954,12 @@ const handleInsertValue = () => {
                   />
                 </div>
                 <Button onClick={generateRandomQueue} variant="outline" className="w-full">
-                  {translations['data.generate'] || 'Generate Random Queue'}
+                  {translations['data.generate']}
                 </Button>
                 <div className="space-y-2">
                   <Input
                     type="number"
-                    placeholder={translations['data.value'] || 'Value'}
+                    placeholder={translations['data.value']}
                     value={queueValue}
                     onChange={(e) => setQueueValue(e.target.value)}
                   />
@@ -2026,6 +1977,7 @@ const handleInsertValue = () => {
           </CardContent>
         </Card>
 
+        {/* Центральная часть с визуализацией и контролами */}
         <div className="lg:col-span-3 space-y-6">
           {renderVisualization()}
 
@@ -2046,15 +1998,330 @@ const handleInsertValue = () => {
               Шаг {currentStep + 1} из {steps.length}
             </div>
           )}
+
+          {showComparison && (dataStructure === 'array' || dataStructure === 'tree' || dataStructure === 'graph') && (
+            <AlgorithmComparison 
+              currentAlgorithm={algorithm}
+              dataStructure={dataStructure}
+            />
+          )}
         </div>
 
+        {/* Правая панель со статистикой/теорией и переключателем */}
         <div className="lg:col-span-1">
-          <StatsPanel
-            dataStructure={dataStructure}
-            algorithm={algorithm}
-            stats={stats}
-            dataSize={getDataSize()}
-          />
+          <Card>
+            <CardHeader className="pb-3">
+              <div className="flex">
+                <div className="flex space-x-1">
+                  <Button
+                    variant={rightPanelMode === 'stats' ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setRightPanelMode('stats')}
+                    className="h-8 px-3"
+                  >
+                    Статистика
+                  </Button>
+                  <Button
+                    variant={rightPanelMode === 'theory' ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setRightPanelMode('theory')}
+                    className="h-8 px-3"
+                    disabled={!(dataStructure === 'array' || dataStructure === 'tree' || dataStructure === 'graph')}
+                  >
+                    Теория
+                  </Button>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {rightPanelMode === 'stats' ? (
+                <>
+                  <div>
+                    <div className="text-sm text-muted-foreground mb-1">Алгоритм:</div>
+                    <div className="font-medium">
+                      {dataStructure === 'array' && algorithm === 'bubblesort' && 'Пузырьковая сортировка'}
+                      {dataStructure === 'array' && algorithm === 'quicksort' && 'Быстрая сортировка'}
+                      {dataStructure === 'array' && algorithm === 'insertionsort' && 'Сортировка вставками'}
+                      {dataStructure === 'array' && algorithm === 'selectionsort' && 'Сортировка выбором'}
+                      {dataStructure === 'tree' && algorithm === 'bst.inorder' && 'Центрированный обход'}
+                      {dataStructure === 'tree' && algorithm === 'bst.preorder' && 'Прямой обход'}
+                      {dataStructure === 'tree' && algorithm === 'bst.postorder' && 'Обратный обход'}
+                      {dataStructure === 'tree' && algorithm === 'bst.levelorder' && 'Обход в ширину'}
+                      {dataStructure === 'graph' && algorithm === 'bfs' && 'Поиск в ширину (BFS)'}
+                      {dataStructure === 'graph' && algorithm === 'dfs' && 'Поиск в глубину (DFS)'}
+                      {dataStructure === 'graph' && algorithm === 'dijkstra' && 'Алгоритм Дейкстры'}
+                    </div>
+                  </div>
+
+                  {getDataSize() !== undefined && (
+                    <div>
+                      <div className="text-sm text-muted-foreground mb-1">Размер данных:</div>
+                      <div className="font-medium">{getDataSize()}</div>
+                    </div>
+                  )}
+
+                  <div className="space-y-2">
+                    <div className="text-sm text-muted-foreground">Сложность:</div>
+                    <div className="grid grid-cols-3 gap-2 text-sm">
+                      <div className="text-center">
+                        <div className="text-xs text-muted-foreground">Лучший</div>
+                        <div className="font-mono">
+                          {dataStructure === 'array' && algorithm === 'bubblesort' && 'O(n)'}
+                          {dataStructure === 'array' && algorithm === 'quicksort' && 'O(n log n)'}
+                          {dataStructure === 'array' && algorithm === 'insertionsort' && 'O(n)'}
+                          {dataStructure === 'array' && algorithm === 'selectionsort' && 'O(n²)'}
+                          {dataStructure === 'tree' && 'O(n)'}
+                          {dataStructure === 'graph' && algorithm === 'bfs' && 'O(V + E)'}
+                          {dataStructure === 'graph' && algorithm === 'dfs' && 'O(V + E)'}
+                          {dataStructure === 'graph' && algorithm === 'dijkstra' && 'O((V+E)log V)'}
+                        </div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-xs text-muted-foreground">Средний</div>
+                        <div className="font-mono">
+                          {dataStructure === 'array' && algorithm === 'bubblesort' && 'O(n²)'}
+                          {dataStructure === 'array' && algorithm === 'quicksort' && 'O(n log n)'}
+                          {dataStructure === 'array' && algorithm === 'insertionsort' && 'O(n²)'}
+                          {dataStructure === 'array' && algorithm === 'selectionsort' && 'O(n²)'}
+                          {dataStructure === 'tree' && 'O(n)'}
+                          {dataStructure === 'graph' && algorithm === 'bfs' && 'O(V + E)'}
+                          {dataStructure === 'graph' && algorithm === 'dfs' && 'O(V + E)'}
+                          {dataStructure === 'graph' && algorithm === 'dijkstra' && 'O((V+E)log V)'}
+                        </div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-xs text-muted-foreground">Худший</div>
+                        <div className="font-mono">
+                          {dataStructure === 'array' && algorithm === 'bubblesort' && 'O(n²)'}
+                          {dataStructure === 'array' && algorithm === 'quicksort' && 'O(n²)'}
+                          {dataStructure === 'array' && algorithm === 'insertionsort' && 'O(n²)'}
+                          {dataStructure === 'array' && algorithm === 'selectionsort' && 'O(n²)'}
+                          {dataStructure === 'tree' && 'O(n)'}
+                          {dataStructure === 'graph' && algorithm === 'bfs' && 'O(V + E)'}
+                          {dataStructure === 'graph' && algorithm === 'dfs' && 'O(V + E)'}
+                          {dataStructure === 'graph' && algorithm === 'dijkstra' && 'O((V+E)log V)'}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2 pt-2 border-t">
+                    <div className="text-sm text-muted-foreground">Выполнение:</div>
+                    
+                    {dataStructure === 'array' && (
+                      <>
+                        {stats.comparisons !== undefined && (
+                          <div className="flex justify-between text-sm">
+                            <span>Сравнения:</span>
+                            <span className="font-medium text-primary">{stats.comparisons}</span>
+                          </div>
+                        )}
+                        {stats.swaps !== undefined && (
+                          <div className="flex justify-between text-sm">
+                            <span>Перестановки:</span>
+                            <span className="font-medium text-primary">{stats.swaps}</span>
+                          </div>
+                        )}
+                      </>
+                    )}
+                    
+                    {stats.operations !== undefined && (
+                      <div className="flex justify-between text-sm">
+                        <span>Операции:</span>
+                        <span className="font-medium text-primary">{stats.operations}</span>
+                      </div>
+                    )}
+                    
+                    {stats.time !== undefined && (
+                      <div className="flex justify-between text-sm">
+                        <span>Время:</span>
+                        <span className="font-medium text-primary">{stats.time.toFixed(2)} мс</span>
+                      </div>
+                    )}
+                    
+                    {stats.comparisons === undefined && 
+                     stats.swaps === undefined && 
+                     stats.operations === undefined && 
+                     stats.time === undefined && (
+                      <div className="text-sm text-muted-foreground">
+                        Запустите алгоритм для получения статистики
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="pt-2 border-t">
+                    <div className="text-xs text-muted-foreground">
+                      V - количество вершин, E - количество рёбер, n - размер данных
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <div className="space-y-4">
+                  {dataStructure === 'array' || dataStructure === 'tree' || dataStructure === 'graph' ? (
+                    <div className="space-y-4">
+                      <h4 className="font-semibold text-lg mb-2">Теория алгоритма</h4>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        {dataStructure === 'array' && 'Алгоритмы сортировки упорядочивают элементы массива по возрастанию или убыванию.'}
+                        {dataStructure === 'tree' && 'Обходы деревьев посещают все узлы дерева в определённом порядке.'}
+                        {dataStructure === 'graph' && 'Графовые алгоритмы находят пути и связи между вершинами графа.'}
+                      </p>
+                      
+                      <div className="space-y-3">
+                        <div>
+                          <h5 className="font-medium mb-1">Описание:</h5>
+                          <p className="text-sm">
+                            {dataStructure === 'array' && algorithm === 'bubblesort' && 'Пузырьковая сортировка — простой алгоритм, который многократно проходит по массиву, сравнивая соседние элементы и меняя их местами при необходимости.'}
+                            {dataStructure === 'array' && algorithm === 'quicksort' && 'Быстрая сортировка — эффективный алгоритм "разделяй и властвуй", который выбирает опорный элемент и рекурсивно сортирует элементы относительно него.'}
+                            {dataStructure === 'array' && algorithm === 'insertionsort' && 'Сортировка вставками — строит отсортированную последовательность, постепенно вставляя элементы на правильные позиции.'}
+                            {dataStructure === 'array' && algorithm === 'selectionsort' && 'Сортировка выбором — находит минимальный элемент и помещает его в начало, затем повторяет для оставшейся части.'}
+                            {dataStructure === 'tree' && algorithm === 'bst.inorder' && 'Центрированный обход посещает узлы в порядке: левое поддерево → корень → правое поддерево.'}
+                            {dataStructure === 'tree' && algorithm === 'bst.preorder' && 'Прямой обход посещает узлы в порядке: корень → левое поддерево → правое поддерево.'}
+                            {dataStructure === 'tree' && algorithm === 'bst.postorder' && 'Обратный обход посещает узлы в порядке: левое поддерево → правое поддерево → корень.'}
+                            {dataStructure === 'tree' && algorithm === 'bst.levelorder' && 'Обход в ширину посещает узлы уровень за уровнем, слева направо.'}
+                            {dataStructure === 'graph' && algorithm === 'bfs' && 'Поиск в ширину — обходит граф уровень за уровнем, исследуя все соседние вершины перед переходом на следующий уровень.'}
+                            {dataStructure === 'graph' && algorithm === 'dfs' && 'Поиск в глубину — идёт как можно глубже по одной ветке графа перед возвратом.'}
+                            {dataStructure === 'graph' && algorithm === 'dijkstra' && 'Алгоритм Дейкстры — находит кратчайшие пути от одной вершины до всех остальных во взвешенном графе.'}
+                          </p>
+                        </div>
+                        
+                        <div>
+                          <h5 className="font-medium mb-1">Сложность:</h5>
+                          <div className="grid grid-cols-3 gap-2 text-sm">
+                            <div className="bg-muted p-2 rounded">
+                              <div className="text-xs text-muted-foreground">Лучший</div>
+                              <div className="font-mono">
+                                {dataStructure === 'array' && algorithm === 'bubblesort' && 'O(n)'}
+                                {dataStructure === 'array' && algorithm === 'quicksort' && 'O(n log n)'}
+                                {dataStructure === 'array' && algorithm === 'insertionsort' && 'O(n)'}
+                                {dataStructure === 'array' && algorithm === 'selectionsort' && 'O(n²)'}
+                                {dataStructure === 'tree' && 'O(n)'}
+                                {dataStructure === 'graph' && algorithm === 'bfs' && 'O(V + E)'}
+                                {dataStructure === 'graph' && algorithm === 'dfs' && 'O(V + E)'}
+                                {dataStructure === 'graph' && algorithm === 'dijkstra' && 'O((V+E)log V)'}
+                              </div>
+                            </div>
+                            <div className="bg-muted p-2 rounded">
+                              <div className="text-xs text-muted-foreground">Средний</div>
+                              <div className="font-mono">
+                                {dataStructure === 'array' && algorithm === 'bubblesort' && 'O(n²)'}
+                                {dataStructure === 'array' && algorithm === 'quicksort' && 'O(n log n)'}
+                                {dataStructure === 'array' && algorithm === 'insertionsort' && 'O(n²)'}
+                                {dataStructure === 'array' && algorithm === 'selectionsort' && 'O(n²)'}
+                                {dataStructure === 'tree' && 'O(n)'}
+                                {dataStructure === 'graph' && algorithm === 'bfs' && 'O(V + E)'}
+                                {dataStructure === 'graph' && algorithm === 'dfs' && 'O(V + E)'}
+                                {dataStructure === 'graph' && algorithm === 'dijkstra' && 'O((V+E)log V)'}
+                              </div>
+                            </div>
+                            <div className="bg-muted p-2 rounded">
+                              <div className="text-xs text-muted-foreground">Худший</div>
+                              <div className="font-mono">
+                                {dataStructure === 'array' && algorithm === 'bubblesort' && 'O(n²)'}
+                                {dataStructure === 'array' && algorithm === 'quicksort' && 'O(n²)'}
+                                {dataStructure === 'array' && algorithm === 'insertionsort' && 'O(n²)'}
+                                {dataStructure === 'array' && algorithm === 'selectionsort' && 'O(n²)'}
+                                {dataStructure === 'tree' && 'O(n)'}
+                                {dataStructure === 'graph' && algorithm === 'bfs' && 'O(V + E)'}
+                                {dataStructure === 'graph' && algorithm === 'dfs' && 'O(V + E)'}
+                                {dataStructure === 'graph' && algorithm === 'dijkstra' && 'O((V+E)log V)'}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div>
+                          <h5 className="font-medium mb-1">Когда использовать:</h5>
+                          <ul className="text-sm space-y-1 list-disc list-inside">
+                            {dataStructure === 'array' && algorithm === 'bubblesort' && (
+                              <>
+                                <li>Для обучения основам алгоритмов</li>
+                                <li>Сортировка небольших массивов</li>
+                                <li>Когда массив почти отсортирован</li>
+                              </>
+                            )}
+                            {dataStructure === 'array' && algorithm === 'quicksort' && (
+                              <>
+                                <li>Сортировка больших массивов</li>
+                                <li>Когда нужна высокая производительность</li>
+                                <li>Встроенная сортировка во многих языках</li>
+                              </>
+                            )}
+                            {dataStructure === 'array' && algorithm === 'insertionsort' && (
+                              <>
+                                <li>Маленькие массивы</li>
+                                <li>Почти отсортированные массивы</li>
+                                <li>Онлайн-сортировка (поступление данных в реальном времени)</li>
+                              </>
+                            )}
+                            {dataStructure === 'array' && algorithm === 'selectionsort' && (
+                              <>
+                                <li>Когда нужно минимизировать количество перестановок</li>
+                                <li>Обучение алгоритмам сортировки</li>
+                                <li>Небольшие массивы</li>
+                              </>
+                            )}
+                            {dataStructure === 'tree' && algorithm === 'bst.inorder' && (
+                              <>
+                                <li>Получение элементов в возрастающем порядке (для BST)</li>
+                                <li>Копирование дерева</li>
+                                <li>Выражение деревьев (инфиксная нотация)</li>
+                              </>
+                            )}
+                            {dataStructure === 'tree' && algorithm === 'bst.preorder' && (
+                              <>
+                                <li>Создание копии дерева</li>
+                                <li>Префиксная нотация выражений</li>
+                                <li>Сериализация дерева</li>
+                              </>
+                            )}
+                            {dataStructure === 'tree' && algorithm === 'bst.postorder' && (
+                              <>
+                                <li>Удаление дерева</li>
+                                <li>Постфиксная нотация выражений</li>
+                                <li>Вычисление выражений</li>
+                              </>
+                            )}
+                            {dataStructure === 'tree' && algorithm === 'bst.levelorder' && (
+                              <>
+                                <li>Поиск кратчайшего пути</li>
+                                <li>Построчное отображение дерева</li>
+                                <li>Нахождение ширины дерева</li>
+                              </>
+                            )}
+                            {dataStructure === 'graph' && algorithm === 'bfs' && (
+                              <>
+                                <li>Поиск кратчайшего пути в невзвешенном графе</li>
+                                <li>Проверка связности графа</li>
+                                <li>Поиск компонент связности</li>
+                              </>
+                            )}
+                            {dataStructure === 'graph' && algorithm === 'dfs' && (
+                              <>
+                                <li>Поиск цикла в графе</li>
+                                <li>Топологическая сортировка</li>
+                                <li>Поиск компонент сильной связности</li>
+                              </>
+                            )}
+                            {dataStructure === 'graph' && algorithm === 'dijkstra' && (
+                              <>
+                                <li>Поиск кратчайшего пути во взвешенном графе</li>
+                                <li>Маршрутизация в сетях</li>
+                                <li>Навигационные системы</li>
+                              </>
+                            )}
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <p className="text-muted-foreground">Теория доступна только для массивов, деревьев и графов</p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>

@@ -23,21 +23,22 @@ export function StatsPanel({ dataStructure, algorithm, stats, dataSize }: StatsP
       // Sorting algorithms
       'bubblesort': { best: 'O(n)', avg: 'O(n²)', worst: 'O(n²)' },
       'quicksort': { best: 'O(n log n)', avg: 'O(n log n)', worst: 'O(n²)' },
-      'mergesort': { best: 'O(n log n)', avg: 'O(n log n)', worst: 'O(n log n)' },
-      'heapsort': { best: 'O(n log n)', avg: 'O(n log n)', worst: 'O(n log n)' },
+      'insertionsort': { best: 'O(n)', avg: 'O(n²)', worst: 'O(n²)' },
+      'selectionsort': { best: 'O(n²)', avg: 'O(n²)', worst: 'O(n²)' },
       
-      // Tree algorithms
-      'bst.insert': { best: 'O(log n)', avg: 'O(log n)', worst: 'O(n)' },
-      'bst.search': { best: 'O(log n)', avg: 'O(log n)', worst: 'O(n)' },
-      'bst.delete': { best: 'O(log n)', avg: 'O(log n)', worst: 'O(n)' },
+      // Tree algorithms - ВНИМАНИЕ: используйте ТОЧНО ТЕ ЖЕ ключи, что и в вашем коде
       'bst.inorder': { best: 'O(n)', avg: 'O(n)', worst: 'O(n)' },
       'bst.preorder': { best: 'O(n)', avg: 'O(n)', worst: 'O(n)' },
       'bst.postorder': { best: 'O(n)', avg: 'O(n)', worst: 'O(n)' },
+      'bst.levelorder': { best: 'O(n)', avg: 'O(n)', worst: 'O(n)' },
+      'bst.insert': { best: 'O(log n)', avg: 'O(log n)', worst: 'O(n)' },
+      'bst.search': { best: 'O(log n)', avg: 'O(log n)', worst: 'O(n)' },
+      'bst.delete': { best: 'O(log n)', avg: 'O(log n)', worst: 'O(n)' },
       
       // Graph algorithms
       'bfs': { best: 'O(V + E)', avg: 'O(V + E)', worst: 'O(V + E)' },
       'dfs': { best: 'O(V + E)', avg: 'O(V + E)', worst: 'O(V + E)' },
-      'dijkstra': { best: 'O(V²)', avg: 'O(V²)', worst: 'O(V²)' },
+      'dijkstra': { best: 'O((V + E) log V)', avg: 'O((V + E) log V)', worst: 'O((V + E) log V)' },
       'prim': { best: 'O(E log V)', avg: 'O(E log V)', worst: 'O(E log V)' },
     };
 
@@ -47,24 +48,73 @@ export function StatsPanel({ dataStructure, algorithm, stats, dataSize }: StatsP
   const complexity = getComplexity();
 
   const getAlgorithmName = () => {
-    const names: Record<string, string> = {
-      'bubblesort': translations['algorithm.bubblesort'],
-      'quicksort': translations['algorithm.quicksort'],
-      'mergesort': translations['algorithm.mergesort'],
-      'heapsort': translations['algorithm.heapsort'],
-      'bst.insert': translations['algorithm.bst.insert'],
-      'bst.search': translations['algorithm.bst.search'],
-      'bst.delete': translations['algorithm.bst.delete'],
-      'bst.inorder': translations['algorithm.bst.inorder'],
-      'bst.preorder': translations['algorithm.bst.preorder'],
-      'bst.postorder': translations['algorithm.bst.postorder'],
-      'bfs': translations['algorithm.bfs'],
-      'dfs': translations['algorithm.dfs'],
-      'dijkstra': translations['algorithm.dijkstra'],
-      'prim': translations['algorithm.prim'],
+    // Пробуем получить перевод из AppContext
+    const translationKey = `algorithm.${algorithm}`;
+    if (translations[translationKey]) {
+      return translations[translationKey];
+    }
+    
+    // Fallback для случаев, если перевода нет
+    const fallbackNames: Record<string, string> = {
+      // Алгоритмы сортировки
+      'bubblesort': language === 'ru' ? 'Пузырьковая сортировка' : 'Bubble Sort',
+      'quicksort': language === 'ru' ? 'Быстрая сортировка' : 'Quick Sort',
+      'insertionsort': language === 'ru' ? 'Сортировка вставками' : 'Insertion Sort',
+      'selectionsort': language === 'ru' ? 'Сортировка выбором' : 'Selection Sort',
+      
+      // Алгоритмы обхода деревьев
+      'bst.inorder': language === 'ru' ? 'Центрированный обход' : 'In-order Traversal',
+      'bst.preorder': language === 'ru' ? 'Прямой обход' : 'Pre-order Traversal',
+      'bst.postorder': language === 'ru' ? 'Обратный обход' : 'Post-order Traversal',
+      'bst.levelorder': language === 'ru' ? 'Обход в ширину' : 'Level-order Traversal',
+      
+      // Графовые алгоритмы
+      'bfs': language === 'ru' ? 'Поиск в ширину (BFS)' : 'Breadth-First Search (BFS)',
+      'dfs': language === 'ru' ? 'Поиск в глубину (DFS)' : 'Depth-First Search (DFS)',
+      'dijkstra': language === 'ru' ? 'Алгоритм Дейкстры' : "Dijkstra's Algorithm",
     };
-    return names[algorithm] || algorithm;
+
+    return fallbackNames[algorithm] || algorithm;
   };
+
+  // Проверяем, нужно ли показывать статистику
+  const shouldShowStats = () => {
+    // Для списков, стеков, очередей и т.д. статистика не рассчитывается
+    if (['list', 'stack', 'queue'].includes(dataStructure)) {
+      return false;
+    }
+    
+    // Для массивов, деревьев и графов статистика есть
+    if (['array', 'tree', 'graph'].includes(dataStructure)) {
+      return true;
+    }
+    
+    return false;
+  };
+
+  if (!shouldShowStats()) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>
+            {language === 'ru' ? 'Информация' : 'Information'}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground">
+            {language === 'ru' 
+              ? `Для ${dataStructure === 'list' ? 'связного списка' : 
+                         dataStructure === 'stack' ? 'стека' : 
+                         'очереди'} статистика операций не рассчитывается.`
+              : `For ${dataStructure === 'list' ? 'linked list' : 
+                         dataStructure === 'stack' ? 'stack' : 
+                         'queue'} operations statistics are not calculated.`
+            }
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>
@@ -126,30 +176,44 @@ export function StatsPanel({ dataStructure, algorithm, stats, dataSize }: StatsP
             <>
               {stats.comparisons !== undefined && (
                 <div className="flex justify-between text-sm">
-                  <span>{translations['profiler.comparisons']}:</span>
+                  <span>{translations['profiler.comparisons'] || 'Сравнения'}:</span>
                   <span className="font-medium text-primary">{stats.comparisons}</span>
                 </div>
               )}
               {stats.swaps !== undefined && (
                 <div className="flex justify-between text-sm">
-                  <span>{translations['profiler.swaps']}:</span>
+                  <span>{translations['profiler.swaps'] || 'Перестановки'}:</span>
                   <span className="font-medium text-primary">{stats.swaps}</span>
                 </div>
               )}
             </>
           )}
           
+          {/* Показываем операции для всех алгоритмов, если они есть */}
           {stats.operations !== undefined && (
             <div className="flex justify-between text-sm">
-              <span>{translations['profiler.operations']}:</span>
+              <span>{translations['profiler.operations'] || 'Операции'}:</span>
               <span className="font-medium text-primary">{stats.operations}</span>
             </div>
           )}
           
           {stats.time !== undefined && (
             <div className="flex justify-between text-sm">
-              <span>{translations['profiler.time']}:</span>
+              <span>{translations['profiler.time'] || 'Время'}:</span>
               <span className="font-medium text-primary">{stats.time.toFixed(2)} мс</span>
+            </div>
+          )}
+          
+          {/* Если нет статистики, показываем сообщение */}
+          {stats.comparisons === undefined && 
+           stats.swaps === undefined && 
+           stats.operations === undefined && 
+           stats.time === undefined && (
+            <div className="text-sm text-muted-foreground">
+              {language === 'ru' 
+                ? 'Запустите алгоритм для получения статистики' 
+                : 'Run the algorithm to get statistics'
+              }
             </div>
           )}
         </div>

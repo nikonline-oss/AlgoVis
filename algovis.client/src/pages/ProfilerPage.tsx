@@ -1280,24 +1280,34 @@ export function ProfilerPage({ onNavigate }: ProfilerPageProps) {
             setDataStructure(v as any);
             setResults([]);
             setSelectedAlgorithm(null);
-            setSelectedTheory('scoringSystem'); // Сбрасываем к системе оценки
+            setSelectedTheory('scoringSystem');
           }}>
-            <TabsList className="grid w-full grid-cols-3 bg-muted">
+            <TabsList className="grid w-full grid-cols-3 bg-muted relative">
+              {/* Активный фон */}
+              <div
+                className={`absolute top-1 bottom-1 rounded-md transition-all duration-300 ease-in-out bg-red-500 ${dataStructure === 'array'
+                    ? 'left-1 w-1/3'
+                    : dataStructure === 'tree'
+                      ? 'left-1/3 w-1/3'
+                      : 'left-2/3 w-1/3'
+                  }`}
+              />
+
               <TabsTrigger
                 value="array"
-                className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                className="relative z-10 data-[state=active]:text-white transition-colors"
               >
                 {translations['structure.array']}
               </TabsTrigger>
               <TabsTrigger
                 value="tree"
-                className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                className="relative z-10 data-[state=active]:text-white transition-colors"
               >
                 {translations['structure.tree']}
               </TabsTrigger>
               <TabsTrigger
                 value="graph"
-                className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                className="relative z-10 data-[state=active]:text-white transition-colors"
               >
                 {translations['structure.graph']}
               </TabsTrigger>
@@ -1838,7 +1848,7 @@ export function ProfilerPage({ onNavigate }: ProfilerPageProps) {
                           {/* Оценка */}
                           <div className="text-foreground">
                             <span className="font-medium">Оценка: </span>
-                            <span className={`font-bold ${isBest ? 'text-accent-green' : 'text-primary'}`}>
+                            <span className={`font-bold ${isBest ? 'text-red-500' : 'text-primary'}`}>
                               {result.score?.toFixed(1)} баллов
                             </span>
                           </div>
@@ -1872,7 +1882,7 @@ export function ProfilerPage({ onNavigate }: ProfilerPageProps) {
                         </div>
                       </div>
                       <div className="flex flex-col items-end gap-2 ml-4">
-                        <span className={`text-lg font-bold ${isBest ? 'text-accent-green' : 'text-muted-foreground'}`}>
+                        <span className={`text-lg font-bold ${isBest ? 'text-red-500' : 'text-muted-foreground'}`}>
                           #{index + 1}
                         </span>
                         {index > 0 && result.score && results[0].score && (

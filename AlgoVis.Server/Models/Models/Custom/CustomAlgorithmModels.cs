@@ -1,10 +1,12 @@
-﻿using System;
+﻿using AlgoVis.Evaluator.Evaluator.Types;
+using AlgoVis.Models.Models.Core;
+using AlgoVis.Server.converters;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
-using AlgoVis.Evaluator.Evaluator.Types;
-using AlgoVis.Models.Models.Core;
 
 namespace AlgoVis.Models.Models.Custom
 {
@@ -41,7 +43,8 @@ namespace AlgoVis.Models.Models.Custom
         public string returnToStep { get; set; } = string.Empty;
         public List<ConditionCase> conditionCases { get; set; } = new();
         public Dictionary<string, object> metadata { get; set; } = new();
-
+  
+        [JsonConverter(typeof(FlexibleBoolConverter))]
         public bool visualize { get; set; } = false; // Включить/выключить визуализацию этого шага
         public List<string> highlightElements { get; set; } = new(); // Элементы для подсветки
         public string highlightColor { get; set; } = "yellow"; // Цвет подсветки

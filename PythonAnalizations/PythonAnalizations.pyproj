@@ -4,7 +4,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>514c26da-53ee-4890-bbfb-5b0178151413</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>python_java_translator\test_translator.py</StartupFile>
+    <StartupFile>app.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -22,25 +22,47 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="app.py" />
     <Compile Include="GigaChatService.py" />
-    <Compile Include="python_java_translator\python_java_translator\data_structures.py" />
-    <Compile Include="python_java_translator\examples.py" />
-    <Compile Include="python_java_translator\python_java_translator\error_handler.py" />
-    <Compile Include="python_java_translator\python_java_translator\java_translator.py" />
-    <Compile Include="python_java_translator\python_java_translator\structure_registry.py" />
-    <Compile Include="python_java_translator\python_java_translator\translation_config.py" />
-    <Compile Include="python_java_translator\python_java_translator\variable_collector.py" />
-    <Compile Include="python_java_translator\python_java_translator\visualization_config.py" />
-    <Compile Include="python_java_translator\python_java_translator\__init__.py" />
-    <Compile Include="python_java_translator\test_translator.py" />
+    <Compile Include="python_java_translator\examples\custom_algorithm.py" />
+    <Compile Include="python_java_translator\examples\sorting_algorithms.py" />
+    <Compile Include="python_java_translator\main.py" />
+    <Compile Include="python_java_translator\mods\custom_sort_mod.py" />
+    <Compile Include="python_java_translator\setup.py" />
+    <Compile Include="python_java_translator\src\config\visualization.py" />
+    <Compile Include="python_java_translator\src\config\__init__.py" />
+    <Compile Include="python_java_translator\src\core\ast_parser.py" />
+    <Compile Include="python_java_translator\src\core\intermediate.py" />
+    <Compile Include="python_java_translator\src\core\java_generator.py" />
+    <Compile Include="python_java_translator\src\core\translator.py" />
+    <Compile Include="python_java_translator\src\core\validator.py" />
+    <Compile Include="python_java_translator\src\core\__init__.py" />
+    <Compile Include="python_java_translator\src\mods\base_mod.py" />
+    <Compile Include="python_java_translator\src\mods\standard_mods\search_mod.py" />
+    <Compile Include="python_java_translator\src\mods\standard_mods\sorting_mod.py" />
+    <Compile Include="python_java_translator\src\mods\standard_mods\__init__.py" />
+    <Compile Include="python_java_translator\src\mods\__init__.py" />
+    <Compile Include="python_java_translator\src\utils\code_utils.py" />
+    <Compile Include="python_java_translator\src\utils\type_resolver.py" />
+    <Compile Include="python_java_translator\src\utils\__init__.py" />
+    <Compile Include="python_java_translator\src\__init__.py" />
+    <Compile Include="python_java_translator\test.py" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="python_java_translator\" />
-    <Folder Include="python_java_translator\python_java_translator\" />
+    <Folder Include="python_java_translator\examples\" />
+    <Folder Include="python_java_translator\mods\" />
+    <Folder Include="python_java_translator\src\mods\standard_mods\" />
+    <Folder Include="python_java_translator\tests\" />
+    <Folder Include="python_java_translator\src\" />
+    <Folder Include="python_java_translator\src\core\" />
+    <Folder Include="python_java_translator\src\mods\" />
+    <Folder Include="python_java_translator\src\config\" />
+    <Folder Include="python_java_translator\src\utils\" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="python_java_translator\output.json" />
     <Content Include="python_java_translator\README.md" />
-    <Content Include="python_java_translator\requirements.txt" />
     <Content Include="поиск_максимума.java.json" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />

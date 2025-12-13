@@ -1,0 +1,327 @@
+{
+  "name": "bubble_sort",
+  "description": "Алгоритм bubble_sort",
+  "structureType": "array",
+  "variables": [
+    {
+      "name": "n",
+      "type": "int",
+      "initialValue": "struct.len",
+      "description": "Переменная n"
+    },
+    {
+      "name": "temp",
+      "type": "int",
+      "initialValue": "struct.values[j]",
+      "description": "Переменная temp"
+    },
+    {
+      "name": "i",
+      "type": "int",
+      "initialValue": 0,
+      "description": "Счетчик внешнего цикла"
+    },
+    {
+      "name": "j",
+      "type": "int",
+      "initialValue": 0,
+      "description": "Счетчик внутреннего цикла"
+    },
+    {
+      "name": "swapped",
+      "type": "bool",
+      "initialValue": "False",
+      "description": "Флаг выполнения обмена"
+    },
+    {
+      "name": "min_idx",
+      "type": "int",
+      "initialValue": 0,
+      "description": "Индекс минимального элемента"
+    },
+    {
+      "name": "key",
+      "type": "int",
+      "initialValue": 0,
+      "description": "Ключевой элемент для вставки"
+    }
+  ],
+  "functions": [
+    {
+      "name": "bubble_sort",
+      "description": "Функция bubble_sort",
+      "parameters": [],
+      "entryPoint": "bubble_sort_start",
+      "steps": [
+        {
+          "id": "bubble_sort_start",
+          "type": "generic",
+          "description": "Начало функции bubble_sort",
+          "parameters": [],
+          "visualize": "True",
+          "nextStep": "assign_1"
+        },
+        {
+          "id": "assign_1",
+          "type": "assign",
+          "description": "Присвоение n = struct.len",
+          "parameters": [ "n", "struct.len" ],
+          "visualize": "True",
+          "nextStep": "for_start_2"
+        },
+        {
+          "id": "for_start_2",
+          "type": "generic",
+          "description": "Начало цикла for",
+          "parameters": [],
+          "visualize": "True",
+          "nextStep": "for_check_3"
+        },
+        {
+          "id": "for_init_7",
+          "type": "assign",
+          "description": "Инициализация счетчика i",
+          "parameters": [ "i", "0" ],
+          "visualize": "True",
+          "nextStep": "for_check_3"
+        },
+        {
+          "id": "for_check_3",
+          "type": "generic",
+          "description": "Проверка условия цикла",
+          "parameters": [],
+          "visualize": "True",
+          "nextStep": "for_condition_8"
+        },
+        {
+          "id": "for_condition_8",
+          "type": "condition",
+          "description": "Проверка границ цикла for: i < n",
+          "parameters": [ "i < n" ],
+          "visualize": "True",
+          "conditionCases": [
+            {
+              "condition": "true",
+              "nextStep": "for_body_4"
+            },
+            {
+              "condition": "false",
+              "nextStep": "for_end_6"
+            }
+          ]
+        },
+        {
+          "id": "for_body_4",
+          "type": "generic",
+          "description": "Начало тела цикла",
+          "parameters": [],
+          "visualize": "True",
+          "nextStep": "for_start_9"
+        },
+        {
+          "id": "for_start_9",
+          "type": "generic",
+          "description": "Начало цикла for",
+          "parameters": [],
+          "visualize": "True",
+          "nextStep": "for_check_10"
+        },
+        {
+          "id": "for_init_14",
+          "type": "assign",
+          "description": "Инициализация счетчика j",
+          "parameters": [ "j", "0" ],
+          "visualize": "True",
+          "nextStep": "for_check_10"
+        },
+        {
+          "id": "for_check_10",
+          "type": "generic",
+          "description": "Проверка условия цикла",
+          "parameters": [],
+          "visualize": "True",
+          "nextStep": "for_condition_15"
+        },
+        {
+          "id": "for_condition_15",
+          "type": "condition",
+          "description": "Проверка границ цикла for: j < ((n - i) - 1)",
+          "parameters": [ "j < ((n - i) - 1)" ],
+          "visualize": "True",
+          "conditionCases": [
+            {
+              "condition": "true",
+              "nextStep": "for_body_11"
+            },
+            {
+              "condition": "false",
+              "nextStep": "for_end_13"
+            }
+          ]
+        },
+        {
+          "id": "for_body_11",
+          "type": "generic",
+          "description": "Начало тела цикла",
+          "parameters": [],
+          "visualize": "True",
+          "nextStep": "condition_16"
+        },
+        {
+          "id": "condition_16",
+          "type": "condition",
+          "description": "Проверка условия: struct.values[j] > struct.values[(j + 1)]",
+          "parameters": [ "struct.values[j] > struct.values[(j + 1)]" ],
+          "visualize": "True",
+          "conditionCases": [
+            {
+              "condition": "true",
+              "nextStep": "if_true_17"
+            },
+            {
+              "condition": "false",
+              "nextStep": "if_false_18"
+            }
+          ]
+        },
+        {
+          "id": "if_true_17",
+          "type": "generic",
+          "description": "Ветка if (условие истинно)",
+          "parameters": [],
+          "visualize": "True",
+          "nextStep": "assign_20"
+        },
+        {
+          "id": "assign_20",
+          "type": "assign",
+          "description": "Присвоение temp = struct.values[j]",
+          "parameters": [ "temp", "struct.values[j]" ],
+          "visualize": "True",
+          "nextStep": "assign_array_21"
+        },
+        {
+          "id": "assign_array_21",
+          "type": "assign",
+          "description": "Присвоение элементу массива struct.values[j] = struct.values[(j + 1)]",
+          "parameters": [ "struct.values[j]", "struct.values[(j + 1)]" ],
+          "visualize": "True",
+          "nextStep": "assign_array_22"
+        },
+        {
+          "id": "assign_array_22",
+          "type": "assign",
+          "description": "Присвоение элементу массива struct.values[(j + 1)] = temp",
+          "parameters": [ "struct.values[(j + 1)]", "temp" ],
+          "visualize": "True",
+          "nextStep": "goto_23"
+        },
+        {
+          "id": "goto_23",
+          "type": "generic",
+          "description": "Переход после if",
+          "parameters": [],
+          "visualize": "True",
+          "nextStep": "after_if_19"
+        },
+        {
+          "id": "if_false_18",
+          "type": "generic",
+          "description": "Ветка else отсутствует",
+          "parameters": [],
+          "visualize": "True",
+          "nextStep": "after_if_19"
+        },
+        {
+          "id": "after_if_19",
+          "type": "generic",
+          "description": "Продолжение после условия",
+          "parameters": [],
+          "visualize": "True",
+          "nextStep": "for_incr_12"
+        },
+        {
+          "id": "for_incr_12",
+          "type": "generic",
+          "description": "Инкремент счетчика",
+          "parameters": [],
+          "visualize": "True",
+          "nextStep": "for_incr_step_24"
+        },
+        {
+          "id": "for_incr_step_24",
+          "type": "assign",
+          "description": "Увеличение счетчика j",
+          "parameters": [ "j", "j + 1" ],
+          "visualize": "True",
+          "nextStep": "for_check_10"
+        },
+        {
+          "id": "for_end_13",
+          "type": "generic",
+          "description": "Конец цикла for",
+          "parameters": [],
+          "visualize": "True",
+          "nextStep": "for_incr_5"
+        },
+        {
+          "id": "for_incr_5",
+          "type": "generic",
+          "description": "Инкремент счетчика",
+          "parameters": [],
+          "visualize": "True",
+          "nextStep": "for_incr_step_25"
+        },
+        {
+          "id": "for_incr_step_25",
+          "type": "assign",
+          "description": "Увеличение счетчика i",
+          "parameters": [ "i", "i + 1" ],
+          "visualize": "True",
+          "nextStep": "for_check_3"
+        },
+        {
+          "id": "for_end_6",
+          "type": "generic",
+          "description": "Конец цикла for",
+          "parameters": [],
+          "visualize": "True",
+          "nextStep": "bubble_sort_return"
+        },
+        {
+          "id": "bubble_sort_return",
+          "type": "return",
+          "description": "Возврат из функции bubble_sort",
+          "parameters": [],
+          "visualize": "True"
+        }
+      ]
+    }
+  ],
+  "steps": [
+    {
+      "id": "start",
+      "type": "generic",
+      "description": "Начало алгоритма",
+      "parameters": [],
+      "visualize": "True",
+      "nextStep": "call_main"
+    },
+    {
+      "id": "call_main",
+      "type": "call_function",
+      "description": "Вызов функции bubble_sort",
+      "parameters": [],
+      "visualize": "True",
+      "functionName": "bubble_sort",
+      "returnToStep": "end"
+    },
+    {
+      "id": "end",
+      "type": "generic",
+      "description": "Алгоритм завершен",
+      "parameters": [],
+      "visualize": "True"
+    }
+  ]
+}

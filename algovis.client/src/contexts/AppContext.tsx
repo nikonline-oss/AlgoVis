@@ -67,7 +67,7 @@ const translations = {
     'algorithm.insertionsort': 'Сортировка вставками',
     'algorithm.selectionsort': 'Сортировка выбором',
     'algorithm.mergesort': 'Сортировка слиянием',
-    'algorithm.bst.inorder': 'Инордерный обход',
+    'algorithm.bst.inorder': 'Центрированный обход',
     'algorithm.bst.preorder': 'Прямой обход',
     'algorithm.bst.postorder': 'Обратный обход',
     'algorithm.bst.levelorder': 'Обход в ширину',

@@ -1276,44 +1276,63 @@ export function ProfilerPage({ onNavigate }: ProfilerPageProps) {
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          <Tabs value={dataStructure} onValueChange={(v) => {
-            setDataStructure(v as any);
-            setResults([]);
-            setSelectedAlgorithm(null);
-            setSelectedTheory('scoringSystem');
-          }}>
-            <TabsList className="grid w-full grid-cols-3 bg-muted relative">
-              {/* Активный фон */}
-              <div
-                className={`absolute top-1 bottom-1 rounded-md transition-all duration-300 ease-in-out bg-red-500 ${dataStructure === 'array'
-                    ? 'left-1 w-1/3'
-                    : dataStructure === 'tree'
-                      ? 'left-1/3 w-1/3'
-                      : 'left-2/3 w-1/3'
-                  }`}
-              />
-
-              <TabsTrigger
-                value="array"
-                className="relative z-10 data-[state=active]:text-white transition-colors"
-              >
-                {translations['structure.array']}
-              </TabsTrigger>
-              <TabsTrigger
-                value="tree"
-                className="relative z-10 data-[state=active]:text-white transition-colors"
-              >
-                {translations['structure.tree']}
-              </TabsTrigger>
-              <TabsTrigger
-                value="graph"
-                className="relative z-10 data-[state=active]:text-white transition-colors"
-              >
-                {translations['structure.graph']}
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
-
+<Tabs value={dataStructure} onValueChange={(v) => {
+  setDataStructure(v as any);
+  setResults([]);
+  setSelectedAlgorithm(null);
+  setSelectedTheory('scoringSystem');
+}}>
+  <TabsList className="grid w-full grid-cols-3 bg-muted">
+    <TabsTrigger
+      value="array"
+      style={{
+        backgroundColor: dataStructure === 'array' 
+          ? (theme === 'dark' ? '#22c55e' : '#22c55e') // Зеленый
+          : 'transparent',
+        color: dataStructure === 'array' 
+          ? '#ffffff'
+          : (theme === 'dark' ? '#d1d5db' : '#4b5563'),
+        fontWeight: dataStructure === 'array' ? '600' : '400',
+        boxShadow: dataStructure === 'array' ? '0 1px 3px 0 rgba(16, 185, 129, 0.3)' : 'none'
+      }}
+      className="transition-all duration-200 hover:opacity-90"
+    >
+      {translations['structure.array']}
+    </TabsTrigger>
+    <TabsTrigger
+      value="tree"
+      style={{
+        backgroundColor: dataStructure === 'tree' 
+          ? (theme === 'dark' ? '#22c55e' : '#22c55e')
+          : 'transparent',
+        color: dataStructure === 'tree' 
+          ? '#ffffff'
+          : (theme === 'dark' ? '#d1d5db' : '#4b5563'),
+        fontWeight: dataStructure === 'tree' ? '600' : '400',
+        boxShadow: dataStructure === 'tree' ? '0 1px 3px 0 rgba(16, 185, 129, 0.3)' : 'none'
+      }}
+      className="transition-all duration-200 hover:opacity-90"
+    >
+      {translations['structure.tree']}
+    </TabsTrigger>
+    <TabsTrigger
+      value="graph"
+      style={{
+        backgroundColor: dataStructure === 'graph' 
+          ? (theme === 'dark' ? '#22c55e' : '#22c55e')
+          : 'transparent',
+        color: dataStructure === 'graph' 
+          ? '#ffffff'
+          : (theme === 'dark' ? '#d1d5db' : '#4b5563'),
+        fontWeight: dataStructure === 'graph' ? '600' : '400',
+        boxShadow: dataStructure === 'graph' ? '0 1px 3px 0 rgba(16, 185, 129, 0.3)' : 'none'
+      }}
+      className="transition-all duration-200 hover:opacity-90"
+    >
+      {translations['structure.graph']}
+    </TabsTrigger>
+  </TabsList>
+</Tabs>
           <div className="space-y-4">
             <div className="space-y-2">
               <label className="text-sm font-medium flex items-center justify-between text-foreground">

@@ -62,10 +62,12 @@ const translations = {
     'structure.hashtable': 'Хэш-таблица',
     'algorithm.select': 'Выберите алгоритм',
     'algorithm.bubblesort': 'Пузырьковая сортировка',
+    'algorithm.dijkstra': 'Алгоритм Дейкстры',
     'algorithm.quicksort': 'Быстрая сортировка',
     'algorithm.insertionsort': 'Сортировка вставками',
     'algorithm.selectionsort': 'Сортировка выбором',
-    'algorithm.bst.inorder': 'Инордерный обход',
+    'algorithm.mergesort': 'Сортировка слиянием',
+    'algorithm.bst.inorder': 'Центрированный обход',
     'algorithm.bst.preorder': 'Прямой обход',
     'algorithm.bst.postorder': 'Обратный обход',
     'algorithm.bst.levelorder': 'Обход в ширину',
@@ -95,7 +97,6 @@ const translations = {
     'profiler.comparisons': 'Сравнения',
     'profiler.swaps': 'Перестановки',
     'profiler.operations': 'Операции',
-    'profiler.sendToVisualizer': 'Отправить в визуализатор',
     'analyzer.title': 'Анализатор кода',
     'analyzer.description': 'Анализируйте сложность и производительность вашего Python кода',
     'analyzer.codeInput': 'Ввод кода',
@@ -160,9 +161,11 @@ const translations = {
     'algorithm.quicksort': 'Quick Sort',
     'algorithm.insertionsort': 'Insertion Sort',
     'algorithm.selectionsort': 'Selection Sort',
+    'algorithm.mergesort': 'Merge Sort',
     'algorithm.bst.inorder': 'Inorder Traversal',
     'algorithm.bst.preorder': 'Preorder Traversal',
     'algorithm.bst.postorder': 'Postorder Traversal',
+    'algorithm.dijkstra': "Dijkstra's Algorithm",
     'algorithm.bst.levelorder': 'Level-Order Traversal',
     'algorithm.bfs': 'Breadth-First Search (BFS)',
     'algorithm.dfs': 'Depth-First Search (DFS)',
@@ -229,7 +232,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const savedLanguage = localStorage.getItem('language') as Language;
     const savedTheme = localStorage.getItem('theme') as Theme;
-    
+
     if (savedLanguage) setLanguage(savedLanguage);
     if (savedTheme) setTheme(savedTheme);
   }, []);

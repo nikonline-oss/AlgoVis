@@ -77,47 +77,15 @@ export function CodeAnalyzerPage() {
         setActiveTab('code');
     };
 
-    const exampleCode = `def bubble_sort(arr):
-    n = len(arr)
+    const exampleCode = `def bubble_sort():
+    n = struct.len
     for i in range(n):
-        swapped = False
         for j in range(0, n-i-1):
-            if arr[j] > arr[j+1]:
-                arr[j], arr[j+1] = arr[j+1], arr[j]
-                swapped = True
-        if not swapped:
-            break
-    return arr
-
-def quick_sort(arr, low=0, high=None):
-    if high is None:
-        high = len(arr) - 1
-    
-    if low < high:
-        pi = partition(arr, low, high)
-        quick_sort(arr, low, pi-1)
-        quick_sort(arr, pi+1, high)
-    
-    return arr
-
-def partition(arr, low, high):
-    pivot = arr[high]
-    i = low - 1
-    
-    for j in range(low, high):
-        if arr[j] <= pivot:
-            i += 1
-            arr[i], arr[j] = arr[j], arr[i]
-    
-    arr[i+1], arr[high] = arr[high], arr[i+1]
-    return i + 1
-
-# Пример использования
-numbers = [64, 34, 25, 12, 22, 11, 90]
-sorted_bubble = bubble_sort(numbers.copy())
-sorted_quick = quick_sort(numbers.copy())
-print("Bubble sort:", sorted_bubble)
-print("Quick sort:", sorted_quick)`;
+            if struct[j] > struct[j+1]:
+                temp = struct[j]
+                struct[j] = struct[j+1]
+                struct[j+1] = temp
+        j = 0`;
 
     // Функция для запуска демо-визуализации
     const runDemoVisualization = () => {
@@ -132,9 +100,9 @@ print("Quick sort:", sorted_quick)`;
                     stepNumber: 1,
                     operation: "init",
                     description: "Инициализация массива",
-                    metadata: { array_name: "arr" },
+                    metadata: { array_name: "struct" },
                     variables: {
-                        arr: [64, 34, 25, 12, 22, 11, 90],
+                        struct: [64, 34, 25, 12, 22, 11, 90],
                         i: 0,
                         j: 0,
                         n: 7
@@ -142,6 +110,21 @@ print("Quick sort:", sorted_quick)`;
                 },
                 {
                     stepNumber: 2,
+                    operation: "assign",
+                    description: "Присвоение n = struct.len",
+                    metadata: {
+                        variable: 'n',
+                        value: 7
+                    },
+                    variables: {
+                        struct: [64, 34, 25, 12, 22, 11, 90],
+                        i: 0,
+                        j: 0,
+                        n: 7
+                    }
+                },
+                {
+                    stepNumber: 3,
                     operation: "compare",
                     description: "Сравнение элементов 0 и 1",
                     metadata: {
@@ -152,14 +135,14 @@ print("Quick sort:", sorted_quick)`;
                         comparison_result: 1
                     },
                     variables: {
-                        arr: [64, 34, 25, 12, 22, 11, 90],
+                        struct: [64, 34, 25, 12, 22, 11, 90],
                         i: 0,
                         j: 0,
                         n: 7
                     }
                 },
                 {
-                    stepNumber: 3,
+                    stepNumber: 4,
                     operation: "swap",
                     description: "Обмен элементов 0 и 1",
                     metadata: {
@@ -169,13 +152,13 @@ print("Quick sort:", sorted_quick)`;
                         value2: 34
                     },
                     variables: {
-                        arr: [34, 64, 25, 12, 22, 11, 90],
+                        struct: [34, 64, 25, 12, 22, 11, 90],
                         i: 0,
                         j: 0,
-                        n: 7
+                        n: 7,
+                        temp: 64
                     }
                 },
-                // Добавьте больше шагов по необходимости
             ],
             statistics: {
                 comparisons: 21,
@@ -192,7 +175,7 @@ print("Quick sort:", sorted_quick)`;
                 start_structure: [64, 34, 25, 12, 22, 11, 90],
                 final_structure: "[11, 12, 22, 25, 34, 64, 90]",
                 variables: {
-                    arr: [11, 12, 22, 25, 34, 64, 90]
+                    struct: [11, 12, 22, 25, 34, 64, 90]
                 },
                 call_depth: 1,
                 function_calls: 1,
@@ -214,14 +197,10 @@ print("Quick sort:", sorted_quick)`;
             </div>
 
             <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-                <TabsList className="grid w-full grid-cols-3">
+                <TabsList className="grid w-full grid-cols-2">
                     <TabsTrigger value="code">
                         <Code className="w-4 h-4 mr-2" />
                         Ввод кода
-                    </TabsTrigger>
-                    <TabsTrigger value="results">
-                        <AlertCircle className="w-4 h-4 mr-2" />
-                        Результаты анализа
                     </TabsTrigger>
                     <TabsTrigger
                         value="visualization"
@@ -234,7 +213,7 @@ print("Quick sort:", sorted_quick)`;
                 </TabsList>
 
                 <TabsContent value="code" className="space-y-6">
-                    <Card className="border-2 border-primary/20">
+                    <Card className="border-2 border-primary/20 bg-gradient-to-br from-background to-card shadow-lg hover:shadow-xl transition-shadow duration-300">
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2">
                                 <Code className="w-5 h-5 text-primary" />
@@ -250,10 +229,10 @@ print("Quick sort:", sorted_quick)`;
                                     value={code}
                                     onChange={(e) => setCode(e.target.value)}
                                     placeholder={exampleCode}
-                                    className="min-h-[300px] font-mono text-sm resize-none"
+                                    className="min-h-[300px] font-mono text-sm resize-none bg-background border-border focus:border-primary focus:ring-2 focus:ring-primary/20"
                                     disabled={isAnalyzing}
                                 />
-                                <div className="absolute bottom-2 right-2 text-xs text-muted-foreground bg-background px-2 py-1 rounded">
+                                <div className="absolute bottom-2 right-2 text-xs text-muted-foreground bg-background/80 backdrop-blur-sm px-2 py-1 rounded border border-border">
                                     {code.split('\n').length} строк
                                 </div>
                             </div>
@@ -262,7 +241,7 @@ print("Quick sort:", sorted_quick)`;
                                 <Button
                                     onClick={handleAnalyze}
                                     disabled={isAnalyzing || !code.trim()}
-                                    className="flex-1"
+                                    className="flex-1 bg-primary hover:bg-primary/90"
                                     size="lg"
                                 >
                                     {isAnalyzing ? (
@@ -282,6 +261,7 @@ print("Quick sort:", sorted_quick)`;
                                     variant="outline"
                                     disabled={isAnalyzing}
                                     size="lg"
+                                    className="border-border hover:bg-secondary"
                                 >
                                     {translations['analyzer.clear'] || 'Очистить'}
                                 </Button>
@@ -290,6 +270,7 @@ print("Quick sort:", sorted_quick)`;
                                     variant="secondary"
                                     size="lg"
                                     disabled={isAnalyzing}
+                                    className="bg-secondary hover:bg-secondary/80"
                                 >
                                     <Eye className="w-4 h-4 mr-2" />
                                     Демо
@@ -302,163 +283,14 @@ print("Quick sort:", sorted_quick)`;
                                     variant="ghost"
                                     size="sm"
                                     disabled={isAnalyzing}
+                                    className="hover:bg-primary/10 hover:text-primary"
                                 >
                                     Загрузить пример
                                 </Button>
                                 <div className="text-xs text-muted-foreground flex items-center justify-end">
-                                    Поддерживаемые языки: Python, JavaScript, C++
+                                    Поддерживаемые языки: Python
                                 </div>
                             </div>
-                        </CardContent>
-                    </Card>
-                </TabsContent>
-
-                <TabsContent value="results" className="space-y-6">
-                    <Card className="border-2 border-primary/20">
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
-                                {analysisResult?.success ? (
-                                    <CheckCircle className="w-5 h-5 text-green-500" />
-                                ) : (
-                                    <AlertCircle className="w-5 h-5 text-amber-500" />
-                                )}
-                                {translations['analyzer.results'] || 'Результаты анализа'}
-                            </CardTitle>
-                            <CardDescription>
-                                {translations['analyzer.resultsDesc'] || 'Результаты статического анализа кода'}
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            {!analysisResult && !isAnalyzing && (
-                                <div className="min-h-[300px] flex items-center justify-center text-center text-muted-foreground">
-                                    <div className="space-y-2">
-                                        <Code className="w-12 h-12 mx-auto opacity-50" />
-                                        <p>{translations['analyzer.noResults'] || 'Нет результатов анализа'}</p>
-                                    </div>
-                                </div>
-                            )}
-
-                            {isAnalyzing && (
-                                <div className="min-h-[300px] flex items-center justify-center">
-                                    <div className="text-center space-y-4">
-                                        <Loader2 className="w-12 h-12 mx-auto animate-spin text-primary" />
-                                        <p className="text-muted-foreground">
-                                            {translations['analyzer.analyzingMessage'] || 'Анализ кода...'}
-                                        </p>
-                                        <p className="text-sm text-muted-foreground">
-                                            Генерация визуализации может занять некоторое время
-                                        </p>
-                                    </div>
-                                </div>
-                            )}
-
-                            {analysisResult && (
-                                <div className="space-y-4">
-                                    <Alert variant={analysisResult.success ? "default" : "destructive"}>
-                                        <AlertDescription className="flex items-center gap-2">
-                                            {analysisResult.success ? (
-                                                <CheckCircle className="w-4 h-4" />
-                                            ) : (
-                                                <AlertCircle className="w-4 h-4" />
-                                            )}
-                                            {analysisResult.message}
-                                        </AlertDescription>
-                                    </Alert>
-
-                                    {analysisResult.details && (
-                                        <div className="space-y-4 pt-4">
-                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                                <Card className="bg-muted/30">
-                                                    <CardContent className="pt-6">
-                                                        <div className="space-y-3">
-                                                            <div className="flex justify-between items-center">
-                                                                <span className="text-sm">Сложность</span>
-                                                                <span className="font-mono px-3 py-1 bg-primary/10 text-primary rounded">
-                                                                    {analysisResult.details.complexity || 'O(n²)'}
-                                                                </span>
-                                                            </div>
-                                                            <div className="flex justify-between items-center">
-                                                                <span className="text-sm">Предупреждения</span>
-                                                                <span className="font-mono px-3 py-1 bg-amber-500/10 text-amber-600 dark:text-amber-400 rounded">
-                                                                    {analysisResult.details.warnings || 0}
-                                                                </span>
-                                                            </div>
-                                                            <div className="flex justify-between items-center">
-                                                                <span className="text-sm">Предложения</span>
-                                                                <span className="font-mono px-3 py-1 bg-green-500/10 text-green-600 dark:text-green-400 rounded">
-                                                                    {analysisResult.details.suggestions || 0}
-                                                                </span>
-                                                            </div>
-                                                        </div>
-                                                    </CardContent>
-                                                </Card>
-
-                                                <Card className="bg-muted/30">
-                                                    <CardContent className="pt-6">
-                                                        <div className="space-y-3">
-                                                            <div className="flex justify-between items-center">
-                                                                <span className="text-sm">Строк кода</span>
-                                                                <span className="font-mono px-3 py-1 bg-blue-500/10 text-blue-600 rounded">
-                                                                    {analysisResult.details.metrics?.lines || 0}
-                                                                </span>
-                                                            </div>
-                                                            <div className="flex justify-between items-center">
-                                                                <span className="text-sm">Функций</span>
-                                                                <span className="font-mono px-3 py-1 bg-purple-500/10 text-purple-600 rounded">
-                                                                    {analysisResult.details.metrics?.functions || 0}
-                                                                </span>
-                                                            </div>
-                                                            <div className="flex justify-between items-center">
-                                                                <span className="text-sm">Классов</span>
-                                                                <span className="font-mono px-3 py-1 bg-indigo-500/10 text-indigo-600 rounded">
-                                                                    {analysisResult.details.metrics?.classes || 0}
-                                                                </span>
-                                                            </div>
-                                                        </div>
-                                                    </CardContent>
-                                                </Card>
-
-                                                <Card className="bg-muted/30">
-                                                    <CardContent className="pt-6">
-                                                        <h4 className="font-semibold mb-3">Алгоритмы обнаружены</h4>
-                                                        <div className="space-y-2">
-                                                            {analysisResult.details.algorithms?.map((algo: string, idx: number) => (
-                                                                <div key={idx} className="flex items-center gap-2">
-                                                                    <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                                                                    <span className="text-sm">{algo}</span>
-                                                                </div>
-                                                            )) || (
-                                                                    <div className="text-sm text-muted-foreground">
-                                                                        Алгоритмы не обнаружены
-                                                                    </div>
-                                                                )}
-                                                        </div>
-                                                    </CardContent>
-                                                </Card>
-                                            </div>
-
-                                            {visualizationData && (
-                                                <div className="pt-4 border-t">
-                                                    <div className="flex items-center justify-between mb-4">
-                                                        <h4 className="font-semibold">Готово к визуализации</h4>
-                                                        <Button
-                                                            onClick={() => setActiveTab('visualization')}
-                                                            size="sm"
-                                                        >
-                                                            <Eye className="w-4 h-4 mr-2" />
-                                                            Перейти к визуализации
-                                                        </Button>
-                                                    </div>
-                                                    <div className="text-sm text-muted-foreground">
-                                                        Алгоритм "{visualizationData.algorithmName}" успешно проанализирован.
-                                                        Доступно {visualizationData.steps.length} шагов визуализации.
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
-                                </div>
-                            )}
                         </CardContent>
                     </Card>
                 </TabsContent>
@@ -475,11 +307,11 @@ print("Quick sort:", sorted_quick)`;
                                 </div>
                                 <div className="flex items-center gap-4">
                                     <div className="flex items-center gap-2">
-                                        <span className="text-sm">Скорость:</span>
+                                        <span className="text-sm text-muted-foreground">Скорость:</span>
                                         <select
                                             value={visualizationSpeed}
                                             onChange={(e) => setVisualizationSpeed(Number(e.target.value))}
-                                            className="px-3 py-1 border rounded text-sm"
+                                            className="px-3 py-1.5 border border-border rounded-lg text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                                         >
                                             <option value="0.5">0.5x</option>
                                             <option value="1">1x</option>
@@ -489,11 +321,12 @@ print("Quick sort:", sorted_quick)`;
                                         </select>
                                     </div>
                                     <Button
-                                        onClick={() => setActiveTab('results')}
+                                        onClick={() => setActiveTab('code')}
                                         variant="outline"
                                         size="sm"
+                                        className="border-border hover:bg-secondary"
                                     >
-                                        Назад к результатам
+                                        Назад к вводу
                                     </Button>
                                 </div>
                             </div>
@@ -506,7 +339,7 @@ print("Quick sort:", sorted_quick)`;
                                 className="shadow-lg"
                             />
 
-                            <Card className="bg-muted/30">
+                            <Card className="bg-gradient-to-br from-muted/30 to-background border border-border/50">
                                 <CardHeader>
                                     <CardTitle className="text-lg">Информация о визуализации</CardTitle>
                                 </CardHeader>
@@ -533,7 +366,7 @@ print("Quick sort:", sorted_quick)`;
                             </Card>
                         </>
                     ) : (
-                        <Card className="border-2 border-primary/20">
+                        <Card className="border-2 border-primary/20 bg-gradient-to-br from-background to-card">
                             <CardContent className="min-h-[400px] flex flex-col items-center justify-center text-center space-y-4">
                                 <Eye className="w-16 h-16 text-muted-foreground/50" />
                                 <div>
@@ -545,6 +378,7 @@ print("Quick sort:", sorted_quick)`;
                                 <Button
                                     onClick={() => setActiveTab('code')}
                                     variant="outline"
+                                    className="border-border hover:bg-secondary"
                                 >
                                     Перейти к вводу кода
                                 </Button>
@@ -555,7 +389,7 @@ print("Quick sort:", sorted_quick)`;
             </Tabs>
 
             {/* Информационная секция */}
-            <Card className="bg-muted/30">
+            <Card className="bg-gradient-to-br from-muted/30 to-background border border-border/50">
                 <CardHeader>
                     <CardTitle className="text-lg">Как работает визуализация</CardTitle>
                 </CardHeader>

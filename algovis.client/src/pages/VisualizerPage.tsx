@@ -6,9 +6,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Input } from '../components/ui/input';
 import { AnimationControls } from '../components/AnimationControls';
 import { ArrayVisualization } from '../components/ArrayVisualization';
-import { TreeVisualization, TreeNode } from '../components/TreeVisualization';
-import { GraphVisualization, GraphNode, GraphEdge } from '../components/GraphVisualization';
-import { ListVisualization, ListNode } from '../components/ListVisualization';
+import { TreeVisualization, type TreeNode } from '../components/TreeVisualization';
+import { GraphVisualization, type GraphNode, type GraphEdge } from '../components/GraphVisualization';
+import { ListVisualization, type ListNode } from '../components/ListVisualization';
 import { StackVisualization } from '../components/StackVisualization';
 import { QueueVisualization } from '../components/QueueVisualization';
 import { StatsPanel } from '../components/StatsPanel';

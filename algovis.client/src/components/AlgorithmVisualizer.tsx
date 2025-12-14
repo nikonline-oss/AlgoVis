@@ -1,6 +1,6 @@
 ﻿import React, { useState, useEffect, useCallback, useMemo } from 'react';
 
-// Типы данных
+// Типы данных (остаются без изменений)
 interface Element {
     value: number;
     index: number;
@@ -98,6 +98,7 @@ interface AlgorithmVisualizerProps {
     speed?: number;
     onSpeedChange?: (speed: number) => void;
     className?: string;
+    theme?: 'light' | 'dark';
 }
 
 const AlgorithmVisualizer: React.FC<AlgorithmVisualizerProps> = ({
@@ -105,7 +106,8 @@ const AlgorithmVisualizer: React.FC<AlgorithmVisualizerProps> = ({
     autoPlay = false,
     speed = 2,
     onSpeedChange,
-    className = ''
+    className = '',
+    theme = 'dark'
 }) => {
     const [currentStepIndex, setCurrentStepIndex] = useState<number>(0);
     const [isPlaying, setIsPlaying] = useState<boolean>(autoPlay);
@@ -113,13 +115,13 @@ const AlgorithmVisualizer: React.FC<AlgorithmVisualizerProps> = ({
     const [history, setHistory] = useState<number[]>([0]);
     const [animationState, setAnimationState] = useState<'idle' | 'comparing' | 'swapping' | 'updating'>('idle');
     const [variableConfigs, setVariableConfigs] = useState<VariableConfig[]>([
-        { variable: 'i', color: '#3b82f6', label: 'i', isActive: true, type: 'index' },
-        { variable: 'j', color: '#ef4444', label: 'j', isActive: true, type: 'index' },
-        { variable: 'pivot_index', color: '#f59e0b', label: 'pivot', isActive: true, type: 'index' },
-        { variable: 'low', color: '#10b981', label: 'low', isActive: true, type: 'index' },
-        { variable: 'high', color: '#8b5cf6', label: 'high', isActive: true, type: 'index' },
-        { variable: 'index1', color: '#ec4899', label: 'index1', isActive: true, type: 'metadata' },
-        { variable: 'index2', color: '#14b8a6', label: 'index2', isActive: true, type: 'metadata' },
+        { variable: 'i', color: '#60a5fa', label: 'i', isActive: true, type: 'index' },
+        { variable: 'j', color: '#f87171', label: 'j', isActive: true, type: 'index' },
+        { variable: 'pivot_index', color: '#fbbf24', label: 'pivot', isActive: true, type: 'index' },
+        { variable: 'low', color: '#34d399', label: 'low', isActive: true, type: 'index' },
+        { variable: 'high', color: '#a78bfa', label: 'high', isActive: true, type: 'index' },
+        { variable: 'index1', color: '#f472b6', label: 'index1', isActive: true, type: 'metadata' },
+        { variable: 'index2', color: '#22d3ee', label: 'index2', isActive: true, type: 'metadata' },
     ]);
     const [showVariableConfig, setShowVariableConfig] = useState<boolean>(false);
     const [newVariable, setNewVariable] = useState<string>('');
@@ -127,18 +129,24 @@ const AlgorithmVisualizer: React.FC<AlgorithmVisualizerProps> = ({
     const [availableArrays, setAvailableArrays] = useState<string[]>([]);
     const [selectedArray, setSelectedArray] = useState<string>('struct');
     const [currentSpeed, setCurrentSpeed] = useState<number>(speed);
+    const [currentTheme, setCurrentTheme] = useState<'light' | 'dark'>(theme);
 
     // Извлекаем данные
     const algorithmName = data.algorithmName;
     const steps = data.steps;
     const statistics = data.statistics;
     const executionTime = data.executionTime;
-    const currentStep = steps[currentStepIndex];
+    const currentStep = steps[currentStepIndex] || steps[0];
 
     // Обновляем скорость при изменении пропса
     useEffect(() => {
         setCurrentSpeed(speed);
     }, [speed]);
+
+    // Обновляем тему при изменении пропса
+    useEffect(() => {
+        setCurrentTheme(theme);
+    }, [theme]);
 
     // Функция для извлечения массива значений из переменных
     const extractArrayFromVariables = useCallback((variables: Variables, arrayName: string = 'struct'): number[] => {
@@ -208,7 +216,7 @@ const AlgorithmVisualizer: React.FC<AlgorithmVisualizerProps> = ({
 
     // Получаем элементы массива для текущего шага
     const elementsArray = useMemo<Array<{ value: number; index: number; label: string }>>(() => {
-        const arrayValues = extractArrayFromVariables(currentStep.variables, selectedArray);
+        const arrayValues = extractArrayFromVariables(currentStep?.variables || {}, selectedArray);
 
         return arrayValues.map((value, index) => ({
             value,
@@ -220,7 +228,7 @@ const AlgorithmVisualizer: React.FC<AlgorithmVisualizerProps> = ({
     // Определяем выделенные элементы на основе конфигураций переменных
     const highlightedElements = useMemo(() => {
         const highlights: Array<{ index: number; color: string; label: string }> = [];
-        const arrayValues = extractArrayFromVariables(currentStep.variables, selectedArray);
+        const arrayValues = extractArrayFromVariables(currentStep?.variables || {}, selectedArray);
         const arrayLength = arrayValues.length;
 
         // Функция для безопасного добавления индекса
@@ -240,13 +248,13 @@ const AlgorithmVisualizer: React.FC<AlgorithmVisualizerProps> = ({
 
             if (config.type === 'index') {
                 // Для переменных-индексов (i, j, pivot_index, low, high)
-                const value = currentStep.variables[config.variable];
+                const value = currentStep?.variables?.[config.variable];
                 if (typeof value === 'number') {
                     addHighlight(value, config);
                 }
             } else if (config.type === 'metadata') {
                 // Для метаданных (index1, index2 из операции swap/compare)
-                const metadata = currentStep.metadata;
+                const metadata = currentStep?.metadata || {};
                 if (config.variable === 'index1' && metadata.index1 !== undefined) {
                     const index1 = typeof metadata.index1 === 'object' && metadata.index1 !== null && 'rawValue' in metadata.index1
                         ? metadata.index1.rawValue
@@ -285,16 +293,18 @@ const AlgorithmVisualizer: React.FC<AlgorithmVisualizerProps> = ({
         const vars = new Set<string>();
 
         // Добавляем все переменные из текущего шага
-        Object.keys(currentStep.variables).forEach(key => {
-            const value = currentStep.variables[key];
-            if (typeof value === 'number' || Array.isArray(value) ||
-                (value && typeof value === 'object' && ('values' in value || 'RawValue' in value))) {
-                vars.add(key);
-            }
-        });
+        if (currentStep?.variables) {
+            Object.keys(currentStep.variables).forEach(key => {
+                const value = currentStep.variables[key];
+                if (typeof value === 'number' || Array.isArray(value) ||
+                    (value && typeof value === 'object' && ('values' in value || 'RawValue' in value))) {
+                    vars.add(key);
+                }
+            });
+        }
 
         // Добавляем переменные из метаданных
-        const metadata = currentStep.metadata;
+        const metadata = currentStep?.metadata || {};
         if (metadata.index1 !== undefined) vars.add('index1');
         if (metadata.index2 !== undefined) vars.add('index2');
         if (metadata.value1 !== undefined) vars.add('value1');
@@ -397,7 +407,7 @@ const AlgorithmVisualizer: React.FC<AlgorithmVisualizerProps> = ({
                 ...variableConfigs,
                 {
                     variable: newVariable,
-                    color: '#3b82f6', // синий по умолчанию
+                    color: '#60a5fa', // синий по умолчанию
                     label: newVariable,
                     isActive: true,
                     type
@@ -536,94 +546,13 @@ const AlgorithmVisualizer: React.FC<AlgorithmVisualizerProps> = ({
         return String(value);
     };
 
-    // Компонент для отображения метаданных
-    const MetadataDisplay = ({ metadata }: { metadata: Metadata }) => {
-        const entries = Object.entries(metadata);
-
-        if (entries.length === 0 || (entries.length === 1 && entries[0][0] === 'visualization_type')) {
-            return <div style={{ color: '#6b7280', fontStyle: 'italic' }}>Нет метаданных</div>;
-        }
-
-        return (
-            <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))',
-                gap: '10px',
-                marginTop: '10px'
-            }}>
-                {entries.map(([key, value]) => {
-                    // Пропускаем visualization_type, так как он не несет полезной информации
-                    if (key === 'visualization_type') return null;
-
-                    return (
-                        <div key={key} style={{
-                            backgroundColor: '#f9fafb',
-                            borderRadius: '6px',
-                            padding: '8px 12px',
-                            border: '1px solid #e5e7eb'
-                        }}>
-                            <div style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                marginBottom: '4px'
-                            }}>
-                                <div style={{
-                                    backgroundColor: '#e5e7eb',
-                                    color: '#374151',
-                                    fontSize: '11px',
-                                    fontWeight: '600',
-                                    padding: '2px 6px',
-                                    borderRadius: '4px',
-                                    textTransform: 'uppercase'
-                                }}>
-                                    {key}
-                                </div>
-                            </div>
-
-                            <div style={{
-                                fontFamily: 'monospace',
-                                fontSize: '14px',
-                                wordBreak: 'break-all',
-                                color: key === 'result' ? (value === true ? '#059669' : '#dc2626') : '#111827'
-                            }}>
-                                {key === 'result' ? (value ? '✅ true' : '❌ false') : formatValue(value, metadata.value_type)}
-                            </div>
-
-                            {key === 'expression' && value && (
-                                <div style={{
-                                    marginTop: '4px',
-                                    fontSize: '12px',
-                                    color: '#6b7280',
-                                    fontStyle: 'italic'
-                                }}>
-                                    Выражение: {formatValue(value)}
-                                </div>
-                            )}
-
-                            {key === 'condition' && value && (
-                                <div style={{
-                                    marginTop: '4px',
-                                    fontSize: '12px',
-                                    color: '#6b7280',
-                                    fontStyle: 'italic'
-                                }}>
-                                    Условие: {formatValue(value)}
-                                </div>
-                            )}
-                        </div>
-                    );
-                })}
-            </div>
-        );
-    };
-
     // Получаем цвет для анимации
     const getAnimationColor = () => {
         switch (animationState) {
             case 'comparing': return '#fbbf24'; // желтый
-            case 'swapping': return '#ef4444'; // красный
-            case 'updating': return '#3b82f6'; // синий
-            default: return '#6b7280'; // серый
+            case 'swapping': return '#f87171'; // красный
+            case 'updating': return '#60a5fa'; // синий
+            default: return currentTheme === 'dark' ? '#9ca3af' : '#6b7280'; // серый
         }
     };
 
@@ -665,32 +594,131 @@ const AlgorithmVisualizer: React.FC<AlgorithmVisualizerProps> = ({
         return String(value);
     };
 
-    // Стили для компонента
+    // Получаем текущие переменные для отображения
+    const currentVariables = useMemo(() => {
+        if (!currentStep?.variables) return {};
+
+        const vars: Record<string, any> = {};
+        Object.entries(currentStep.variables).forEach(([key, value]) => {
+            // Пропускаем выбранный массив, так как он отображается отдельно
+            if (key !== selectedArray) {
+                vars[key] = value;
+            }
+        });
+        return vars;
+    }, [currentStep, selectedArray]);
+
+    // Компонент для отображения метаданных
+    const MetadataDisplay = ({ metadata }: { metadata: Metadata }) => {
+        const entries = Object.entries(metadata || {});
+
+        if (entries.length === 0 || (entries.length === 1 && entries[0][0] === 'visualization_type')) {
+            return <div style={{ color: currentTheme === 'dark' ? '#9ca3af' : '#6b7280', fontStyle: 'italic' }}>Нет метаданных</div>;
+        }
+
+        return (
+            <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))',
+                gap: '10px',
+                marginTop: '10px'
+            }}>
+                {entries.map(([key, value]) => {
+                    // Пропускаем visualization_type, так как он не несет полезной информации
+                    if (key === 'visualization_type') return null;
+
+                    return (
+                        <div key={key} style={{
+                            backgroundColor: currentTheme === 'dark' ? '#374151' : '#f9fafb',
+                            borderRadius: '6px',
+                            padding: '8px 12px',
+                            border: `1px solid ${currentTheme === 'dark' ? '#4b5563' : '#e5e7eb'}`
+                        }}>
+                            <div style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                marginBottom: '4px'
+                            }}>
+                                <div style={{
+                                    backgroundColor: currentTheme === 'dark' ? '#4b5563' : '#e5e7eb',
+                                    color: currentTheme === 'dark' ? '#d1d5db' : '#374151',
+                                    fontSize: '11px',
+                                    fontWeight: '600',
+                                    padding: '2px 6px',
+                                    borderRadius: '4px',
+                                    textTransform: 'uppercase'
+                                }}>
+                                    {key}
+                                </div>
+                            </div>
+
+                            <div style={{
+                                fontFamily: 'monospace',
+                                fontSize: '14px',
+                                wordBreak: 'break-all',
+                                color: key === 'result' ? (value === true ? '#34d399' : '#f87171') : (currentTheme === 'dark' ? '#e5e7eb' : '#111827')
+                            }}>
+                                {key === 'result' ? (value ? '✅ true' : '❌ false') : formatValue(value, metadata.value_type)}
+                            </div>
+
+                            {key === 'expression' && value && (
+                                <div style={{
+                                    marginTop: '4px',
+                                    fontSize: '12px',
+                                    color: currentTheme === 'dark' ? '#9ca3af' : '#6b7280',
+                                    fontStyle: 'italic'
+                                }}>
+                                    Выражение: {formatValue(value)}
+                                </div>
+                            )}
+
+                            {key === 'condition' && value && (
+                                <div style={{
+                                    marginTop: '4px',
+                                    fontSize: '12px',
+                                    color: currentTheme === 'dark' ? '#9ca3af' : '#6b7280',
+                                    fontStyle: 'italic'
+                                }}>
+                                    Условие: {formatValue(value)}
+                                </div>
+                            )}
+                        </div>
+                    );
+                })}
+            </div>
+        );
+    };
+
+    // Стили для компонента с темной темой
     const styles = {
         container: {
-            backgroundColor: '#ffffff',
+            backgroundColor: currentTheme === 'dark' ? '#1f2937' : '#ffffff',
             borderRadius: '12px',
-            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+            boxShadow: currentTheme === 'dark' 
+                ? '0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2)'
+                : '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
             padding: '24px',
-            fontFamily: '"Segoe UI", system-ui, -apple-system, sans-serif'
+            fontFamily: '"Segoe UI", system-ui, -apple-system, sans-serif',
+            color: currentTheme === 'dark' ? '#f3f4f6' : '#1f2937',
+            transition: 'background-color 0.3s ease, color 0.3s ease'
         },
         header: {
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
             marginBottom: '24px',
-            borderBottom: '2px solid #e5e7eb',
+            borderBottom: `2px solid ${currentTheme === 'dark' ? '#374151' : '#e5e7eb'}`,
             paddingBottom: '16px'
         },
         title: {
             fontSize: '28px',
             fontWeight: '700',
-            color: '#1f2937',
+            color: currentTheme === 'dark' ? '#f9fafb' : '#1f2937',
             margin: 0
         },
         subtitle: {
             fontSize: '14px',
-            color: '#6b7280',
+            color: currentTheme === 'dark' ? '#9ca3af' : '#6b7280',
             marginTop: '4px'
         },
         controls: {
@@ -698,7 +726,7 @@ const AlgorithmVisualizer: React.FC<AlgorithmVisualizerProps> = ({
             flexWrap: 'wrap' as const,
             alignItems: 'center',
             gap: '8px',
-            backgroundColor: '#f9fafb',
+            backgroundColor: currentTheme === 'dark' ? '#374151' : '#f9fafb',
             borderRadius: '10px',
             padding: '16px',
             marginBottom: '20px'
@@ -717,30 +745,42 @@ const AlgorithmVisualizer: React.FC<AlgorithmVisualizerProps> = ({
         },
         buttonPrimary: {
             backgroundColor: '#3b82f6',
-            color: 'white'
+            color: 'white',
+            '&:hover': {
+                backgroundColor: '#2563eb'
+            }
         },
         buttonSecondary: {
-            backgroundColor: '#e5e7eb',
-            color: '#374151'
+            backgroundColor: currentTheme === 'dark' ? '#4b5563' : '#e5e7eb',
+            color: currentTheme === 'dark' ? '#f3f4f6' : '#374151',
+            '&:hover': {
+                backgroundColor: currentTheme === 'dark' ? '#6b7280' : '#d1d5db'
+            }
         },
         buttonSuccess: {
             backgroundColor: '#10b981',
-            color: 'white'
+            color: 'white',
+            '&:hover': {
+                backgroundColor: '#059669'
+            }
         },
         buttonDanger: {
             backgroundColor: '#ef4444',
-            color: 'white'
+            color: 'white',
+            '&:hover': {
+                backgroundColor: '#dc2626'
+            }
         },
         buttonDisabled: {
             opacity: 0.5,
             cursor: 'not-allowed'
         },
         stepInfo: {
-            backgroundColor: '#f8fafc',
+            backgroundColor: currentTheme === 'dark' ? '#374151' : '#f8fafc',
             borderRadius: '10px',
             padding: '20px',
             marginBottom: '24px',
-            border: '1px solid #e2e8f0',
+            border: `1px solid ${currentTheme === 'dark' ? '#4b5563' : '#e2e8f0'}`,
             overflow: 'hidden',
             transition: 'all 0.3s ease-in-out'
         },
@@ -764,7 +804,7 @@ const AlgorithmVisualizer: React.FC<AlgorithmVisualizerProps> = ({
         stepDescription: {
             fontSize: '18px',
             fontWeight: '600',
-            color: '#1f2937',
+            color: currentTheme === 'dark' ? '#f9fafb' : '#1f2937',
             margin: 0,
             flex: 1
         },
@@ -775,7 +815,7 @@ const AlgorithmVisualizer: React.FC<AlgorithmVisualizerProps> = ({
             justifyContent: 'center',
             marginBottom: '32px',
             padding: '20px',
-            backgroundColor: '#f8fafc',
+            backgroundColor: currentTheme === 'dark' ? '#374151' : '#f8fafc',
             borderRadius: '10px',
             minHeight: '150px'
         },
@@ -787,10 +827,12 @@ const AlgorithmVisualizer: React.FC<AlgorithmVisualizerProps> = ({
             flexDirection: 'column' as const,
             alignItems: 'center',
             justifyContent: 'center',
-            border: '2px solid #cbd5e1',
+            border: `2px solid ${currentTheme === 'dark' ? '#4b5563' : '#cbd5e1'}`,
             borderRadius: '8px',
-            backgroundColor: 'white',
-            boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)',
+            backgroundColor: currentTheme === 'dark' ? '#1f2937' : 'white',
+            boxShadow: currentTheme === 'dark' 
+                ? '0 2px 4px rgba(0, 0, 0, 0.2)'
+                : '0 2px 4px rgba(0, 0, 0, 0.05)',
             transition: 'all 0.3s ease-in-out'
         },
         elementIndex: {
@@ -798,19 +840,19 @@ const AlgorithmVisualizer: React.FC<AlgorithmVisualizerProps> = ({
             top: '4px',
             left: '4px',
             fontSize: '12px',
-            color: '#64748b',
+            color: currentTheme === 'dark' ? '#9ca3af' : '#64748b',
             fontWeight: '600'
         },
         elementValue: {
             fontSize: '22px',
             fontWeight: '700',
-            color: '#1e293b',
+            color: currentTheme === 'dark' ? '#f3f4f6' : '#1e293b',
             transition: 'all 0.3s ease-in-out'
         },
         elementLabel: {
             marginTop: '4px',
             fontSize: '12px',
-            color: '#64748b'
+            color: currentTheme === 'dark' ? '#9ca3af' : '#64748b'
         },
         statsContainer: {
             display: 'grid',
@@ -819,7 +861,7 @@ const AlgorithmVisualizer: React.FC<AlgorithmVisualizerProps> = ({
             marginBottom: '32px'
         },
         statCard: {
-            backgroundColor: '#f1f5f9',
+            backgroundColor: currentTheme === 'dark' ? '#374151' : '#f1f5f9',
             borderRadius: '10px',
             padding: '20px',
             textAlign: 'center' as const
@@ -827,18 +869,18 @@ const AlgorithmVisualizer: React.FC<AlgorithmVisualizerProps> = ({
         statValue: {
             fontSize: '28px',
             fontWeight: '800',
-            color: '#0f172a',
+            color: currentTheme === 'dark' ? '#f9fafb' : '#0f172a',
             margin: '8px 0'
         },
         statLabel: {
             fontSize: '14px',
-            color: '#475569',
+            color: currentTheme === 'dark' ? '#d1d5db' : '#475569',
             fontWeight: '600',
             textTransform: 'uppercase' as const,
             letterSpacing: '0.5px'
         },
         variablesContainer: {
-            backgroundColor: '#f8fafc',
+            backgroundColor: currentTheme === 'dark' ? '#374151' : '#f8fafc',
             borderRadius: '10px',
             padding: '20px',
             marginBottom: '24px'
@@ -850,8 +892,8 @@ const AlgorithmVisualizer: React.FC<AlgorithmVisualizerProps> = ({
             marginTop: '16px'
         },
         variableItem: {
-            backgroundColor: 'white',
-            border: '1px solid #e2e8f0',
+            backgroundColor: currentTheme === 'dark' ? '#1f2937' : 'white',
+            border: `1px solid ${currentTheme === 'dark' ? '#4b5563' : '#e2e8f0'}`,
             borderRadius: '8px',
             padding: '12px',
             fontFamily: 'monospace'
@@ -862,7 +904,7 @@ const AlgorithmVisualizer: React.FC<AlgorithmVisualizerProps> = ({
             gap: '8px',
             maxHeight: '120px',
             overflowY: 'auto' as const,
-            backgroundColor: '#f8fafc',
+            backgroundColor: currentTheme === 'dark' ? '#374151' : '#f8fafc',
             borderRadius: '10px',
             padding: '16px',
             marginBottom: '24px'
@@ -870,8 +912,8 @@ const AlgorithmVisualizer: React.FC<AlgorithmVisualizerProps> = ({
         stepButton: {
             padding: '8px 12px',
             borderRadius: '6px',
-            border: '1px solid #cbd5e1',
-            backgroundColor: 'white',
+            border: `1px solid ${currentTheme === 'dark' ? '#4b5563' : '#cbd5e1'}`,
+            backgroundColor: currentTheme === 'dark' ? '#1f2937' : 'white',
             cursor: 'pointer',
             minWidth: '50px',
             fontSize: '14px',
@@ -885,16 +927,16 @@ const AlgorithmVisualizer: React.FC<AlgorithmVisualizerProps> = ({
             gap: '10px',
             marginBottom: '20px',
             padding: '12px',
-            backgroundColor: '#fef3c7',
+            backgroundColor: currentTheme === 'dark' ? '#78350f' : '#fef3c7',
             borderRadius: '8px',
             border: `2px solid ${getAnimationColor()}`
         },
         variableConfigPanel: {
-            backgroundColor: '#f8fafc',
+            backgroundColor: currentTheme === 'dark' ? '#374151' : '#f8fafc',
             borderRadius: '10px',
             padding: '20px',
             marginBottom: '24px',
-            border: '1px solid #e2e8f0'
+            border: `1px solid ${currentTheme === 'dark' ? '#4b5563' : '#e2e8f0'}`
         },
         configRow: {
             display: 'flex',
@@ -902,9 +944,9 @@ const AlgorithmVisualizer: React.FC<AlgorithmVisualizerProps> = ({
             gap: '12px',
             marginBottom: '12px',
             padding: '12px',
-            backgroundColor: 'white',
+            backgroundColor: currentTheme === 'dark' ? '#1f2937' : 'white',
             borderRadius: '8px',
-            border: '1px solid #e5e7eb'
+            border: `1px solid ${currentTheme === 'dark' ? '#4b5563' : '#e5e7eb'}`
         },
         stepInfoContent: {
             maxHeight: stepInfoHeight === 'auto' ? 'none' : `${stepInfoHeight}px`,
@@ -917,27 +959,13 @@ const AlgorithmVisualizer: React.FC<AlgorithmVisualizerProps> = ({
             gap: '8px',
             marginTop: '16px',
             padding: '8px',
-            backgroundColor: '#f1f5f9',
+            backgroundColor: currentTheme === 'dark' ? '#4b5563' : '#f1f5f9',
             borderRadius: '6px'
         }
     };
 
-    // Получаем текущие переменные для отображения
-    const currentVariables = useMemo(() => {
-        if (!currentStep?.variables) return {};
-
-        const vars: Record<string, any> = {};
-        Object.entries(currentStep.variables).forEach(([key, value]) => {
-            // Пропускаем выбранный массив, так как он отображается отдельно
-            if (key !== selectedArray) {
-                vars[key] = value;
-            }
-        });
-        return vars;
-    }, [currentStep, selectedArray]);
-
     return (
-        <div style={styles.container} className={className}>
+        <div style={styles.container} className={`${className}`}>
             {/* Заголовок и управление */}
             <div style={styles.header}>
                 <div>
@@ -949,10 +977,10 @@ const AlgorithmVisualizer: React.FC<AlgorithmVisualizerProps> = ({
                     </div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontSize: '16px', fontWeight: '600', color: '#1f2937' }}>
+                    <div style={{ fontSize: '16px', fontWeight: '600', color: currentTheme === 'dark' ? '#f9fafb' : '#1f2937' }}>
                         Шаг {currentStepIndex + 1} из {steps.length}
                     </div>
-                    <div style={{ fontSize: '14px', color: '#6b7280' }}>
+                    <div style={{ fontSize: '14px', color: currentTheme === 'dark' ? '#9ca3af' : '#6b7280' }}>
                         {formatTime(executionTime)}
                     </div>
                 </div>
@@ -1020,22 +1048,23 @@ const AlgorithmVisualizer: React.FC<AlgorithmVisualizerProps> = ({
                 {/* Выбор массива */}
                 {availableArrays.length > 0 && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span style={{ fontSize: '14px', color: '#374151', fontWeight: '500' }}>Массив:</span>
+                        <span style={{ fontSize: '14px', color: currentTheme === 'dark' ? '#d1d5db' : '#374151', fontWeight: '500' }}>Массив:</span>
                         <select
                             value={selectedArray}
                             onChange={(e) => setSelectedArray(e.target.value)}
                             style={{
                                 padding: '8px 12px',
                                 borderRadius: '6px',
-                                border: '1px solid #d1d5db',
-                                backgroundColor: 'white',
+                                border: `1px solid ${currentTheme === 'dark' ? '#4b5563' : '#d1d5db'}`,
+                                backgroundColor: currentTheme === 'dark' ? '#1f2937' : 'white',
+                                color: currentTheme === 'dark' ? '#f3f4f6' : '#374151',
                                 fontSize: '14px',
                                 minWidth: '120px'
                             }}
                         >
                             {availableArrays.map(array => (
                                 <option key={array} value={array}>
-                                    {array} ({extractArrayFromVariables(currentStep.variables, array).length} элементов)
+                                    {array} ({extractArrayFromVariables(currentStep?.variables || {}, array).length} элементов)
                                 </option>
                             ))}
                         </select>
@@ -1044,15 +1073,16 @@ const AlgorithmVisualizer: React.FC<AlgorithmVisualizerProps> = ({
 
                 {/* Скорость воспроизведения */}
                 <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{ fontSize: '14px', color: '#374151', fontWeight: '500' }}>Скорость:</span>
+                    <span style={{ fontSize: '14px', color: currentTheme === 'dark' ? '#d1d5db' : '#374151', fontWeight: '500' }}>Скорость:</span>
                     <select
                         value={currentSpeed}
                         onChange={(e) => handleSpeedChange(Number(e.target.value))}
                         style={{
                             padding: '8px 12px',
                             borderRadius: '6px',
-                            border: '1px solid #d1d5db',
-                            backgroundColor: 'white',
+                            border: `1px solid ${currentTheme === 'dark' ? '#4b5563' : '#d1d5db'}`,
+                            backgroundColor: currentTheme === 'dark' ? '#1f2937' : 'white',
+                            color: currentTheme === 'dark' ? '#f3f4f6' : '#374151',
                             fontSize: '14px'
                         }}
                     >
@@ -1068,7 +1098,7 @@ const AlgorithmVisualizer: React.FC<AlgorithmVisualizerProps> = ({
                     onClick={() => setShowAllMetadata(!showAllMetadata)}
                     style={{
                         ...styles.button,
-                        backgroundColor: showAllMetadata ? '#7c3aed' : '#8b5cf6',
+                        backgroundColor: showAllMetadata ? '#8b5cf6' : '#a78bfa',
                         color: 'white'
                     }}
                 >
@@ -1090,12 +1120,12 @@ const AlgorithmVisualizer: React.FC<AlgorithmVisualizerProps> = ({
             {/* Панель настройки переменных */}
             {showVariableConfig && (
                 <div style={styles.variableConfigPanel}>
-                    <h3 style={{ fontSize: '20px', fontWeight: '600', color: '#1f2937', marginBottom: '16px' }}>
+                    <h3 style={{ fontSize: '20px', fontWeight: '600', color: currentTheme === 'dark' ? '#f9fafb' : '#1f2937', marginBottom: '16px' }}>
                         Настройка отображения переменных
                     </h3>
 
                     <div style={{ marginBottom: '20px' }}>
-                        <h4 style={{ fontSize: '16px', fontWeight: '500', color: '#4b5563', marginBottom: '12px' }}>
+                        <h4 style={{ fontSize: '16px', fontWeight: '500', color: currentTheme === 'dark' ? '#d1d5db' : '#4b5563', marginBottom: '12px' }}>
                             Доступные переменные:
                         </h4>
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
@@ -1111,13 +1141,13 @@ const AlgorithmVisualizer: React.FC<AlgorithmVisualizerProps> = ({
                                     style={{
                                         padding: '6px 12px',
                                         borderRadius: '6px',
-                                        border: '1px solid #d1d5db',
+                                        border: `1px solid ${currentTheme === 'dark' ? '#4b5563' : '#d1d5db'}`,
                                         backgroundColor: variableConfigs.some(config => config.variable === variable)
                                             ? '#3b82f6'
-                                            : 'white',
+                                            : (currentTheme === 'dark' ? '#1f2937' : 'white'),
                                         color: variableConfigs.some(config => config.variable === variable)
                                             ? 'white'
-                                            : '#374151',
+                                            : (currentTheme === 'dark' ? '#f3f4f6' : '#374151'),
                                         fontSize: '14px',
                                         cursor: 'pointer'
                                     }}
@@ -1138,7 +1168,9 @@ const AlgorithmVisualizer: React.FC<AlgorithmVisualizerProps> = ({
                                 style={{
                                     padding: '8px 12px',
                                     borderRadius: '6px',
-                                    border: '1px solid #d1d5db',
+                                    border: `1px solid ${currentTheme === 'dark' ? '#4b5563' : '#d1d5db'}`,
+                                    backgroundColor: currentTheme === 'dark' ? '#1f2937' : 'white',
+                                    color: currentTheme === 'dark' ? '#f3f4f6' : '#374151',
                                     flex: 1
                                 }}
                             />
@@ -1160,7 +1192,7 @@ const AlgorithmVisualizer: React.FC<AlgorithmVisualizerProps> = ({
                     </div>
 
                     <div>
-                        <h4 style={{ fontSize: '16px', fontWeight: '500', color: '#4b5563', marginBottom: '12px' }}>
+                        <h4 style={{ fontSize: '16px', fontWeight: '500', color: currentTheme === 'dark' ? '#d1d5db' : '#4b5563', marginBottom: '12px' }}>
                             Настроенные переменные:
                         </h4>
                         {variableConfigs.map(config => (
@@ -1171,7 +1203,7 @@ const AlgorithmVisualizer: React.FC<AlgorithmVisualizerProps> = ({
                                     onChange={() => toggleVariableConfig(config.variable)}
                                     style={{ cursor: 'pointer' }}
                                 />
-                                <div style={{ minWidth: '100px', fontWeight: '600', color: '#374151' }}>
+                                <div style={{ minWidth: '100px', fontWeight: '600', color: currentTheme === 'dark' ? '#f3f4f6' : '#374151' }}>
                                     {config.variable}
                                 </div>
                                 <input
@@ -1181,7 +1213,9 @@ const AlgorithmVisualizer: React.FC<AlgorithmVisualizerProps> = ({
                                     style={{
                                         padding: '6px 12px',
                                         borderRadius: '4px',
-                                        border: '1px solid #d1d5db',
+                                        border: `1px solid ${currentTheme === 'dark' ? '#4b5563' : '#d1d5db'}`,
+                                        backgroundColor: currentTheme === 'dark' ? '#1f2937' : 'white',
+                                        color: currentTheme === 'dark' ? '#f3f4f6' : '#374151',
                                         width: '100px'
                                     }}
                                 />
@@ -1192,7 +1226,7 @@ const AlgorithmVisualizer: React.FC<AlgorithmVisualizerProps> = ({
                                     style={{
                                         width: '50px',
                                         height: '40px',
-                                        border: '1px solid #d1d5db',
+                                        border: `1px solid ${currentTheme === 'dark' ? '#4b5563' : '#d1d5db'}`,
                                         borderRadius: '4px',
                                         cursor: 'pointer'
                                     }}
@@ -1202,9 +1236,9 @@ const AlgorithmVisualizer: React.FC<AlgorithmVisualizerProps> = ({
                                     height: '40px',
                                     backgroundColor: config.color,
                                     borderRadius: '4px',
-                                    border: '1px solid #d1d5db'
+                                    border: `1px solid ${currentTheme === 'dark' ? '#4b5563' : '#d1d5db'}`
                                 }} />
-                                <div style={{ marginLeft: 'auto', fontSize: '14px', color: '#6b7280' }}>
+                                <div style={{ marginLeft: 'auto', fontSize: '14px', color: currentTheme === 'dark' ? '#9ca3af' : '#6b7280' }}>
                                     {config.type}
                                 </div>
                                 <button
@@ -1225,8 +1259,8 @@ const AlgorithmVisualizer: React.FC<AlgorithmVisualizerProps> = ({
                         ))}
                     </div>
 
-                    <div style={{ marginTop: '16px', padding: '12px', backgroundColor: '#fef3c7', borderRadius: '8px' }}>
-                        <p style={{ fontSize: '14px', color: '#92400e', margin: 0 }}>
+                    <div style={{ marginTop: '16px', padding: '12px', backgroundColor: currentTheme === 'dark' ? '#78350f' : '#fef3c7', borderRadius: '8px' }}>
+                        <p style={{ fontSize: '14px', color: currentTheme === 'dark' ? '#fbbf24' : '#92400e', margin: 0 }}>
                             <strong>Как это работает:</strong> Переменные, помеченные как активные, будут отображаться на массиве.
                             Переменные типа "index" берутся из значений переменных (i, j, pivot_index и т.д.).
                             Переменные типа "metadata" берутся из метаданных операции (index1, index2 для операций swap/compare).
@@ -1240,35 +1274,35 @@ const AlgorithmVisualizer: React.FC<AlgorithmVisualizerProps> = ({
                 <div style={styles.stepHeader}>
                     <div style={{
                         ...styles.operationBadge,
-                        backgroundColor: getOperationColor(currentStep.operation),
+                        backgroundColor: getOperationColor(currentStep?.operation || ''),
                         animation: animationState !== 'idle' ? 'pulse 1.5s infinite' : 'none'
                     }}>
-                        {getOperationIcon(currentStep.operation)}
+                        {getOperationIcon(currentStep?.operation || '')}
                     </div>
                     <h2 style={styles.stepDescription}>
-                        Шаг {currentStep.stepNumber}: {currentStep.description}
+                        Шаг {currentStep?.stepNumber || 0}: {currentStep?.description || 'Начало'}
                     </h2>
                     <div style={{
                         fontSize: '14px',
-                        color: '#6b7280',
-                        backgroundColor: '#f3f4f6',
+                        color: currentTheme === 'dark' ? '#9ca3af' : '#6b7280',
+                        backgroundColor: currentTheme === 'dark' ? '#4b5563' : '#f3f4f6',
                         padding: '4px 12px',
                         borderRadius: '20px',
                         fontWeight: '500'
                     }}>
-                        {currentStep.operation || 'navigate'}
+                        {currentStep?.operation || 'init'}
                     </div>
                 </div>
 
                 {/* Управление высотой блока с информацией о шаге */}
                 <div style={styles.heightControls}>
-                    <span style={{ fontSize: '14px', color: '#374151', fontWeight: '500' }}>Высота информации:</span>
+                    <span style={{ fontSize: '14px', color: currentTheme === 'dark' ? '#d1d5db' : '#374151', fontWeight: '500' }}>Высота информации:</span>
                     <button
                         onClick={() => setStepInfoHeight(150)}
                         style={{
                             padding: '4px 12px',
-                            backgroundColor: stepInfoHeight === 150 ? '#3b82f6' : '#e5e7eb',
-                            color: stepInfoHeight === 150 ? 'white' : '#374151',
+                            backgroundColor: stepInfoHeight === 150 ? '#3b82f6' : (currentTheme === 'dark' ? '#4b5563' : '#e5e7eb'),
+                            color: stepInfoHeight === 150 ? 'white' : (currentTheme === 'dark' ? '#f3f4f6' : '#374151'),
                             border: 'none',
                             borderRadius: '4px',
                             cursor: 'pointer',
@@ -1281,8 +1315,8 @@ const AlgorithmVisualizer: React.FC<AlgorithmVisualizerProps> = ({
                         onClick={() => setStepInfoHeight(300)}
                         style={{
                             padding: '4px 12px',
-                            backgroundColor: stepInfoHeight === 300 ? '#3b82f6' : '#e5e7eb',
-                            color: stepInfoHeight === 300 ? 'white' : '#374151',
+                            backgroundColor: stepInfoHeight === 300 ? '#3b82f6' : (currentTheme === 'dark' ? '#4b5563' : '#e5e7eb'),
+                            color: stepInfoHeight === 300 ? 'white' : (currentTheme === 'dark' ? '#f3f4f6' : '#374151'),
                             border: 'none',
                             borderRadius: '4px',
                             cursor: 'pointer',
@@ -1295,8 +1329,8 @@ const AlgorithmVisualizer: React.FC<AlgorithmVisualizerProps> = ({
                         onClick={() => setStepInfoHeight(450)}
                         style={{
                             padding: '4px 12px',
-                            backgroundColor: stepInfoHeight === 450 ? '#3b82f6' : '#e5e7eb',
-                            color: stepInfoHeight === 450 ? 'white' : '#374151',
+                            backgroundColor: stepInfoHeight === 450 ? '#3b82f6' : (currentTheme === 'dark' ? '#4b5563' : '#e5e7eb'),
+                            color: stepInfoHeight === 450 ? 'white' : (currentTheme === 'dark' ? '#f3f4f6' : '#374151'),
                             border: 'none',
                             borderRadius: '4px',
                             cursor: 'pointer',
@@ -1309,8 +1343,8 @@ const AlgorithmVisualizer: React.FC<AlgorithmVisualizerProps> = ({
                         onClick={() => setStepInfoHeight('auto')}
                         style={{
                             padding: '4px 12px',
-                            backgroundColor: stepInfoHeight === 'auto' ? '#3b82f6' : '#e5e7eb',
-                            color: stepInfoHeight === 'auto' ? 'white' : '#374151',
+                            backgroundColor: stepInfoHeight === 'auto' ? '#3b82f6' : (currentTheme === 'dark' ? '#4b5563' : '#e5e7eb'),
+                            color: stepInfoHeight === 'auto' ? 'white' : (currentTheme === 'dark' ? '#f3f4f6' : '#374151'),
                             border: 'none',
                             borderRadius: '4px',
                             cursor: 'pointer',
@@ -1323,28 +1357,28 @@ const AlgorithmVisualizer: React.FC<AlgorithmVisualizerProps> = ({
 
                 {/* Основные метаданные */}
                 <div style={styles.stepInfoContent}>
-                    <MetadataDisplay metadata={currentStep.metadata} />
+                    <MetadataDisplay metadata={currentStep?.metadata || {}} />
                 </div>
 
                 {/* Расширенные метаданные (показываются по клику) */}
                 {showAllMetadata && (
-                    <div style={{ marginTop: '20px', paddingTop: '20px', borderTop: '2px dashed #e5e7eb' }}>
-                        <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#374151', marginBottom: '12px' }}>
+                    <div style={{ marginTop: '20px', paddingTop: '20px', borderTop: `2px dashed ${currentTheme === 'dark' ? '#4b5563' : '#e5e7eb'}` }}>
+                        <h3 style={{ fontSize: '16px', fontWeight: '600', color: currentTheme === 'dark' ? '#f3f4f6' : '#374151', marginBottom: '12px' }}>
                             Детальные метаданные шага:
                         </h3>
                         <div style={{
-                            backgroundColor: '#f9fafb',
+                            backgroundColor: currentTheme === 'dark' ? '#1f2937' : '#f9fafb',
                             borderRadius: '8px',
                             padding: '16px',
                             fontFamily: 'monospace',
                             fontSize: '13px',
-                            color: '#374151',
+                            color: currentTheme === 'dark' ? '#e5e7eb' : '#374151',
                             whiteSpace: 'pre-wrap',
                             overflowX: 'auto',
                             maxHeight: '300px',
                             overflowY: 'auto'
                         }}>
-                            {JSON.stringify(currentStep.metadata, null, 2)}
+                            {JSON.stringify(currentStep?.metadata || {}, null, 2)}
                         </div>
                     </div>
                 )}
@@ -1353,10 +1387,10 @@ const AlgorithmVisualizer: React.FC<AlgorithmVisualizerProps> = ({
             {/* Визуализация массива */}
             <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                    <h3 style={{ fontSize: '20px', fontWeight: '600', color: '#1f2937' }}>
+                    <h3 style={{ fontSize: '20px', fontWeight: '600', color: currentTheme === 'dark' ? '#f9fafb' : '#1f2937' }}>
                         Визуализация массива ({selectedArray})
                     </h3>
-                    <div style={{ fontSize: '14px', color: '#6b7280' }}>
+                    <div style={{ fontSize: '14px', color: currentTheme === 'dark' ? '#9ca3af' : '#6b7280' }}>
                         Элементов: {animatedElements.length}
                     </div>
                 </div>
@@ -1372,10 +1406,10 @@ const AlgorithmVisualizer: React.FC<AlgorithmVisualizerProps> = ({
                                 key={`${element.index}-${currentStepIndex}`}
                                 style={{
                                     ...styles.arrayElement,
-                                    borderColor: isHighlighted ? highlight.color : '#cbd5e1',
+                                    borderColor: isHighlighted ? highlight.color : (currentTheme === 'dark' ? '#4b5563' : '#cbd5e1'),
                                     boxShadow: isHighlighted
                                         ? `0 0 0 3px ${highlight.color}40`
-                                        : '0 2px 4px rgba(0, 0, 0, 0.05)',
+                                        : (currentTheme === 'dark' ? '0 2px 4px rgba(0, 0, 0, 0.2)' : '0 2px 4px rgba(0, 0, 0, 0.05)'),
                                     transform: isHighlighted ? 'translateY(-5px)' : 'translateY(0)',
                                     animation: isHighlighted ? 'bounce 0.5s ease-in-out infinite' : 'none'
                                 }}
@@ -1418,10 +1452,10 @@ const AlgorithmVisualizer: React.FC<AlgorithmVisualizerProps> = ({
                     <div style={{
                         marginTop: '16px',
                         padding: '12px',
-                        backgroundColor: '#fef3c7',
+                        backgroundColor: currentTheme === 'dark' ? '#78350f' : '#fef3c7',
                         borderRadius: '8px',
                         fontSize: '14px',
-                        color: '#92400e'
+                        color: currentTheme === 'dark' ? '#fbbf24' : '#92400e'
                     }}>
                         <strong>Выделенные элементы:</strong>{' '}
                         {highlightedElements.map((h, i) => (
@@ -1445,21 +1479,21 @@ const AlgorithmVisualizer: React.FC<AlgorithmVisualizerProps> = ({
 
             {/* Статистика */}
             <div>
-                <h3 style={{ fontSize: '20px', fontWeight: '600', color: '#1f2937', marginBottom: '16px' }}>
+                <h3 style={{ fontSize: '20px', fontWeight: '600', color: currentTheme === 'dark' ? '#f9fafb' : '#1f2937', marginBottom: '16px' }}>
                     Статистика выполнения
                 </h3>
                 <div style={styles.statsContainer}>
                     <div style={styles.statCard}>
                         <div style={styles.statLabel}>Всего шагов</div>
-                        <div style={styles.statValue}>{statistics.steps}</div>
+                        <div style={styles.statValue}>{statistics?.steps || 0}</div>
                     </div>
                     <div style={styles.statCard}>
                         <div style={styles.statLabel}>Сравнения</div>
-                        <div style={styles.statValue}>{statistics.comparisons}</div>
+                        <div style={styles.statValue}>{statistics?.comparisons || 0}</div>
                     </div>
                     <div style={styles.statCard}>
                         <div style={styles.statLabel}>Обмены</div>
-                        <div style={styles.statValue}>{statistics.swaps}</div>
+                        <div style={styles.statValue}>{statistics?.swaps || 0}</div>
                     </div>
                     <div style={styles.statCard}>
                         <div style={styles.statLabel}>Время выполнения</div>
@@ -1470,25 +1504,28 @@ const AlgorithmVisualizer: React.FC<AlgorithmVisualizerProps> = ({
 
             {/* Состояние выполнения */}
             <div style={styles.variablesContainer}>
-                <h3 style={{ fontSize: '20px', fontWeight: '600', color: '#1f2937', marginBottom: '16px' }}>
+                <h3 style={{ fontSize: '20px', fontWeight: '600', color: currentTheme === 'dark' ? '#f9fafb' : '#1f2937', marginBottom: '16px' }}>
                     Текущие значения переменных
                 </h3>
                 <div style={styles.variablesGrid}>
                     {Object.entries(currentVariables).map(([key, value]) => {
                         const config = variableConfigs.find(c => c.variable === key);
-                        const isChanging = currentStep.metadata?.variable === key;
+                        const isChanging = currentStep?.metadata?.variable === key;
 
                         return (
                             <div key={key} style={{
                                 ...styles.variableItem,
-                                borderColor: config?.isActive ? config.color : '#e2e8f0',
-                                backgroundColor: isChanging ? '#eff6ff' : 'white',
+                                borderColor: config?.isActive ? config.color : (currentTheme === 'dark' ? '#4b5563' : '#e2e8f0'),
+                                backgroundColor: isChanging 
+                                    ? (currentTheme === 'dark' ? '#1e40af' : '#eff6ff') 
+                                    : (currentTheme === 'dark' ? '#1f2937' : 'white'),
+                                color: currentTheme === 'dark' ? '#f3f4f6' : '#111827',
                                 transform: isChanging ? 'scale(1.02)' : 'scale(1)',
                                 transition: 'all 0.3s'
                             }}>
                                 <div style={{
                                     fontSize: '12px',
-                                    color: config?.isActive ? config.color : '#6b7280',
+                                    color: config?.isActive ? config.color : (currentTheme === 'dark' ? '#9ca3af' : '#6b7280'),
                                     marginBottom: '4px',
                                     fontWeight: '600',
                                     display: 'flex',
@@ -1511,7 +1548,7 @@ const AlgorithmVisualizer: React.FC<AlgorithmVisualizerProps> = ({
                                 <div style={{
                                     fontSize: '14px',
                                     fontWeight: '700',
-                                    color: isChanging ? '#1d4ed8' : '#111827',
+                                    color: isChanging ? (currentTheme === 'dark' ? '#93c5fd' : '#1d4ed8') : (currentTheme === 'dark' ? '#f3f4f6' : '#111827'),
                                     wordBreak: 'break-all'
                                 }}>
                                     {formatVariableValue(key, value)}
@@ -1524,7 +1561,7 @@ const AlgorithmVisualizer: React.FC<AlgorithmVisualizerProps> = ({
 
             {/* Навигация по шагам */}
             <div>
-                <h3 style={{ fontSize: '20px', fontWeight: '600', color: '#1f2937', marginBottom: '16px' }}>
+                <h3 style={{ fontSize: '20px', fontWeight: '600', color: currentTheme === 'dark' ? '#f9fafb' : '#1f2937', marginBottom: '16px' }}>
                     Навигация по шагам
                 </h3>
                 <div style={styles.stepNavigation}>
@@ -1534,9 +1571,9 @@ const AlgorithmVisualizer: React.FC<AlgorithmVisualizerProps> = ({
                             onClick={() => goToStep(index)}
                             style={{
                                 ...styles.stepButton,
-                                backgroundColor: index === currentStepIndex ? '#3b82f6' : 'white',
-                                color: index === currentStepIndex ? 'white' : '#374151',
-                                borderColor: index === currentStepIndex ? '#2563eb' : '#cbd5e1',
+                                backgroundColor: index === currentStepIndex ? '#3b82f6' : (currentTheme === 'dark' ? '#1f2937' : 'white'),
+                                color: index === currentStepIndex ? 'white' : (currentTheme === 'dark' ? '#f3f4f6' : '#374151'),
+                                borderColor: index === currentStepIndex ? '#2563eb' : (currentTheme === 'dark' ? '#4b5563' : '#cbd5e1'),
                                 transform: index === currentStepIndex ? 'scale(1.05)' : 'scale(1)'
                             }}
                             title={`Шаг ${step.stepNumber}: ${step.operation} - ${step.description}`}
@@ -1577,15 +1614,16 @@ const AlgorithmVisualizer: React.FC<AlgorithmVisualizerProps> = ({
             <div style={{
                 marginTop: '24px',
                 paddingTop: '16px',
-                borderTop: '2px solid #e5e7eb',
+                borderTop: `2px solid ${currentTheme === 'dark' ? '#374151' : '#e5e7eb'}`,
                 fontSize: '14px',
-                color: '#6b7280'
+                color: currentTheme === 'dark' ? '#9ca3af' : '#6b7280'
             }}>
-                <h4 style={{ fontWeight: '600', marginBottom: '8px', color: '#374151' }}>Управление:</h4>
+                <h4 style={{ fontWeight: '600', marginBottom: '8px', color: currentTheme === 'dark' ? '#f3f4f6' : '#374151' }}>Управление:</h4>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <kbd style={{
-                            backgroundColor: '#e5e7eb',
+                            backgroundColor: currentTheme === 'dark' ? '#4b5563' : '#e5e7eb',
+                            color: currentTheme === 'dark' ? '#f3f4f6' : '#374151',
                             padding: '4px 8px',
                             borderRadius: '4px',
                             fontFamily: 'monospace',
@@ -1596,7 +1634,8 @@ const AlgorithmVisualizer: React.FC<AlgorithmVisualizerProps> = ({
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <kbd style={{
-                            backgroundColor: '#e5e7eb',
+                            backgroundColor: currentTheme === 'dark' ? '#4b5563' : '#e5e7eb',
+                            color: currentTheme === 'dark' ? '#f3f4f6' : '#374151',
                             padding: '4px 8px',
                             borderRadius: '4px',
                             fontFamily: 'monospace',
@@ -1607,7 +1646,8 @@ const AlgorithmVisualizer: React.FC<AlgorithmVisualizerProps> = ({
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <kbd style={{
-                            backgroundColor: '#e5e7eb',
+                            backgroundColor: currentTheme === 'dark' ? '#4b5563' : '#e5e7eb',
+                            color: currentTheme === 'dark' ? '#f3f4f6' : '#374151',
                             padding: '4px 8px',
                             borderRadius: '4px',
                             fontFamily: 'monospace',

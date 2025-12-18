@@ -35,7 +35,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
     <div className="relative min-h-screen">
       {/* Particles Background */}
       <div
-        className="fixed inset-0 z-10"
+        className=" inset-0 z-0"
         style={{
           width: '100vw',
           height: '100vh',
@@ -57,7 +57,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
       </div>
 
       {/* Content */}
-      <div className="relative z-10 space-y-12">
+      <div className="relative z-0 space-y-12">
         {/* Hero Section */}
         <section className="text-center space-y-6 py-12">
           <h1 className="text-4xl font-bold text-foreground">

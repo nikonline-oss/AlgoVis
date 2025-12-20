@@ -60,7 +60,12 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
     {
-        policy.WithOrigins("http://localhost:3001")
+        policy.WithOrigins(
+            "http://localhost",           // nginx порт 80
+            "http://127.0.0.1",           // nginx порт 80  
+            "http://81.94.156.231",        // ваш внешний IP
+            "http://localhost:3000"
+        )
                   .AllowAnyHeader()
                   .AllowAnyMethod()
                   .AllowCredentials();
@@ -103,13 +108,12 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
-app.UseCors("AllowAll");
-app.UseAuthorization();
-
+app.UseCors("AllowAll");      // ✅ 1-е место!
+app.UseHttpsRedirection();    // 2-е
+app.UseAuthorization();       // 3-е
 app.MapControllers();
+
 app.MapHub<VisualizationHub>("/visualizationHub");  // WebSocket
 
-app.MapFallbackToFile("/index.html");
 
 app.Run();

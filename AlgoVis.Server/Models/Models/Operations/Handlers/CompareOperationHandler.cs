@@ -34,10 +34,7 @@ namespace AlgoVis.Models.Models.Operations.Handlers
             if (context.Variables.Get(arrayName).HasProperty("values"))
                 arrayValue = context.Variables.Get(arrayName).GetProperty("values") as ArrayValue;
 
-            IVariableValue[] args1 = [index1];
-            IVariableValue[] args2 = [index2];
-
-            var comparisonResult = CompareValues(arrayValue.CallMethod("get", args1), arrayValue.CallMethod("get", args2));
+            var comparisonResult = CompareValues(index1, index2);
 
             context.Variables.Set("last_comparison", new IntValue(comparisonResult));
 

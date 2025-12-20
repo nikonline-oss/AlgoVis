@@ -1,0 +1,199 @@
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Алгоритм: Factorial</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .algorithm-info {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .algorithm-name {
+            color: #2c3e50;
+            margin-top: 0;
+        }
+        .algorithm-description {
+            color: #7f8c8d;
+            line-height: 1.6;
+        }
+        .json-viewer {
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+            overflow-x: auto;
+        }
+        .stats {
+            background-color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .stat-item {
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="algorithm-info">
+        <h1 class="algorithm-name">Алгоритм: Factorial</h1>
+        <p class="algorithm-description">Пример алгоритма: factorial</p>
+    </div>
+    
+    <div class="json-viewer">
+{
+  "name": "Factorial",
+  "description": "Пример алгоритма: factorial",
+  "structureType": "array",
+  "variables": [
+    {
+      "name": "last_comparison",
+      "type": "int",
+      "initialValue": 0
+    },
+    {
+      "name": "struct",
+      "type": "object",
+      "initialValue": {}
+    },
+    {
+      "name": "i",
+      "type": "int",
+      "initialValue": null
+    },
+    {
+      "name": "n",
+      "type": "int",
+      "initialValue": null
+    },
+    {
+      "name": "result",
+      "type": "int",
+      "initialValue": null
+    }
+  ],
+  "functions": [],
+  "steps": [
+    {
+      "id": "start",
+      "type": "generic",
+      "description": "Начало алгоритма",
+      "parameters": [],
+      "visualize": true,
+      "nextStep": "assign_1"
+    },
+    {
+      "id": "assign_1",
+      "type": "assign",
+      "description": "Присваивание n = 5",
+      "parameters": [
+        "n",
+        "5"
+      ],
+      "visualize": true,
+      "nextStep": "assign_2"
+    },
+    {
+      "id": "assign_2",
+      "type": "assign",
+      "description": "Присваивание result = 1",
+      "parameters": [
+        "result",
+        "1"
+      ],
+      "visualize": true,
+      "nextStep": "assign_3"
+    },
+    {
+      "id": "assign_3",
+      "type": "assign",
+      "description": "Инициализация i = 1",
+      "parameters": [
+        "i",
+        "1"
+      ],
+      "visualize": false,
+      "nextStep": "condition_4"
+    },
+    {
+      "id": "condition_4",
+      "type": "condition",
+      "description": "Проверка i < n + 1",
+      "parameters": [
+        "i < n + 1"
+      ],
+      "visualize": true,
+      "conditionCases": [
+        {
+          "condition": "true",
+          "nextStep": "assign_5"
+        },
+        {
+          "condition": "false",
+          "nextStep": "generic_7"
+        }
+      ]
+    },
+    {
+      "id": "assign_5",
+      "type": "assign",
+      "description": "Присваивание result = result * i",
+      "parameters": [
+        "result",
+        "result * i"
+      ],
+      "visualize": true,
+      "nextStep": "assign_6"
+    },
+    {
+      "id": "assign_6",
+      "type": "assign",
+      "description": "Инкремент i = i + 1",
+      "parameters": [
+        "i",
+        "i + 1"
+      ],
+      "visualize": false,
+      "nextStep": "condition_4"
+    },
+    {
+      "id": "generic_7",
+      "type": "generic",
+      "description": "Выход из цикла",
+      "parameters": [],
+      "visualize": false,
+      "nextStep": "end"
+    },
+    {
+      "id": "end",
+      "type": "generic",
+      "description": "Алгоритм завершен",
+      "parameters": [],
+      "visualize": true
+    }
+  ]
+}
+    </div>
+    
+    <div class="stats">
+        <h3>Статистика:</h3>
+        <div class="stat-item">Тип структуры: array</div>
+        <div class="stat-item">Всего шагов: 9</div>
+        <div class="stat-item">Всего переменных: 5</div>
+    </div>
+</body>
+</html>
+        

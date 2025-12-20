@@ -1,0 +1,120 @@
+{
+  "name": "WhileLoopTest",
+  "description": "Тест цикла while с break",
+  "structureType": "array",
+  "variables": [
+    {
+      "name": "last_comparison",
+      "type": "int",
+      "initialValue": 0
+    },
+    {
+      "name": "struct",
+      "type": "object",
+      "initialValue": {}
+    },
+    {
+      "name": "i",
+      "type": "int",
+      "initialValue": null
+    }
+  ],
+  "functions": [],
+  "steps": [
+    {
+      "id": "step_1",
+      "type": "assign",
+      "description": "Присваивание i = 0",
+      "parameters": [
+        "i",
+        "0"
+      ],
+      "visualize": true,
+      "nextStep": "end"
+    },
+    {
+      "id": "step_2",
+      "type": "compare",
+      "description": "Сравнение i и 10",
+      "parameters": [
+        "i",
+        "10"
+      ],
+      "visualize": true,
+      "nextStep": "end",
+      "highlightColor": "yellow"
+    },
+    {
+      "id": "step_3",
+      "type": "assign",
+      "description": "Присваивание i = i + 1",
+      "parameters": [
+        "i",
+        "i + 1"
+      ],
+      "visualize": true,
+      "nextStep": "end"
+    },
+    {
+      "id": "step_4",
+      "type": "compare",
+      "description": "Сравнение i и 5",
+      "parameters": [
+        "i",
+        "5"
+      ],
+      "visualize": true,
+      "nextStep": "step_5",
+      "highlightColor": "yellow"
+    },
+    {
+      "id": "step_5",
+      "type": "condition",
+      "description": "Проверка: last_comparison == 0",
+      "parameters": [
+        "last_comparison == 0"
+      ],
+      "visualize": true,
+      "conditionCases": [
+        {
+          "condition": "true",
+          "nextStep": "step_6"
+        },
+        {
+          "condition": "false",
+          "nextStep": "if_merge_7"
+        }
+      ]
+    },
+    {
+      "id": "step_6",
+      "type": "generic",
+      "description": "break (вне цикла)",
+      "parameters": [],
+      "visualize": false,
+      "nextStep": "if_merge_7"
+    },
+    {
+      "id": "if_merge_7",
+      "type": "generic",
+      "description": "Продолжение после условия",
+      "parameters": [],
+      "visualize": false
+    },
+    {
+      "id": "start",
+      "type": "generic",
+      "description": "Начало алгоритма",
+      "parameters": [],
+      "visualize": true,
+      "nextStep": "step_1"
+    },
+    {
+      "id": "end",
+      "type": "generic",
+      "description": "Алгоритм завершен",
+      "parameters": [],
+      "visualize": true
+    }
+  ]
+}

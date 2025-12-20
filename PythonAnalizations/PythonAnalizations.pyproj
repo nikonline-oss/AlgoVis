@@ -24,41 +24,23 @@
   <ItemGroup>
     <Compile Include="app.py" />
     <Compile Include="GigaChatService.py" />
-    <Compile Include="python_java_translator\examples\custom_algorithm.py" />
-    <Compile Include="python_java_translator\examples\sorting_algorithms.py" />
+    <Compile Include="python_java_translator\IR\ast_to_ir.py" />
+    <Compile Include="python_java_translator\IR\ir_control.py" />
+    <Compile Include="python_java_translator\IR\ir_nodes.py" />
+    <Compile Include="python_java_translator\IR\ir_structures.py" />
+    <Compile Include="python_java_translator\IR\ir_to_yava.py" />
+    <Compile Include="python_java_translator\IR\test.py" />
+    <Compile Include="python_java_translator\IR\__init__.py" />
     <Compile Include="python_java_translator\main.py" />
-    <Compile Include="python_java_translator\mods\custom_sort_mod.py" />
     <Compile Include="python_java_translator\setup.py" />
-    <Compile Include="python_java_translator\src\config\visualization.py" />
-    <Compile Include="python_java_translator\src\config\__init__.py" />
-    <Compile Include="python_java_translator\src\core\ast_parser.py" />
-    <Compile Include="python_java_translator\src\core\intermediate.py" />
-    <Compile Include="python_java_translator\src\core\java_generator.py" />
-    <Compile Include="python_java_translator\src\core\translator.py" />
-    <Compile Include="python_java_translator\src\core\validator.py" />
-    <Compile Include="python_java_translator\src\core\__init__.py" />
-    <Compile Include="python_java_translator\src\mods\base_mod.py" />
-    <Compile Include="python_java_translator\src\mods\standard_mods\search_mod.py" />
-    <Compile Include="python_java_translator\src\mods\standard_mods\sorting_mod.py" />
-    <Compile Include="python_java_translator\src\mods\standard_mods\__init__.py" />
-    <Compile Include="python_java_translator\src\mods\__init__.py" />
-    <Compile Include="python_java_translator\src\utils\code_utils.py" />
-    <Compile Include="python_java_translator\src\utils\type_resolver.py" />
-    <Compile Include="python_java_translator\src\utils\__init__.py" />
-    <Compile Include="python_java_translator\src\__init__.py" />
     <Compile Include="python_java_translator\test.py" />
+    <Compile Include="python_java_translator\yava_quick.py" />
+    <Compile Include="python_java_translator\yava_translator_service.py" />
+    <Compile Include="python_java_translator\__init__.py" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="python_java_translator\" />
-    <Folder Include="python_java_translator\examples\" />
-    <Folder Include="python_java_translator\mods\" />
-    <Folder Include="python_java_translator\src\mods\standard_mods\" />
-    <Folder Include="python_java_translator\tests\" />
-    <Folder Include="python_java_translator\src\" />
-    <Folder Include="python_java_translator\src\core\" />
-    <Folder Include="python_java_translator\src\mods\" />
-    <Folder Include="python_java_translator\src\config\" />
-    <Folder Include="python_java_translator\src\utils\" />
+    <Folder Include="python_java_translator\IR\" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="python_java_translator\output.json" />

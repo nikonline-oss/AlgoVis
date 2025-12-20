@@ -20,6 +20,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -181,6 +182,7 @@ namespace AlgoVis.Core.Core
 
             try
             {
+
                 // Пробуем парсить как JSON объект
                 if (IsJsonObject(initialValue))
                 {

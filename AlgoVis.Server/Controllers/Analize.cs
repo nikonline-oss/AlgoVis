@@ -61,7 +61,7 @@ namespace AlgoVis.Server.Controllers
                     return BadRequest(new
                     {
                         Success = false,
-                        Message = $"Translation failed: {translationResult.Error}"
+                        Message = $"Translation failed: {translationResult.ValidationResult}"
                     });
                 }
 
@@ -116,14 +116,13 @@ namespace AlgoVis.Server.Controllers
                 var jsonContent = JsonSerializer.Serialize(translationRequest);
                 var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
 
-                var response = await httpClient.PostAsync("http://localhost:5000/translate", content);
+                var response = await httpClient.PostAsync("http://localhost:5001/translate", content);
 
                 if (!response.IsSuccessStatusCode)
                 {
                     return new TranslationResult
                     {
-                        Success = false,
-                        Error = $"Translation service returned status: {response.StatusCode}"
+                        Success = false
                     };
                 }
 
@@ -132,40 +131,37 @@ namespace AlgoVis.Server.Controllers
                     responseContent,
                     new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
-                if (translationResponse == null || !translationResponse.Success)
+                if (translationResponse == null || !translationResponse.success)
                 {
                     return new TranslationResult
                     {
-                        Success = false,
-                        Error = translationResponse?.Error ?? "Unknown translation error"
+                        Success = false
                     };
                 }
 
                 // Извлекаем JSON алгоритма из ответа
                 string javaJson;
-                if (translationResponse.Java is string jsonString)
+                if (translationResponse.yava is string jsonString)
                 {
                     javaJson = jsonString;
                 }
                 else
                 {
-                    javaJson = JsonSerializer.Serialize(translationResponse.Java);
+                    javaJson = JsonSerializer.Serialize(translationResponse.yava);
                 }
 
                 return new TranslationResult
                 {
                     Success = true,
                     JavaJson = javaJson,
-                    ValidationResult = translationResponse.Validation,
-                    Warnings = translationResponse.Warning
+                    ValidationResult = translationResponse.validation,
                 };
             }
             catch (Exception ex)
             {
                 return new TranslationResult
                 {
-                    Success = false,
-                    Error = $"Translation service error: {ex.Message}"
+                    Success = false
                 };
             }
         }
@@ -202,11 +198,11 @@ namespace AlgoVis.Server.Controllers
 
     public class TranslationServiceResponse
     {
-        public bool Success { get; set; }
-        public object Java { get; set; }
-        public object Validation { get; set; }
-        public string Error { get; set; }
-        public string Warning { get; set; }
+        public bool success { get; set; }
+        public object yava { get; set; }
+        public object validation { get; set; }
+        public object statistics { get; set; }
+        public string message { get; set; }
     }
 
     public class TranslationResult
@@ -214,8 +210,6 @@ namespace AlgoVis.Server.Controllers
         public bool Success { get; set; }
         public string JavaJson { get; set; }
         public object ValidationResult { get; set; }
-        public string Warnings { get; set; }
-        public string Error { get; set; }
     }
 
 }

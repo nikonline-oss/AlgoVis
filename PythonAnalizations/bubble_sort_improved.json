@@ -1,0 +1,271 @@
+{
+  "name": "BubbleSort",
+  "description": "Сортировка пузырьком с визуализацией каждого шага",
+  "structureType": "array",
+  "variables": [
+    {
+      "name": "last_comparison",
+      "type": "int",
+      "initialValue": 0
+    },
+    {
+      "name": "struct",
+      "type": "object",
+      "initialValue": {}
+    },
+    {
+      "name": "i",
+      "type": "int",
+      "initialValue": null
+    },
+    {
+      "name": "j",
+      "type": "int",
+      "initialValue": null
+    },
+    {
+      "name": "arr",
+      "type": "int",
+      "initialValue": null
+    },
+    {
+      "name": "n",
+      "type": "int",
+      "initialValue": null
+    },
+    {
+      "name": "temp",
+      "type": "int",
+      "initialValue": null
+    },
+    {
+      "name": "arr[j]",
+      "type": "int",
+      "initialValue": null
+    },
+    {
+      "name": "arr[j + 1]",
+      "type": "int",
+      "initialValue": null
+    }
+  ],
+  "functions": [],
+  "steps": [
+    {
+      "id": "step_1",
+      "type": "assign",
+      "description": "Присваивание arr = [5, 2, 8, 1, 9, 3]",
+      "parameters": [
+        "arr",
+        "[5, 2, 8, 1, 9, 3]"
+      ],
+      "visualize": true,
+      "nextStep": "end"
+    },
+    {
+      "id": "step_2",
+      "type": "assign",
+      "description": "Присваивание n = len(arr)",
+      "parameters": [
+        "n",
+        "len(arr)"
+      ],
+      "visualize": true,
+      "nextStep": "step_3"
+    },
+    {
+      "id": "step_3",
+      "type": "assign",
+      "description": "Инициализация i = 0",
+      "parameters": [
+        "i",
+        "0"
+      ],
+      "visualize": false,
+      "nextStep": "for_cond_4"
+    },
+    {
+      "id": "for_cond_4",
+      "type": "condition",
+      "description": "Проверка i < n",
+      "parameters": [
+        "i < n"
+      ],
+      "visualize": true,
+      "conditionCases": [
+        {
+          "condition": "true",
+          "nextStep": "step_8"
+        },
+        {
+          "condition": "false",
+          "nextStep": "for_exit_7"
+        }
+      ]
+    },
+    {
+      "id": "step_8",
+      "type": "assign",
+      "description": "Инициализация j = 0",
+      "parameters": [
+        "j",
+        "0"
+      ],
+      "visualize": false,
+      "nextStep": "for_cond_9"
+    },
+    {
+      "id": "for_cond_9",
+      "type": "condition",
+      "description": "Проверка j < n - i - 1",
+      "parameters": [
+        "j < n - i - 1"
+      ],
+      "visualize": true,
+      "conditionCases": [
+        {
+          "condition": "true",
+          "nextStep": "step_13"
+        },
+        {
+          "condition": "false",
+          "nextStep": "for_exit_12"
+        }
+      ]
+    },
+    {
+      "id": "step_13",
+      "type": "compare",
+      "description": "Сравнение arr[j] и arr[j + 1]",
+      "parameters": [
+        "arr[j]",
+        "arr[j + 1]"
+      ],
+      "visualize": true,
+      "nextStep": "step_14",
+      "highlightElements": [
+        "j",
+        "j"
+      ],
+      "highlightColor": "yellow"
+    },
+    {
+      "id": "step_14",
+      "type": "condition",
+      "description": "Проверка: last_comparison > 0",
+      "parameters": [
+        "last_comparison > 0"
+      ],
+      "visualize": true,
+      "conditionCases": [
+        {
+          "condition": "true",
+          "nextStep": "step_15"
+        },
+        {
+          "condition": "false",
+          "nextStep": "if_merge_18"
+        }
+      ]
+    },
+    {
+      "id": "step_15",
+      "type": "assign",
+      "description": "Присваивание temp = arr[j]",
+      "parameters": [
+        "temp",
+        "arr[j]"
+      ],
+      "visualize": true,
+      "nextStep": "if_merge_18"
+    },
+    {
+      "id": "step_16",
+      "type": "assign",
+      "description": "Присваивание элемента arr[j] = arr[j + 1]",
+      "parameters": [
+        "arr[j]",
+        "arr[j + 1]"
+      ],
+      "visualize": true,
+      "nextStep": "if_merge_18",
+      "highlightElements": [
+        "j"
+      ],
+      "highlightColor": "blue"
+    },
+    {
+      "id": "step_17",
+      "type": "assign",
+      "description": "Присваивание элемента arr[j + 1] = temp",
+      "parameters": [
+        "arr[j + 1]",
+        "temp"
+      ],
+      "visualize": true,
+      "nextStep": "if_merge_18",
+      "highlightElements": [
+        "j"
+      ],
+      "highlightColor": "blue"
+    },
+    {
+      "id": "if_merge_18",
+      "type": "generic",
+      "description": "Продолжение после условия",
+      "parameters": [],
+      "visualize": false
+    },
+    {
+      "id": "for_inc_11",
+      "type": "assign",
+      "description": "Инкремент j = j + 1",
+      "parameters": [
+        "j",
+        "j + 1"
+      ],
+      "visualize": false,
+      "nextStep": "for_cond_9"
+    },
+    {
+      "id": "for_exit_12",
+      "type": "generic",
+      "description": "Выход из цикла for",
+      "parameters": [],
+      "visualize": false
+    },
+    {
+      "id": "for_inc_6",
+      "type": "assign",
+      "description": "Инкремент i = i + 1",
+      "parameters": [
+        "i",
+        "i + 1"
+      ],
+      "visualize": false,
+      "nextStep": "for_cond_4"
+    },
+    {
+      "id": "for_exit_7",
+      "type": "generic",
+      "description": "Выход из цикла for",
+      "parameters": [],
+      "visualize": false
+    },
+    {
+      "id": "start",
+      "type": "generic",
+      "description": "Начало алгоритма",
+      "parameters": [],
+      "visualize": true,
+      "nextStep": "step_1"
+    },
+    {
+      "id": "end",
+      "type": "generic",
+      "description": "Алгоритм завершен",
+      "parameters": [],
+      "visualize": true
+    }
+  ]
+}

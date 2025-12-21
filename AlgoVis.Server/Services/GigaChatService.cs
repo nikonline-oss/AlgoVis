@@ -1,11 +1,10 @@
-﻿using AlgoVis.Server.Interfaces;
-using System.Text;
+﻿using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace AlgoVis.Server.Services
 {
-    public class GigaChatService : IGigaChatService
+    public class GigaChatService
     {
         private readonly string _authKey = "MDE5YTRhNzEtYWEyYy03MjM4LWExMjUtNTZmNTIwNDg1MTRhOjAzZTU1NDNkLWQ1MGQtNDVhMy1iYWU5LWE3ODkxY2Y4MzVkNA==";
         private readonly string _scope = "GIGACHAT_API_PERS";

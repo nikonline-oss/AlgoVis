@@ -10,9 +10,25 @@ using ExecutionContext = AlgoVis.Models.Models.DataStructures.ExecutionContext;
 
 namespace AlgoVis.Models.Models.Operations.Handlers
 {
-    // Обработчик возврата из функции
+    /// <summary>
+    /// Обработчик операции возврата из функции.
+    /// </summary>
+    /// <remarks>
+    /// Управляет завершением выполнения функции, восстановлением контекста
+    /// и возвратом к точке вызова.
+    /// </remarks>
     public class ReturnOperationHandler : BaseOperationHandler
     {
+        /// <summary>
+        /// Выполняет операцию возврата из функции.
+        /// </summary>
+        /// <param name="step">Шаг алгоритма с операцией возврата.</param>
+        /// <param name="context">Контекст выполнения алгоритма.</param>
+        /// <remarks>
+        /// Извлекает контекст функции из стека вызовов и возвращается
+        /// к шагу, указанному в ReturnStepId контекста функции.
+        /// Если стек вызовов пуст, завершает выполнение.
+        /// </remarks>
         public override void Execute(AlgorithmStep step, ExecutionContext context)
         {
             if (context.FunctionStack.Current == null)

@@ -10,6 +10,23 @@ from .ir_control import *
 
 @dataclass
 class StepInfo:
+    """
+    Информация о шаге алгоритма в формате ЯВА.
+    
+    Attributes:
+        id (str): Уникальный идентификатор шага
+        type (str): Тип шага (assign, compare, condition, etc.)
+        description (str): Описание шага для отображения
+        parameters (List[Any]): Параметры шага
+        nextStep (Optional[str]): ID следующего шага
+        conditionCases (Optional[List[Dict]]): Список условий и переходов для условных шагов
+        functionName (Optional[str]): Название функции (если шаг вызывает функцию)
+        functionParameters (Optional[Dict]): Параметры функции
+        returnToStep (Optional[str]): Шаг для возврата после вызова функции
+        visualize (bool): Флаг визуализации шага
+        highlightElements (Optional[List[str]]): Элементы для подсветки
+        highlightColor (Optional[str]): Цвет подсветки
+    """
     id: str
     type: str
     description: str
@@ -24,6 +41,12 @@ class StepInfo:
     highlightColor: Optional[str] = None
     
     def to_dict(self) -> Dict:
+        """
+        Преобразует объект StepInfo в словарь.
+        
+        Returns:
+            Dict: Словарь с данными шага
+        """
         result = {
             "id": self.id,
             "type": self.type,
@@ -52,22 +75,51 @@ class StepInfo:
 
 @dataclass
 class BlockResult:
-    """Результат трансляции блока операторов"""
+    """
+    Результат трансляции блока операторов.
+    
+    Attributes:
+        entry_step (str): ID первого шага блока
+        exit_steps (List[str]): ID всех выходных шагов блока
+        steps (List[StepInfo]): Все шаги в блоке
+    """
     entry_step: str  # ID первого шага
     exit_steps: List[str]  # ID всех выходных шагов
     steps: List[StepInfo]  # Все шаги в блоке
     
     def add_step(self, step: StepInfo, is_exit: bool = False):
+        """
+        Добавляет шаг в блок.
+        
+        Args:
+            step (StepInfo): Добавляемый шаг
+            is_exit (bool): Является ли шаг выходным
+        """
         self.steps.append(step)
         if is_exit:
             self.exit_steps.append(step.id)
     
     @classmethod
     def empty(cls) -> 'BlockResult':
+        """
+        Создает пустой BlockResult.
+        
+        Returns:
+            BlockResult: Пустой результат блока
+        """
         return cls(entry_step="", exit_steps=[], steps=[])
     
     @classmethod
     def single(cls, step: StepInfo) -> 'BlockResult':
+        """
+        Создает BlockResult с одним шагом.
+        
+        Args:
+            step (StepInfo): Единственный шаг
+            
+        Returns:
+            BlockResult: Результат с одним шагом
+        """
         return cls(
             entry_step=step.id,
             exit_steps=[step.id],
@@ -76,10 +128,35 @@ class BlockResult:
 
 
 class IRToYAVA:
+    """
+    Транслятор промежуточного представления (IR) в формат ЯВА.
+    
+    Осуществляет преобразование IR представления в структурированный JSON формат,
+    пригодный для визуализации алгоритмов в системе ЯВА.
+    
+    Attributes:
+        program_name (str): Название программы
+        description (str): Описание программы
+        structure_type (str): Тип структуры данных
+        steps (Dict[str, StepInfo]): Словарь шагов по ID
+        variables (List[Dict]): Список переменных
+        functions (List[Dict]): Список функций
+        step_counter (int): Счетчик для генерации уникальных ID шагов
+        variable_set (Set[str]): Множество зарегистрированных переменных
+    """
+    
     def __init__(self, 
                  program_name: str = "Algorithm", 
                  description: str = "Сгенерированный алгоритм",
                  structure_type: str = "array"):
+        """
+        Инициализирует транслятор.
+        
+        Args:
+            program_name (str): Название программы
+            description (str): Описание программы
+            structure_type (str): Тип структуры данных
+        """
         self.program_name = program_name
         self.description = description
         self.structure_type = structure_type
@@ -94,7 +171,7 @@ class IRToYAVA:
         self._register_system_variables()
     
     def _register_system_variables(self):
-        """Регистрация системных переменных"""
+        """Регистрация системных переменных."""
         system_vars = [
         ]
         
@@ -104,6 +181,15 @@ class IRToYAVA:
                 self.variable_set.add(var["name"])
     
     def _new_step_id(self, prefix: str = "step") -> str:
+        """
+        Генерирует новый уникальный ID шага.
+        
+        Args:
+            prefix (str): Префикс для ID
+            
+        Returns:
+            str: Уникальный ID шага
+        """
         self.step_counter += 1
         return f"{prefix}_{self.step_counter}"
     
@@ -112,7 +198,18 @@ class IRToYAVA:
                     description: str, 
                     parameters: List = None,
                     **kwargs) -> StepInfo:
+        """
+        Создает новый шаг.
         
+        Args:
+            step_type (str): Тип шага
+            description (str): Описание шага
+            parameters (List): Параметры шага
+            **kwargs: Дополнительные параметры шага
+            
+        Returns:
+            StepInfo: Созданный шаг
+        """
         step_id = kwargs.pop('id', self._new_step_id(prefix=step_type))
         
         step = StepInfo(
@@ -127,7 +224,14 @@ class IRToYAVA:
         return step
     
     def _register_variable(self, name: str, var_type: str = "int", initial_value: Any = None):
-        """Регистрация переменной в списке переменных ЯВА"""
+        """
+        Регистрирует переменную в списке переменных ЯВА.
+        
+        Args:
+            name (str): Имя переменной
+            var_type (str): Тип переменной
+            initial_value (Any): Начальное значение
+        """
         # Не регистрируем выражения с квадратными скобками как переменные
         if '[' in name or ']' in name:
             return
@@ -153,7 +257,16 @@ class IRToYAVA:
             self.variable_set.add(name)
     
     def _link_blocks(self, block1: BlockResult, block2: BlockResult) -> BlockResult:
-        """Связывание двух блоков последовательно"""
+        """
+        Связывает два блока последовательно.
+        
+        Args:
+            block1 (BlockResult): Первый блок
+            block2 (BlockResult): Второй блок
+            
+        Returns:
+            BlockResult: Объединенный блок
+        """
         if not block1.steps:
             return block2
         if not block2.steps:
@@ -176,7 +289,16 @@ class IRToYAVA:
         )
     
     def _link_blocks_with_merge(self, blocks: List[BlockResult], merge_step: StepInfo) -> BlockResult:
-        """Связывание нескольких блоков с точкой слияния"""
+        """
+        Связывает несколько блоков с точкой слияния.
+        
+        Args:
+            blocks (List[BlockResult]): Список блоков
+            merge_step (StepInfo): Точка слияния
+            
+        Returns:
+            BlockResult: Объединенный блок с точкой слияния
+        """
         if not blocks:
             return BlockResult.single(merge_step)
         
@@ -201,7 +323,15 @@ class IRToYAVA:
         )
     
     def _translate_assign(self, node: IRAssign) -> BlockResult:
-        """Трансляция присваивания"""
+        """
+        Трансляция присваивания.
+        
+        Args:
+            node (IRAssign): Узел присваивания IR
+            
+        Returns:
+            BlockResult: Блок с шагом присваивания
+        """
         # Регистрируем переменную, если это не элемент массива
         if '[' not in node.target and ']' not in node.target:
             self._register_variable(node.target, initial_value=None)
@@ -234,7 +364,15 @@ class IRToYAVA:
         ))
     
     def _translate_compare(self, node: IRCompare) -> BlockResult:
-        """Трансляция сравнения"""
+        """
+        Трансляция сравнения.
+        
+        Args:
+            node (IRCompare): Узел сравнения IR
+            
+        Returns:
+            BlockResult: Блок с шагом сравнения
+        """
         # Извлекаем индексы для подсветки
         highlight_elements = []
         import re
@@ -256,7 +394,15 @@ class IRToYAVA:
         ))
     
     def _translate_swap(self, node: IRSwap) -> BlockResult:
-        """Трансляция обмена элементов"""
+        """
+        Трансляция обмена элементов.
+        
+        Args:
+            node (IRSwap): Узел обмена IR
+            
+        Returns:
+            BlockResult: Блок с шагом обмена
+        """
         return BlockResult.single(self._create_step(
             step_type="swap",
             description=f"Обмен элементов {node.idx1} и {node.idx2}",
@@ -267,7 +413,15 @@ class IRToYAVA:
         ))
     
     def _translate_if(self, node: IRIf) -> BlockResult:
-        """Трансляция условного оператора if"""
+        """
+        Трансляция условного оператора if.
+        
+        Args:
+            node (IRIf): Узел условного оператора IR
+            
+        Returns:
+            BlockResult: Блок с условным оператором
+        """
         # Шаг условия
         cond_step = self._create_step(
             step_type="condition",
@@ -350,7 +504,15 @@ class IRToYAVA:
         )
     
     def _translate_for(self, node: IRFor) -> BlockResult:
-        """Трансляция цикла for"""
+        """
+        Трансляция цикла for.
+        
+        Args:
+            node (IRFor): Узел цикла for IR
+            
+        Returns:
+            BlockResult: Блок с циклом for
+        """
         # Регистрируем переменную цикла
         self._register_variable(node.var, "int", node.start)
         
@@ -437,7 +599,15 @@ class IRToYAVA:
         )
     
     def _translate_statement(self, node) -> BlockResult:
-        """Трансляция одного оператора"""
+        """
+        Трансляция одного оператора.
+        
+        Args:
+            node: Узел IR оператора
+            
+        Returns:
+            BlockResult: Блок с транслированным оператором
+        """
         if isinstance(node, IRAssign):
             return self._translate_assign(node)
         elif isinstance(node, IRCompare):
@@ -472,7 +642,15 @@ class IRToYAVA:
             ))
     
     def _translate_block(self, statements: List) -> BlockResult:
-        """Трансляция блока операторов"""
+        """
+        Трансляция блока операторов.
+        
+        Args:
+            statements (List): Список операторов IR
+            
+        Returns:
+            BlockResult: Блок с транслированными операторами
+        """
         if not statements:
             return BlockResult.empty()
         
@@ -489,7 +667,12 @@ class IRToYAVA:
         return result
     
     def _collect_variables_from_ir(self, ir_program: Dict):
-        """Сбор переменных из IR программы"""
+        """
+        Сбор переменных из IR программы.
+        
+        Args:
+            ir_program (Dict): IR программа
+        """
         for var_name, var_info in ir_program.get("variables", {}).items():
             # Не добавляем выражения с квадратными скобками
             if '[' in var_name or ']' in var_name:
@@ -500,7 +683,15 @@ class IRToYAVA:
                 self.variable_set.add(var_name)
     
     def translate(self, ir_program: Dict) -> Dict[str, Any]:
-        """Основной метод трансляции IR → ЯВА"""
+        """
+        Основной метод трансляции IR → ЯВА.
+        
+        Args:
+            ir_program (Dict): IR программа
+            
+        Returns:
+            Dict[str, Any]: Программа в формате ЯВА
+        """
         # Очищаем состояние
         self.steps.clear()
         self.step_counter = 0
@@ -567,9 +758,13 @@ class IRToYAVA:
         }
 
 
-# Упрощенный тест для проверки новой системы
 def test_new_system():
-    """Тест новой системы связывания"""
+    """
+    Тест новой системы связывания.
+    
+    Returns:
+        Dict: Результат тестовой трансляции
+    """
     # Создаем простой IR для тестирования
     from ir_nodes import IRAssign, IRCompare
     from ir_control import IRIf, IRFor

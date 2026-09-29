@@ -1,6 +1,4 @@
-﻿//using AlgoVis.Core.Core.Algorithms.Graph;
-using AlgoVis.Core.Core.Algorithms.Sorting;
-//using AlgoVis.Core.Core.Algorithms.Tree;
+﻿//using AlgoVis.Core.Core.Algorithms.Tree;
 using AlgoVis.Models.Models.Core;
 using AlgoVis.Models.Models.Custom;
 using AlgoVis.Models.Models.DataStructures;
@@ -14,60 +12,37 @@ using System.Threading.Tasks;
 
 namespace AlgoVis.Core.Core
 {
+    /// <summary>
+    /// Менеджер для управления выполнением алгоритмов.
+    /// </summary>
+    /// <remarks>
+    /// Этот класс предоставляет методы для выполнения как стандартных, так и пользовательских алгоритмов
+    /// на различных структурах данных. Служит фасадом для более сложной логики выполнения алгоритмов.
+    /// </remarks>
     public class AlgorithmManager
     {
-        private readonly Dictionary<string, Type> _algorithms = new();
         private readonly AlgorithmInterpreter algorithmInterpreter;
 
+        /// <summary>
+        /// Инициализирует новый экземпляр класса <see cref="AlgorithmManager"/>.
+        /// </summary>
+        /// <remarks>
+        /// Создает экземпляр интерпретатора алгоритмов для выполнения пользовательских алгоритмов.
+        /// </remarks>
         public AlgorithmManager()
         {
             algorithmInterpreter = new AlgorithmInterpreter();
-
-            RegisterAlgorithm<ArrayStructure, int[]>("BubbleSort", typeof(BubbleSortAlgorithm));
-            RegisterAlgorithm<ArrayStructure, int[]>("QuickSort", typeof(QuickSortAlgorithm));
-            RegisterAlgorithm<ArrayStructure, int[]>("InsertionSort", typeof(InsertionSortAlgorithm));
-            RegisterAlgorithm<ArrayStructure, int[]>("SelectionSort", typeof(SelectionSortAlgorithm));
-            //RegisterAlgorithm<GraphStructure, GraphState>("GraphDFS", typeof(GraphDfsAlgorithm));
-            //RegisterAlgorithm<BinaryTreeStructure, TreeNode>("TreeInOrder", typeof(TreeInOrderAlgorithm));
         }
 
-        public void RegisterAlgorithm<TStructure, TState>(string name, Type algorithmType)
-            where TStructure : IDataStructure<TState>
-        {
-            _algorithms[name] = algorithmType;
-        }
-
-        public AlgorithmResult ExecuteAlgorithm(AlgorithmConfig config, IDataStructure structure)
-        {
-            if (!_algorithms.ContainsKey(config.Name))
-                throw new ArgumentException($"Algorithm '{config.Name}' not found");
-
-            var algorithmType = _algorithms[config.Name];
-            var algorithmInstance = Activator.CreateInstance(algorithmType);
-
-            // Используем рефлексию для вызова метода Execute
-            var executeMethod = algorithmType.GetMethod("Execute");
-            return executeMethod?.Invoke(algorithmInstance, new object[] { config, structure }) as AlgorithmResult
-                ?? throw new InvalidOperationException("Failed to execute algorithm");
-        }
-        public AlgorithmResult<T> ExecuteAlgorithm<T>(AlgorithmConfig config, IDataStructure structure)
-        {
-            if (!_algorithms.ContainsKey(config.Name))
-                throw new ArgumentException($"Algorithm '{config.Name}' not found");
-
-            var algorithmType = _algorithms[config.Name];
-            var algorithmInstance = Activator.CreateInstance(algorithmType);
-
-            // Используем рефлексию для вызова метода Execute
-            var executeMethod = algorithmType.GetMethod("Execute");
-            return executeMethod?.Invoke(algorithmInstance, new object[] { config, structure }) as AlgorithmResult<T>
-                ?? throw new InvalidOperationException("Failed to execute algorithm");
-        }
+        /// <summary>
+        /// Выполняет пользовательский алгоритм.
+        /// </summary>
+        /// <param name="request">Запрос на выполнение алгоритма, содержащий описание алгоритма.</param>
+        /// <param name="structure">Структура данных, на которой выполняется алгоритм.</param>
+        /// <returns>Результат выполнения алгоритма.</returns>
         public CustomAlgorithmResult ExecuteCustomAlgorithm(CustomAlgorithmRequest request, IDataStructure structure)
         {
             return algorithmInterpreter.Execute(request, structure);
         }
-
-        public List<string> GetAvailableAlgorithms() => _algorithms.Keys.ToList();
     }
 }

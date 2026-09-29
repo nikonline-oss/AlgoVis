@@ -18,14 +18,36 @@ using ExecutionContext = AlgoVis.Models.Models.DataStructures.ExecutionContext;
 
 namespace AlgoVis.Models.Models.Operations.Handlers
 {
+    /// <summary>
+    /// Обработчик операции присваивания значений переменным, элементам массивов и свойствам.
+    /// </summary>
+    /// <remarks>
+    /// Поддерживает три типа присваивания:
+    /// 1. Прямое присваивание переменной: x = 5
+    /// 2. Присваивание элемента массива: arr[0] = 10
+    /// 3. Присваивание свойства объекта: obj.property = value
+    /// </remarks>
     public class AssignOperationHandler : BaseOperationHandler
     {
+        /// <summary>
+        /// Выполняет операцию присваивания значения переменной, элементу массива или свойству.
+        /// </summary>
+        /// <param name="step">Шаг алгоритма с параметрами операции.</param>
+        /// <param name="context">Контекст выполнения алгоритма.</param>
+        /// <exception cref="ArgumentException">
+        /// Выбрасывается, если количество параметров меньше 2.
+        /// </exception>
+        /// <remarks>
+        /// Параметры шага:
+        /// - parameters[0]: Левый операнд (переменная, элемент массива или свойство)
+        /// - parameters[1]: Выражение для вычисления значения (правый операнд)
+        /// </remarks>
         public override void Execute(AlgorithmStep step, ExecutionContext context)
         {
             if (step.parameters.Count < 2)
                 throw new ArgumentException("Assign operation requires 2 parameters");
 
-             var leftSide = step.parameters[0];
+            var leftSide = step.parameters[0];
             var rightExpression = step.parameters[1].ToLower();
             IVariableValue value = EvaluateExpression(rightExpression, context);
 
@@ -58,16 +80,40 @@ namespace AlgoVis.Models.Models.Operations.Handlers
             ExecuteNextStep(step, context);
         }
 
+        /// <summary>
+        /// Проверяет, является ли выражение доступом к элементу массива.
+        /// </summary>
+        /// <param name="expression">Выражение для проверки.</param>
+        /// <returns>true, если выражение содержит доступ к массиву через []; иначе false.</returns>
         private bool IsArrayAccess(string expression)
         {
             return expression.Contains("[") && expression.Contains("]");
         }
 
+        /// <summary>
+        /// Проверяет, является ли выражение доступом к свойству объекта.
+        /// </summary>
+        /// <param name="expression">Выражение для проверки.</param>
+        /// <returns>true, если выражение содержит доступ к свойству через точку; иначе false.</returns>
         private bool IsPropertyAccess(string expression)
         {
             return expression.Contains(".") && !expression.Contains("[");
         }
 
+        /// <summary>
+        /// Устанавливает значение элемента массива.
+        /// </summary>
+        /// <param name="arrayAccess">Выражение доступа к массиву (например, "arr[index]").</param>
+        /// <param name="value">Значение для установки.</param>
+        /// <param name="context">Контекст выполнения алгоритма.</param>
+        /// <exception cref="ArgumentException">
+        /// Выбрасывается, если выражение доступа к массиву некорректно.
+        /// </exception>
+        /// <remarks>
+        /// Парсит выражение для получения имени массива и индекса,
+        /// вычисляет индекс, получает массив и устанавливает значение.
+        /// Особый случай: если имя массива "struct", обновляет состояние структуры.
+        /// </remarks>
         private void SetArrayElement(string arrayAccess, IVariableValue value, ExecutionContext context)
         {
             var pattern = @"^([a-zA-Z_][a-zA-Z0-9_]*)\[(.+)\]$";
@@ -91,17 +137,25 @@ namespace AlgoVis.Models.Models.Operations.Handlers
 
             IVariableValue[] args = [index, value];
 
-            array.CallMethod("set",args);
+            array.CallMethod("set", args);
 
-            if(arrayName == "struct")
+            if (arrayName == "struct")
                 FromArrayValue(array, context);
 
             context.Variables.Set(arrayName, array);
         }
 
         /// <summary>
-        /// Обновляет состояние ArrayStructure из ArrayValue через конвертер
+        /// Обновляет состояние ArrayStructure из ArrayValue через конвертер.
         /// </summary>
+        /// <param name="arrayValue">Значение массива для конвертации.</param>
+        /// <param name="context">Контекст выполнения алгоритма.</param>
+        /// <exception cref="ArgumentNullException">
+        /// Выбрасывается, если arrayValue равен null.
+        /// </exception>
+        /// <remarks>
+        /// Используется для синхронизации состояния структуры данных с значением массива.
+        /// </remarks>
         public void FromArrayValue(ArrayValue arrayValue, ExecutionContext context)
         {
             if (arrayValue == null)
@@ -123,6 +177,15 @@ namespace AlgoVis.Models.Models.Operations.Handlers
             }
         }
 
+        /// <summary>
+        /// Устанавливает значение свойства объекта.
+        /// </summary>
+        /// <param name="propertyAccess">Выражение доступа к свойству (например, "obj.property").</param>
+        /// <param name="value">Значение для установки.</param>
+        /// <param name="context">Контекст выполнения алгоритма.</param>
+        /// <remarks>
+        /// Обрабатывает как простые (obj.property), так и вложенные (obj.prop1.prop2) свойства.
+        /// </remarks>
         private void SetProperty(string propertyAccess, IVariableValue value, ExecutionContext context)
         {
             Console.WriteLine($"🔍 SetProperty: {propertyAccess} = {value}");
@@ -142,6 +205,14 @@ namespace AlgoVis.Models.Models.Operations.Handlers
             }
         }
 
+        /// <summary>
+        /// Извлекает отображаемое значение из IVariableValue для логов и визуализации.
+        /// </summary>
+        /// <param name="value">Значение для форматирования.</param>
+        /// <returns>Отформатированное строковое представление значения.</returns>
+        /// <remarks>
+        /// Специально обрабатывает объекты и массивы для более информативного отображения.
+        /// </remarks>
         private object ExtractDisplayValue(IVariableValue value)
         {
             // Для отображения в логах и визуализации

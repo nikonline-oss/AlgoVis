@@ -13,10 +13,33 @@ using System.Threading.Tasks;
 
 namespace AlgoVis.Core.Core
 {
+    /// <summary>
+    /// Фабрика для создания структур данных различных типов.
+    /// </summary>
+    /// <remarks>
+    /// Этот класс предоставляет методы для создания структур данных из различных форматов:
+    /// JSON, IVariableValue и нативных объектов C#. Поддерживает массивы, связные списки, 
+    /// бинарные деревья и графы.
+    /// </remarks>
     public static class StructureFactory
     {
         private static readonly UniversalStructureConverter _converter = new UniversalStructureConverter();
 
+        /// <summary>
+        /// Создает структуру данных указанного типа.
+        /// </summary>
+        /// <param name="type">Тип структуры данных ("array", "linkedlist", "binarytree", "graph").</param>
+        /// <param name="data">Данные для создания структуры.</param>
+        /// <returns>Созданная структура данных.</returns>
+        /// <exception cref="ArgumentException">
+        /// Выбрасывается, если указан неподдерживаемый тип структуры.
+        /// </exception>
+        /// <remarks>
+        /// Метод поддерживает несколько форматов входных данных:
+        /// - JsonElement: данные в формате JSON
+        /// - IVariableValue: данные в виде значений переменных
+        /// - Нативные объекты C#: для обратной совместимости
+        /// </remarks>
         public static IDataStructure CreateStructure(string type, object data)
         {
             Console.WriteLine($"🔍 StructureFactory: создание структуры типа '{type}', данные: {data}, тип данных: {data?.GetType()}");
@@ -55,6 +78,14 @@ namespace AlgoVis.Core.Core
             };
         }
 
+        /// <summary>
+        /// Создает структуру массива из различных форматов данных.
+        /// </summary>
+        /// <param name="data">Данные для создания массива.</param>
+        /// <returns>Структура массива.</returns>
+        /// <exception cref="ArgumentException">
+        /// Выбрасывается, если формат данных не поддерживается.
+        /// </exception>
         private static IDataStructure CreateArrayStructure(object data)
         {
             return data switch
@@ -71,28 +102,64 @@ namespace AlgoVis.Core.Core
             };
         }
 
-        // Универсальная структура для любых типов массивов
+        /// <summary>
+        /// Универсальная структура для массивов любых типов.
+        /// </summary>
+        /// <remarks>
+        /// Эта структура оборачивает ArrayValue и предоставляет интерфейс IDataStructure
+        /// для работы с массивами различных типов (int, double, string, bool, object).
+        /// </remarks>
         public class UniversalArrayStructure : IDataStructure
         {
+            /// <summary>
+            /// Получает или задает значение массива.
+            /// </summary>
             public ArrayValue ArrayValue { get; private set; }
+
+            /// <summary>
+            /// Получает тип структуры - "array".
+            /// </summary>
             public string Type => "array";
+
+            /// <summary>
+            /// Получает уникальный идентификатор структуры.
+            /// </summary>
             public string Id { get; } = Guid.NewGuid().ToString();
 
+            /// <summary>
+            /// Инициализирует новый экземпляр класса <see cref="UniversalArrayStructure"/>.
+            /// </summary>
+            /// <param name="arrayValue">Начальное значение массива.</param>
             public UniversalArrayStructure(ArrayValue arrayValue = null)
             {
                 ArrayValue = arrayValue ?? new ArrayValue();
             }
 
+            /// <summary>
+            /// Получает текущее состояние структуры.
+            /// </summary>
+            /// <returns>Текущее значение массива.</returns>
             public object GetState()
             {
                 return ArrayValue;
             }
 
+            /// <summary>
+            /// Получает исходное состояние структуры.
+            /// </summary>
+            /// <returns>Исходное значение массива.</returns>
             public object GetOriginState()
             {
                 return ArrayValue;
             }
 
+            /// <summary>
+            /// Применяет новое состояние к структуре.
+            /// </summary>
+            /// <param name="state">Новое состояние структуры.</param>
+            /// <exception cref="InvalidOperationException">
+            /// Выбрасывается, если тип состояния не поддерживается.
+            /// </exception>
             public void ApplyState(object state)
             {
                 if (state is ArrayValue arrayValue)
@@ -113,12 +180,27 @@ namespace AlgoVis.Core.Core
                 }
             }
 
+            /// <summary>
+            /// Преобразует структуру в данные для визуализации.
+            /// </summary>
+            /// <returns>Данные для визуализации структуры.</returns>
+            /// <exception cref="NotImplementedException">
+            /// Метод не реализован в текущей версии.
+            /// </exception>
             public VisualizationData ToVisualizationData()
             {
                 throw new NotImplementedException();
             }
         }
 
+        /// <summary>
+        /// Создает массив из JSON элемента.
+        /// </summary>
+        /// <param name="jsonElement">JSON элемент, представляющий массив.</param>
+        /// <returns>Структура массива.</returns>
+        /// <exception cref="ArgumentException">
+        /// Выбрасывается, если JSON элемент не является массивом.
+        /// </exception>
         private static ArrayStructure CreateArrayFromJson(JsonElement jsonElement)
         {
             if (jsonElement.ValueKind == JsonValueKind.Array)
@@ -138,6 +220,18 @@ namespace AlgoVis.Core.Core
             }
         }
 
+        /// <summary>
+        /// Парсит JSON элемент в целое число.
+        /// </summary>
+        /// <param name="element">JSON элемент для парсинга.</param>
+        /// <returns>Целое число, полученное из JSON элемента.</returns>
+        /// <remarks>
+        /// Поддерживает различные типы JSON значений:
+        /// - Number: получает целое число
+        /// - String: пробует парсить строку
+        /// - True/False: преобразует в 1/0
+        /// - Остальные: возвращает 0
+        /// </remarks>
         private static int ParseJsonValueToInt(JsonElement element)
         {
             return element.ValueKind switch
@@ -150,6 +244,14 @@ namespace AlgoVis.Core.Core
             };
         }
 
+        /// <summary>
+        /// Создает бинарное дерево из JSON элемента.
+        /// </summary>
+        /// <param name="jsonElement">JSON элемент, представляющий бинарное дерево.</param>
+        /// <returns>Структура бинарного дерева.</returns>
+        /// <exception cref="ArgumentException">
+        /// Выбрасывается, если JSON элемент не является объектом.
+        /// </exception>
         private static BinaryTreeStructure CreateBinaryTreeFromJson(JsonElement jsonElement)
         {
             if (jsonElement.ValueKind == JsonValueKind.Object)
@@ -164,6 +266,17 @@ namespace AlgoVis.Core.Core
             }
         }
 
+        /// <summary>
+        /// Парсит JSON элемент в узел дерева.
+        /// </summary>
+        /// <param name="jsonElement">JSON элемент для парсинга.</param>
+        /// <returns>Узел дерева или null, если элемент является null.</returns>
+        /// <remarks>
+        /// Ожидает JSON объект со свойствами:
+        /// - value: значение узла
+        /// - left: левое поддерево
+        /// - right: правое поддерево
+        /// </remarks>
         private static TreeNode ParseTreeNode(JsonElement jsonElement)
         {
             if (jsonElement.ValueKind == JsonValueKind.Null)
@@ -192,6 +305,14 @@ namespace AlgoVis.Core.Core
             return node;
         }
 
+        /// <summary>
+        /// Создает связный список из JSON элемента.
+        /// </summary>
+        /// <param name="jsonElement">JSON элемент, представляющий массив значений.</param>
+        /// <returns>Структура связного списка.</returns>
+        /// <exception cref="ArgumentException">
+        /// Выбрасывается, если JSON элемент не является массивом.
+        /// </exception>
         private static LinkedListStructure CreateLinkedListFromJson(JsonElement jsonElement)
         {
             if (jsonElement.ValueKind == JsonValueKind.Array)
@@ -224,6 +345,14 @@ namespace AlgoVis.Core.Core
             }
         }
 
+        /// <summary>
+        /// Создает граф из JSON элемента.
+        /// </summary>
+        /// <param name="jsonElement">JSON элемент, представляющий граф.</param>
+        /// <returns>Структура графа.</returns>
+        /// <exception cref="ArgumentException">
+        /// Выбрасывается, если JSON элемент не является объектом.
+        /// </exception>
         private static GraphStructure CreateGraphFromJson(JsonElement jsonElement)
         {
             if (jsonElement.ValueKind == JsonValueKind.Object)
@@ -272,7 +401,16 @@ namespace AlgoVis.Core.Core
             }
         }
 
-        // Обобщенная версия для типобезопасного использования
+        /// <summary>
+        /// Создает структуру данных указанного типа с типобезопасным возвращаемым значением.
+        /// </summary>
+        /// <typeparam name="T">Тип структуры данных, реализующий интерфейс IDataStructure.</typeparam>
+        /// <param name="type">Тип структуры данных.</param>
+        /// <param name="data">Данные для создания структуры.</param>
+        /// <returns>Структура данных указанного типа.</returns>
+        /// <exception cref="InvalidOperationException">
+        /// Выбрасывается, если структуру нельзя привести к указанному типу.
+        /// </exception>
         public static IDataStructure<T> CreateStructure<T>(string type, object data)
         {
             var structure = CreateStructure(type, data);
@@ -280,16 +418,25 @@ namespace AlgoVis.Core.Core
                 throw new InvalidOperationException($"Не удается привести структуру к типу {typeof(T).Name}");
         }
 
+        /// <summary>
+        /// Создает структуру данных из значения переменной.
+        /// </summary>
+        /// <param name="value">Значение переменной.</param>
+        /// <param name="type">Тип структуры данных.</param>
+        /// <returns>Структура данных.</returns>
         public static IDataStructure CreateStructureFromVariableValue(IVariableValue value, string type)
         {
             return _converter.ConvertFromVariableValue(value, type);
         }
 
-        // Метод для конвертации структуры в IVariableValue
+        /// <summary>
+        /// Конвертирует структуру данных в значение переменной.
+        /// </summary>
+        /// <param name="structure">Структура данных для конвертации.</param>
+        /// <returns>Значение переменной, представляющее структуру.</returns>
         public static IVariableValue ConvertStructureToVariableValue(IDataStructure structure)
         {
             return _converter.ConvertToVariableValue(structure);
         }
-
     }
 }

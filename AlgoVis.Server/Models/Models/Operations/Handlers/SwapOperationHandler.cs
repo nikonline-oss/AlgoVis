@@ -17,9 +17,35 @@ using ExecutionContext = AlgoVis.Models.Models.DataStructures.ExecutionContext;
 
 namespace AlgoVis.Models.Models.Operations.Handlers
 {
-    // Операция обмена
+    /// <summary>
+    /// Обработчик операции обмена значений между элементами массива.
+    /// </summary>
+    /// <remarks>
+    /// Выполняет обмен значений между двумя элементами массива,
+    /// обновляет статистику операций и обеспечивает визуализацию процесса.
+    /// </remarks>
     public class SwapOperationHandler : BaseOperationHandler
     {
+        /// <summary>
+        /// Выполняет операцию обмена значений между двумя элементами массива.
+        /// </summary>
+        /// <param name="step">Шаг алгоритма с параметрами операции.</param>
+        /// <param name="context">Контекст выполнения алгоритма.</param>
+        /// <exception cref="ArgumentException">
+        /// Выбрасывается, если количество параметров меньше 2.
+        /// </exception>
+        /// <exception cref="InvalidOperationException">
+        /// Выбрасывается, если массив не найден или не является массивом.
+        /// </exception>
+        /// <exception cref="IndexOutOfRangeException">
+        /// Выбрасывается, если индекс выходит за границы массива.
+        /// </exception>
+        /// <remarks>
+        /// Увеличивает счетчик обменов в статистике.
+        /// Параметры шага могут быть в двух форматах:
+        /// - 2 параметра: индексы для обмена (используется массив по умолчанию "struct")
+        /// - 3 параметра: имя массива, первый индекс, второй индекс
+        /// </remarks>
         public override void Execute(AlgorithmStep step, ExecutionContext context)
         {
             context.Statistics.Swaps++;
@@ -89,9 +115,19 @@ namespace AlgoVis.Models.Models.Operations.Handlers
 
             ExecuteNextStep(step, context);
         }
+
         /// <summary>
-        /// Обновляет состояние ArrayStructure из ArrayValue через конвертер
+        /// Обновляет состояние ArrayStructure из ArrayValue через конвертер.
         /// </summary>
+        /// <param name="arrayValue">Значение массива для конвертации.</param>
+        /// <param name="context">Контекст выполнения алгоритма.</param>
+        /// <exception cref="ArgumentNullException">
+        /// Выбрасывается, если arrayValue равен null.
+        /// </exception>
+        /// <remarks>
+        /// Используется для синхронизации структуры данных с значением массива
+        /// после операций обмена.
+        /// </remarks>
         public void FromArrayValue(ArrayValue arrayValue, ExecutionContext context)
         {
             if (arrayValue == null)

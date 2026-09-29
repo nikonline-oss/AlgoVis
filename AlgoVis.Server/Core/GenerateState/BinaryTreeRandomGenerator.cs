@@ -8,19 +8,44 @@ using System.Threading.Tasks;
 
 namespace AlgoVis.Core.Core.GenerateState
 {
+    /// <summary>
+    /// Генератор случайных бинарных деревьев.
+    /// </summary>
+    /// <remarks>
+    /// Этот класс генерирует бинарные деревья различных типов: полные, сбалансированные, случайные.
+    /// Поддерживает настройку количества узлов и диапазона значений.
+    /// </remarks>
     public class BinaryTreeRandomGenerator : RandomGeneratorBase<BinaryTreeStructure>
     {
+        /// <summary>
+        /// Инициализирует новый экземпляр класса <see cref="BinaryTreeRandomGenerator"/> с указанным начальным значением.
+        /// </summary>
+        /// <param name="seed">Начальное значение для генератора случайных чисел.</param>
         public BinaryTreeRandomGenerator(int seed)
         {
             _random = new Random(seed);
         }
 
+        /// <summary>
+        /// Инициализирует новый экземпляр класса <see cref="BinaryTreeRandomGenerator"/>.
+        /// </summary>
         public BinaryTreeRandomGenerator()
         {
         }
 
+        /// <summary>
+        /// Получает тип структуры данных - "binarytree".
+        /// </summary>
         public override string StructureType => "binarytree";
 
+        /// <summary>
+        /// Генерирует бинарное дерево с указанными параметрами.
+        /// </summary>
+        /// <param name="parameters">Параметры для генерации дерева.</param>
+        /// <returns>Сгенерированное бинарное дерево.</returns>
+        /// <remarks>
+        /// Поддерживаемые типы деревьев: "complete", "balanced", "random".
+        /// </remarks>
         public override BinaryTreeStructure Generate(Dictionary<string, object> parameters)
         {
             var nodeCount = GetParameterValue(parameters, "nodeCount", 7);
@@ -37,6 +62,13 @@ namespace AlgoVis.Core.Core.GenerateState
             };
         }
 
+        /// <summary>
+        /// Генерирует полное бинарное дерево.
+        /// </summary>
+        /// <param name="nodeCount">Количество узлов.</param>
+        /// <param name="minValue">Минимальное значение узла.</param>
+        /// <param name="maxValue">Максимальное значение узла.</param>
+        /// <returns>Полное бинарное дерево.</returns>
         private BinaryTreeStructure GenerateCompleteTree(int nodeCount, int minValue, int maxValue)
         {
             if (nodeCount <= 0) return new BinaryTreeStructure();
@@ -68,12 +100,27 @@ namespace AlgoVis.Core.Core.GenerateState
             return new BinaryTreeStructure(nodes[0]);
         }
 
+        /// <summary>
+        /// Генерирует сбалансированное бинарное дерево.
+        /// </summary>
+        /// <param name="nodeCount">Количество узлов.</param>
+        /// <param name="minValue">Минимальное значение узла.</param>
+        /// <param name="maxValue">Максимальное значение узла.</param>
+        /// <returns>Сбалансированное бинарное дерево.</returns>
         private BinaryTreeStructure GenerateBalancedTree(int nodeCount, int minValue, int maxValue)
         {
             if (nodeCount <= 0) return new BinaryTreeStructure();
             return new BinaryTreeStructure(BuildBalancedTree(0, nodeCount - 1, minValue, maxValue));
         }
 
+        /// <summary>
+        /// Рекурсивно строит сбалансированное дерево.
+        /// </summary>
+        /// <param name="start">Начальный индекс.</param>
+        /// <param name="end">Конечный индекс.</param>
+        /// <param name="minValue">Минимальное значение узла.</param>
+        /// <param name="maxValue">Максимальное значение узла.</param>
+        /// <returns>Корень сбалансированного дерева.</returns>
         private TreeNode BuildBalancedTree(int start, int end, int minValue, int maxValue)
         {
             if (start > end) return null;
@@ -90,6 +137,13 @@ namespace AlgoVis.Core.Core.GenerateState
             return node;
         }
 
+        /// <summary>
+        /// Генерирует случайное бинарное дерево.
+        /// </summary>
+        /// <param name="nodeCount">Количество узлов.</param>
+        /// <param name="minValue">Минимальное значение узла.</param>
+        /// <param name="maxValue">Максимальное значение узла.</param>
+        /// <returns>Случайное бинарное дерево.</returns>
         private BinaryTreeStructure GenerateRandomTree(int nodeCount, int minValue, int maxValue)
         {
             if (nodeCount <= 0) return new BinaryTreeStructure();
@@ -107,6 +161,11 @@ namespace AlgoVis.Core.Core.GenerateState
             return new BinaryTreeStructure(root);
         }
 
+        /// <summary>
+        /// Вставляет новый узел в случайное место дерева.
+        /// </summary>
+        /// <param name="root">Корень дерева.</param>
+        /// <param name="newNode">Новый узел.</param>
         private void InsertRandomNode(TreeNode root, TreeNode newNode)
         {
             while (true)
@@ -132,6 +191,10 @@ namespace AlgoVis.Core.Core.GenerateState
             }
         }
 
+        /// <summary>
+        /// Получает параметры по умолчанию для генерации бинарного дерева.
+        /// </summary>
+        /// <returns>Словарь параметров по умолчанию.</returns>
         public override Dictionary<string, object> GetDefaultParameters()
         {
             return new Dictionary<string, object>

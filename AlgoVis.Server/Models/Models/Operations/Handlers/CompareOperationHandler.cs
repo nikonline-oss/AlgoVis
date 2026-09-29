@@ -14,9 +14,32 @@ using ExecutionContext = AlgoVis.Models.Models.DataStructures.ExecutionContext;
 
 namespace AlgoVis.Models.Models.Operations.Handlers
 {
-    // Операция сравнения
+    /// <summary>
+    /// Обработчик операции сравнения значений.
+    /// </summary>
+    /// <remarks>
+    /// Сравнивает два значения и сохраняет результат в переменной "last_comparison".
+    /// Результат сравнения: 
+    /// -1: первое значение меньше второго
+    ///  0: значения равны
+    ///  1: первое значение больше второго
+    /// </remarks>
     public class CompareOperationHandler : BaseOperationHandler
     {
+        /// <summary>
+        /// Выполняет операцию сравнения двух значений.
+        /// </summary>
+        /// <param name="step">Шаг алгоритма с параметрами операции.</param>
+        /// <param name="context">Контекст выполнения алгоритма.</param>
+        /// <exception cref="ArgumentException">
+        /// Выбрасывается, если количество параметров меньше 2.
+        /// </exception>
+        /// <remarks>
+        /// Увеличивает счетчик сравнений в статистике.
+        /// Параметры шага могут быть в двух форматах:
+        /// - 2 параметра: индексы для сравнения (используется массив по умолчанию "struct")
+        /// - 3 параметра: имя массива, первый индекс, второй индекс
+        /// </remarks>
         public override void Execute(AlgorithmStep step, ExecutionContext context)
         {
             context.Statistics.Comparisons++;
@@ -54,21 +77,32 @@ namespace AlgoVis.Models.Models.Operations.Handlers
             ExecuteNextStep(step, context);
         }
 
-        //Сравнение чисел
-        //"5 > 3" // возвращает 1
-        //"2.5 == 2.5" // возвращает 0
-        //"10 < 5" // возвращает -1
+        // Примеры использования операции сравнения:
+        // "5 > 3" // возвращает 1
+        // "2.5 == 2.5" // возвращает 0
+        // "10 < 5" // возвращает -1
+        // "'apple' < 'banana'" // возвращает -1
+        // "'hello' == 'hello'" // возвращает 0
+        // "arr1.length > arr2.length" // сравнение длин массивов
+        // "arr1[0] == arr2[0]" // сравнение элементов массивов
+        // "'5' > 3" // строка '5' преобразуется в число 5, возвращает 1
 
-        //// Сравнение строк
-        //"'apple' < 'banana'" // возвращает -1
-        //"'hello' == 'hello'" // возвращает 0
-
-        //// Сравнение массивов
-        //"arr1.length > arr2.length" // сравнение длин массивов
-        //"arr1[0] == arr2[0]" // сравнение элементов массивов
-
-        //// Сравнение с автоматическим преобразованием
-        //"'5' > 3" // строка '5' преобразуется в число 5, возвращает 1
+        /// <summary>
+        /// Сравнивает два значения и возвращает результат сравнения.
+        /// </summary>
+        /// <param name="value1">Первое значение для сравнения.</param>
+        /// <param name="value2">Второе значение для сравнения.</param>
+        /// <returns>
+        /// Целое число, представляющее результат сравнения:
+        /// -1: value1 < value2
+        ///  0: value1 == value2
+        ///  1: value1 > value2
+        /// </returns>
+        /// <remarks>
+        /// Поддерживает сравнение чисел, строк, булевых значений и массивов.
+        /// Для массивов сравнивает их длины.
+        /// При необходимости выполняет автоматическое преобразование типов.
+        /// </remarks>
         private int CompareValues(IVariableValue value1, IVariableValue value2)
         {
             // Для чисел - численное сравнение
@@ -113,6 +147,11 @@ namespace AlgoVis.Models.Models.Operations.Handlers
             }
         }
 
+        /// <summary>
+        /// Проверяет, является ли значение числовым.
+        /// </summary>
+        /// <param name="value">Значение для проверки.</param>
+        /// <returns>true, если значение типа Int или Double; иначе false.</returns>
         private bool IsNumeric(IVariableValue value)
         {
             return value.Type == VariableType.Int || value.Type == VariableType.Double;

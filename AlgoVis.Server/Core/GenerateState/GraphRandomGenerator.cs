@@ -8,19 +8,44 @@ using System.Threading.Tasks;
 
 namespace AlgoVis.Core.Core.GenerateState
 {
+    /// <summary>
+    /// Генератор случайных графов.
+    /// </summary>
+    /// <remarks>
+    /// Этот класс генерирует графы различных типов: случайные, круговые, сеточные, полные.
+    /// Поддерживает настройку количества узлов, весов ребер и ориентации графа.
+    /// </remarks>
     public class GraphRandomGenerator : RandomGeneratorBase<GraphStructure>
     {
+        /// <summary>
+        /// Инициализирует новый экземпляр класса <see cref="GraphRandomGenerator"/> с указанным начальным значением.
+        /// </summary>
+        /// <param name="seed">Начальное значение для генератора случайных чисел.</param>
         public GraphRandomGenerator(int seed)
         {
             _random = new Random(seed);
         }
 
+        /// <summary>
+        /// Инициализирует новый экземпляр класса <see cref="GraphRandomGenerator"/>.
+        /// </summary>
         public GraphRandomGenerator()
         {
         }
 
+        /// <summary>
+        /// Получает тип структуры данных - "graph".
+        /// </summary>
         public override string StructureType => "graph";
 
+        /// <summary>
+        /// Генерирует граф с указанными параметрами.
+        /// </summary>
+        /// <param name="parameters">Параметры для генерации графа.</param>
+        /// <returns>Сгенерированный граф.</returns>
+        /// <remarks>
+        /// Поддерживаемые типы графов: "circular", "grid", "complete", "random".
+        /// </remarks>
         public override GraphStructure Generate(Dictionary<string, object> parameters)
         {
             var nodeCount = GetParameterValue(parameters, "nodeCount", 8);
@@ -39,6 +64,14 @@ namespace AlgoVis.Core.Core.GenerateState
             };
         }
 
+        /// <summary>
+        /// Генерирует круговой граф.
+        /// </summary>
+        /// <param name="nodeCount">Количество узлов.</param>
+        /// <param name="minWeight">Минимальный вес ребра.</param>
+        /// <param name="maxWeight">Максимальный вес ребра.</param>
+        /// <param name="directed">Флаг ориентированного графа (0 - неориентированный, 1 - ориентированный).</param>
+        /// <returns>Круговой граф.</returns>
         private GraphStructure GenerateCircularGraph(int nodeCount, int minWeight, int maxWeight, int directed)
         {
             var structure = new GraphStructure();
@@ -74,6 +107,14 @@ namespace AlgoVis.Core.Core.GenerateState
             return structure;
         }
 
+        /// <summary>
+        /// Генерирует сеточный граф.
+        /// </summary>
+        /// <param name="nodeCount">Количество узлов.</param>
+        /// <param name="minWeight">Минимальный вес ребра.</param>
+        /// <param name="maxWeight">Максимальный вес ребра.</param>
+        /// <param name="directed">Флаг ориентированного графа (0 - неориентированный, 1 - ориентированный).</param>
+        /// <returns>Сеточный граф.</returns>
         private GraphStructure GenerateGridGraph(int nodeCount, int minWeight, int maxWeight, int directed)
         {
             var structure = new GraphStructure();
@@ -127,6 +168,14 @@ namespace AlgoVis.Core.Core.GenerateState
             return structure;
         }
 
+        /// <summary>
+        /// Генерирует полный граф.
+        /// </summary>
+        /// <param name="nodeCount">Количество узлов.</param>
+        /// <param name="minWeight">Минимальный вес ребра.</param>
+        /// <param name="maxWeight">Максимальный вес ребра.</param>
+        /// <param name="directed">Флаг ориентированного графа (0 - неориентированный, 1 - ориентированный).</param>
+        /// <returns>Полный граф.</returns>
         private GraphStructure GenerateCompleteGraph(int nodeCount, int minWeight, int maxWeight, int directed)
         {
             var structure = new GraphStructure();
@@ -174,6 +223,17 @@ namespace AlgoVis.Core.Core.GenerateState
             return structure;
         }
 
+        /// <summary>
+        /// Генерирует случайный граф.
+        /// </summary>
+        /// <param name="nodeCount">Количество узлов.</param>
+        /// <param name="minWeight">Минимальный вес ребра.</param>
+        /// <param name="maxWeight">Максимальный вес ребра.</param>
+        /// <param name="directed">Флаг ориентированного графа (0 - неориентированный, 1 - ориентированный).</param>
+        /// <returns>Случайный граф.</returns>
+        /// <remarks>
+        /// Использует алгоритм предотвращения коллизий и принудительное размещение для улучшения визуализации.
+        /// </remarks>
         private GraphStructure GenerateRandomGraph(int nodeCount, int minWeight, int maxWeight, int directed)
         {
             var structure = new GraphStructure();
@@ -226,6 +286,13 @@ namespace AlgoVis.Core.Core.GenerateState
             return structure;
         }
 
+        /// <summary>
+        /// Проверяет, есть ли коллизия нового узла с существующими узлами.
+        /// </summary>
+        /// <param name="newNode">Новый узел.</param>
+        /// <param name="existingNodes">Существующие узлы.</param>
+        /// <param name="minDistance">Минимальное допустимое расстояние между узлами.</param>
+        /// <returns>true, если есть коллизия; иначе false.</returns>
         private bool HasCollision(GraphNode newNode, List<GraphNode> existingNodes, double minDistance)
         {
             return existingNodes.Any(existing =>
@@ -236,6 +303,12 @@ namespace AlgoVis.Core.Core.GenerateState
             });
         }
 
+        /// <summary>
+        /// Применяет алгоритм принудительного размещения для улучшения позиционирования узлов.
+        /// </summary>
+        /// <param name="nodes">Список узлов.</param>
+        /// <param name="iterations">Количество итераций алгоритма.</param>
+        /// <param name="repulsionForce">Сила отталкивания между узлами.</param>
         private void ApplyForceDirectedLayout(List<GraphNode> nodes, int iterations, double repulsionForce)
         {
             const int padding = 60;
@@ -295,6 +368,10 @@ namespace AlgoVis.Core.Core.GenerateState
             }
         }
 
+        /// <summary>
+        /// Создает минимальное остовное дерево для обеспечения связности графа.
+        /// </summary>
+        /// <param name="structure">Структура графа.</param>
         private void CreateMinimumSpanningTree(GraphStructure structure)
         {
             var nodeCount = structure.Nodes.Count;
@@ -346,6 +423,14 @@ namespace AlgoVis.Core.Core.GenerateState
             }
         }
 
+        /// <summary>
+        /// Добавляет короткие ребра к графу для увеличения плотности.
+        /// </summary>
+        /// <param name="structure">Структура графа.</param>
+        /// <param name="minWeight">Минимальный вес ребра.</param>
+        /// <param name="maxWeight">Максимальный вес ребра.</param>
+        /// <param name="maxDistance">Максимальное расстояние для добавления ребра.</param>
+        /// <param name="directed">Флаг ориентированного графа.</param>
         private void AddShortEdges(GraphStructure structure, int minWeight, int maxWeight, double maxDistance, int directed)
         {
             var nodeCount = structure.Nodes.Count;
@@ -408,6 +493,10 @@ namespace AlgoVis.Core.Core.GenerateState
             }
         }
 
+        /// <summary>
+        /// Получает параметры по умолчанию для генерации графа.
+        /// </summary>
+        /// <returns>Словарь параметров по умолчанию.</returns>
         public override Dictionary<string, object> GetDefaultParameters()
         {
             return new Dictionary<string, object>

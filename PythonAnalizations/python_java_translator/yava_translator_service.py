@@ -1,5 +1,9 @@
 ﻿# yava_translator_service.py
 
+"""
+Сервис для трансляции Python кода в формат ЯВА.
+"""
+
 import json
 import ast
 import sys
@@ -20,10 +24,21 @@ except ImportError as e:
     print("Убедитесь, что в папке IR есть файл __init__.py")
     raise
 
+
 class YAVATranslatorService:
     """
     Сервис для трансляции Python кода в формат ЯВА.
-    Обеспечивает удобный интерфейс для всего процесса трансляции.
+    
+    Обеспечивает удобный интерфейс для всего процесса трансляции:
+    Python → AST → IR → ЯВА JSON.
+    
+    Attributes:
+        default_program_name (str): Название алгоритма по умолчанию
+        default_description (str): Описание алгоритма по умолчанию
+        default_structure_type (str): Тип структуры данных по умолчанию
+        _ir_converter (ASTtoIR): Конвертер AST в IR
+        _translator (IRToYAVA): Транслятор IR в ЯВА
+        _last_result (Dict): Последний результат трансляции
     """
     
     def __init__(self, 
@@ -45,7 +60,7 @@ class YAVATranslatorService:
         self._ir_converter = ASTtoIR()
         self._translator = None
         self._last_result = None
-        
+    
     def translate_from_python(self,
                               python_code: str,
                               program_name: Optional[str] = None,
@@ -62,6 +77,9 @@ class YAVATranslatorService:
             
         Returns:
             Словарь с алгоритмом в формате ЯВА
+            
+        Raises:
+            ValueError: При ошибках в Python коде или трансляции
         """
         # Устанавливаем значения по умолчанию
         program_name = program_name or self.default_program_name
@@ -106,6 +124,9 @@ class YAVATranslatorService:
             
         Returns:
             Словарь с алгоритмом в формате ЯВА
+            
+        Raises:
+            ValueError: При ошибках трансляции
         """
         program_name = program_name or self.default_program_name
         description = description or self.default_description
@@ -137,6 +158,9 @@ class YAVATranslatorService:
             
         Returns:
             Путь к сохраненному файлу
+            
+        Raises:
+            ValueError: Если нет данных для сохранения
         """
         data = yava_data or self._last_result
         if data is None:
@@ -158,6 +182,9 @@ class YAVATranslatorService:
             
         Returns:
             Данные алгоритма в формате ЯВА
+            
+        Raises:
+            FileNotFoundError: Если файл не найден
         """
         filepath = Path(filepath)
         
@@ -260,6 +287,9 @@ class YAVATranslatorService:
             
         Returns:
             Алгоритм в формате ЯВА
+            
+        Raises:
+            ValueError: Если указан неизвестный тип алгоритма
         """
         examples = {
             "bubble_sort": """
@@ -328,7 +358,7 @@ for i in range(1, len(arr)):
             include_html: Включать ли HTML обертку
             
         Returns:
-            HTML код с алгоритмом
+            HTML код с алгоритмом или JSON строку
         """
         data = yava_data or self._last_result
         if data is None:
@@ -440,11 +470,14 @@ for i in range(1, len(arr)):
 class YAVATranslatorCLI:
     """
     Командный интерфейс для сервиса трансляции.
+    
+    Attributes:
+        service (YAVATranslatorService): Сервис трансляции
     """
     
     def __init__(self):
         self.service = YAVATranslatorService()
-        
+    
     def run(self):
         """
         Запуск интерактивного режима.
@@ -485,7 +518,7 @@ class YAVATranslatorCLI:
                 print("Неизвестная команда. Попробуйте снова.")
     
     def _translate_from_input(self):
-        """Трансляция из введенного Python кода"""
+        """Трансляция из введенного Python кода."""
         print("\nВведите Python код (введите 'END' на новой строке для завершения):")
         
         lines = []
@@ -516,7 +549,7 @@ class YAVATranslatorCLI:
             print(f"\n❌ Ошибка: {e}")
     
     def _load_from_file(self):
-        """Загрузка Python кода из файла"""
+        """Загрузка Python кода из файла."""
         filename = input("Введите путь к файлу Python: ").strip()
         
         try:
@@ -530,7 +563,7 @@ class YAVATranslatorCLI:
             print(f"\n❌ Ошибка: {e}")
     
     def _create_example(self):
-        """Создание примера алгоритма"""
+        """Создание примера алгоритма."""
         print("Доступные примеры:")
         examples = ["bubble_sort", "linear_search", "factorial", "sum_array", "find_max"]
         for i, example in enumerate(examples, 1):
@@ -550,7 +583,7 @@ class YAVATranslatorCLI:
             print(f"\n❌ Ошибка: {e}")
     
     def _validate(self):
-        """Проверка валидности"""
+        """Проверка валидности."""
         if self.service._last_result is None:
             print("Сначала выполните трансляцию.")
             return
@@ -565,7 +598,7 @@ class YAVATranslatorCLI:
                 print(f"   - {error}")
     
     def _show_stats(self):
-        """Показать статистику"""
+        """Показать статистику."""
         if self.service._last_result is None:
             print("Сначала выполните трансляцию.")
             return
@@ -585,7 +618,7 @@ class YAVATranslatorCLI:
                 print(f"     - {step_type}: {count}")
     
     def _export_html(self):
-        """Экспорт в HTML"""
+        """Экспорт в HTML."""
         if self.service._last_result is None:
             print("Сначала выполните трансляцию.")
             return
@@ -602,7 +635,7 @@ class YAVATranslatorCLI:
         print(f"✅ HTML файл сохранен: {filename}")
     
     def _save_to_file(self):
-        """Сохранение в JSON файл"""
+        """Сохранение в JSON файл."""
         if self.service._last_result is None:
             print("Сначала выполните трансляцию.")
             return
@@ -689,7 +722,6 @@ def create_batch_translator(source_dir: str,
 
 # Примеры использования
 if __name__ == "__main__":
-    # Пример 1: Быстрое использование
     # Пример 2: Запуск CLI
     cli = YAVATranslatorCLI()
     cli.run()

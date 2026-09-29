@@ -12,10 +12,23 @@ using System.Threading.Tasks;
 
 namespace AlgoVis.Core.Core
 {
+    /// <summary>
+    /// Универсальный конвертер структур данных в значения переменных и обратно.
+    /// </summary>
+    /// <remarks>
+    /// Этот класс делегирует конвертацию специализированным конвертерам для каждого типа структур данных.
+    /// Поддерживает регистрацию пользовательских конвертеров.
+    /// </remarks>
     public class UniversalStructureConverter : IStructureConverter
     {
         private readonly Dictionary<string, IStructureConverter> _converters;
 
+        /// <summary>
+        /// Инициализирует новый экземпляр класса <see cref="UniversalStructureConverter"/>.
+        /// </summary>
+        /// <remarks>
+        /// Регистрирует конвертеры для стандартных типов структур данных: array, binarytree, linkedlist, graph.
+        /// </remarks>
         public UniversalStructureConverter()
         {
             _converters = new Dictionary<string, IStructureConverter>
@@ -27,6 +40,14 @@ namespace AlgoVis.Core.Core
             };
         }
 
+        /// <summary>
+        /// Конвертирует структуру данных в значение переменной.
+        /// </summary>
+        /// <param name="structure">Структура данных для конвертации.</param>
+        /// <returns>Значение переменной, представляющее структуру.</returns>
+        /// <exception cref="NotSupportedException">
+        /// Выбрасывается, если тип структуры не поддерживается.
+        /// </exception>
         public IVariableValue ConvertToVariableValue(IDataStructure structure)
         {
             if (structure == null)
@@ -39,6 +60,18 @@ namespace AlgoVis.Core.Core
             throw new NotSupportedException($"Structure type '{type}' is not supported");
         }
 
+        /// <summary>
+        /// Конвертирует значение переменной в структуру данных.
+        /// </summary>
+        /// <param name="value">Значение переменной для конвертации.</param>
+        /// <param name="structureType">Тип структуры данных.</param>
+        /// <returns>Структура данных.</returns>
+        /// <exception cref="ArgumentNullException">
+        /// Выбрасывается, если значение равно null.
+        /// </exception>
+        /// <exception cref="NotSupportedException">
+        /// Выбрасывается, если тип структуры не поддерживается.
+        /// </exception>
         public IDataStructure ConvertFromVariableValue(IVariableValue value, string structureType)
         {
             if (value == null)
@@ -51,24 +84,62 @@ namespace AlgoVis.Core.Core
             throw new NotSupportedException($"Structure type '{type}' is not supported");
         }
 
+        /// <summary>
+        /// Проверяет, поддерживает ли конвертер указанный тип структуры.
+        /// </summary>
+        /// <param name="structureType">Тип структуры данных.</param>
+        /// <returns>true, если тип поддерживается; иначе false.</returns>
         public bool CanConvert(string structureType)
         {
             return _converters.ContainsKey(structureType.ToLower());
         }
 
+        /// <summary>
+        /// Регистрирует новый конвертер для указанного типа структуры.
+        /// </summary>
+        /// <param name="structureType">Тип структуры данных.</param>
+        /// <param name="converter">Конвертер для регистрации.</param>
         public void RegisterConverter(string structureType, IStructureConverter converter)
         {
             _converters[structureType.ToLower()] = converter;
         }
     }
 
-    // Базовый класс для конвертеров
+    /// <summary>
+    /// Базовый абстрактный класс для конвертеров структур данных.
+    /// </summary>
+    /// <remarks>
+    /// Предоставляет базовую функциональность и абстрактные методы для конвертации структур данных.
+    /// </remarks>
     public abstract class BaseStructureConverter : IStructureConverter
     {
+        /// <summary>
+        /// Конвертирует структуру данных в значение переменной.
+        /// </summary>
+        /// <param name="structure">Структура данных для конвертации.</param>
+        /// <returns>Значение переменной.</returns>
         public abstract IVariableValue ConvertToVariableValue(IDataStructure structure);
+
+        /// <summary>
+        /// Конвертирует значение переменной в структуру данных.
+        /// </summary>
+        /// <param name="value">Значение переменной для конвертации.</param>
+        /// <param name="structureType">Тип структуры данных.</param>
+        /// <returns>Структура данных.</returns>
         public abstract IDataStructure ConvertFromVariableValue(IVariableValue value, string structureType);
+
+        /// <summary>
+        /// Проверяет, поддерживает ли конвертер указанный тип структуры.
+        /// </summary>
+        /// <param name="structureType">Тип структуры данных.</param>
+        /// <returns>true, если тип поддерживается; иначе false.</returns>
         public abstract bool CanConvert(string structureType);
 
+        /// <summary>
+        /// Конвертирует узел дерева в значение переменной.
+        /// </summary>
+        /// <param name="node">Узел дерева.</param>
+        /// <returns>Значение переменной, представляющее узел дерева.</returns>
         protected IVariableValue ConvertTreeNode(TreeNode node)
         {
             if (node == null)
@@ -91,6 +162,14 @@ namespace AlgoVis.Core.Core
             return new ObjectValue(properties);
         }
 
+        /// <summary>
+        /// Конвертирует значение переменной в узел дерева.
+        /// </summary>
+        /// <param name="value">Значение переменной.</param>
+        /// <returns>Узел дерева.</returns>
+        /// <exception cref="InvalidOperationException">
+        /// Выбрасывается, если формат значения некорректен.
+        /// </exception>
         protected TreeNode ConvertToTreeNode(IVariableValue value)
         {
             if (value is NullValue)
@@ -116,9 +195,19 @@ namespace AlgoVis.Core.Core
         }
     }
 
-    // Конвертер для массивов
+    /// <summary>
+    /// Конвертер для массивов.
+    /// </summary>
+    /// <remarks>
+    /// Поддерживает конвертацию массивов различных типов: int[], double[], string[], bool[], ArrayValue.
+    /// </remarks>
     public class ArrayStructureConverter : BaseStructureConverter
     {
+        /// <summary>
+        /// Конвертирует структуру массива в значение переменной.
+        /// </summary>
+        /// <param name="structure">Структура массива.</param>
+        /// <returns>Значение переменной, представляющее массив.</returns>
         public override IVariableValue ConvertToVariableValue(IDataStructure structure)
         {
             var state = structure.GetState();
@@ -136,6 +225,15 @@ namespace AlgoVis.Core.Core
             return new ObjectValue(properties);
         }
 
+        /// <summary>
+        /// Конвертирует значение переменной в структуру массива.
+        /// </summary>
+        /// <param name="value">Значение переменной.</param>
+        /// <param name="structureType">Тип структуры данных.</param>
+        /// <returns>Структура массива.</returns>
+        /// <exception cref="InvalidOperationException">
+        /// Выбрасывается, если формат значения некорректен.
+        /// </exception>
         public override IDataStructure ConvertFromVariableValue(IVariableValue value, string structureType)
         {
             if (value is ObjectValue obj && obj.GetProperty("values") is ArrayValue arrayValue)
@@ -147,11 +245,24 @@ namespace AlgoVis.Core.Core
             throw new InvalidOperationException("Invalid array structure format");
         }
 
+        /// <summary>
+        /// Проверяет, поддерживает ли конвертер указанный тип структуры.
+        /// </summary>
+        /// <param name="structureType">Тип структуры данных.</param>
+        /// <returns>true, если тип "array"; иначе false.</returns>
         public override bool CanConvert(string structureType)
         {
             return structureType.ToLower() == "array";
         }
 
+        /// <summary>
+        /// Конвертирует состояние массива в значение ArrayValue.
+        /// </summary>
+        /// <param name="state">Состояние массива.</param>
+        /// <returns>Значение ArrayValue.</returns>
+        /// <exception cref="NotSupportedException">
+        /// Выбрасывается, если тип состояния не поддерживается.
+        /// </exception>
         private ArrayValue ConvertToArrayValue(object state)
         {
             return state switch
@@ -166,6 +277,14 @@ namespace AlgoVis.Core.Core
             };
         }
 
+        /// <summary>
+        /// Конвертирует значение ArrayValue в состояние массива.
+        /// </summary>
+        /// <param name="arrayValue">Значение ArrayValue.</param>
+        /// <returns>Состояние массива (массив соответствующего типа).</returns>
+        /// <remarks>
+        /// Определяет тип массива на основе типа первого элемента.
+        /// </remarks>
         private object ConvertFromArrayValue(ArrayValue arrayValue)
         {
             // Определяем тип массива на основе содержимого
@@ -183,6 +302,11 @@ namespace AlgoVis.Core.Core
             };
         }
 
+        /// <summary>
+        /// Конвертирует JSON массив в значение ArrayValue.
+        /// </summary>
+        /// <param name="jsonArray">JSON элемент, представляющий массив.</param>
+        /// <returns>Значение ArrayValue.</returns>
         private ArrayValue ConvertJsonArray(JsonElement jsonArray)
         {
             var items = new List<IVariableValue>();
@@ -193,6 +317,11 @@ namespace AlgoVis.Core.Core
             return new ArrayValue(items);
         }
 
+        /// <summary>
+        /// Конвертирует JSON элемент в значение переменной.
+        /// </summary>
+        /// <param name="element">JSON элемент.</param>
+        /// <returns>Значение переменной.</returns>
         private IVariableValue ConvertJsonElement(JsonElement element)
         {
             return element.ValueKind switch
@@ -210,6 +339,11 @@ namespace AlgoVis.Core.Core
             };
         }
 
+        /// <summary>
+        /// Конвертирует JSON объект в значение ObjectValue.
+        /// </summary>
+        /// <param name="jsonObject">JSON элемент, представляющий объект.</param>
+        /// <returns>Значение ObjectValue.</returns>
         private ObjectValue ConvertJsonObject(JsonElement jsonObject)
         {
             var properties = new Dictionary<string, IVariableValue>();
@@ -221,9 +355,19 @@ namespace AlgoVis.Core.Core
         }
     }
 
-    // Конвертер для бинарных деревьев
+    /// <summary>
+    /// Конвертер для бинарных деревьев.
+    /// </summary>
     public class BinaryTreeStructureConverter : BaseStructureConverter
     {
+        /// <summary>
+        /// Конвертирует структуру бинарного дерева в значение переменной.
+        /// </summary>
+        /// <param name="structure">Структура бинарного дерева.</param>
+        /// <returns>Значение переменной, представляющее дерево.</returns>
+        /// <exception cref="InvalidOperationException">
+        /// Выбрасывается, если состояние структуры некорректно.
+        /// </exception>
         public override IVariableValue ConvertToVariableValue(IDataStructure structure)
         {
             var state = structure.GetState();
@@ -245,6 +389,15 @@ namespace AlgoVis.Core.Core
             throw new InvalidOperationException("Invalid binary tree state");
         }
 
+        /// <summary>
+        /// Конвертирует значение переменной в структуру бинарного дерева.
+        /// </summary>
+        /// <param name="value">Значение переменной.</param>
+        /// <param name="structureType">Тип структуры данных.</param>
+        /// <returns>Структура бинарного дерева.</returns>
+        /// <exception cref="InvalidOperationException">
+        /// Выбрасывается, если формат значения некорректен.
+        /// </exception>
         public override IDataStructure ConvertFromVariableValue(IVariableValue value, string structureType)
         {
             if (value is ObjectValue obj)
@@ -256,17 +409,32 @@ namespace AlgoVis.Core.Core
             throw new InvalidOperationException("Invalid binary tree format");
         }
 
+        /// <summary>
+        /// Проверяет, поддерживает ли конвертер указанный тип структуры.
+        /// </summary>
+        /// <param name="structureType">Тип структуры данных.</param>
+        /// <returns>true, если тип "binarytree"; иначе false.</returns>
         public override bool CanConvert(string structureType)
         {
             return structureType.ToLower() == "binarytree";
         }
 
+        /// <summary>
+        /// Вычисляет высоту дерева.
+        /// </summary>
+        /// <param name="node">Корень дерева.</param>
+        /// <returns>Высота дерева.</returns>
         private int CalculateTreeHeight(TreeNode node)
         {
             if (node == null) return 0;
             return 1 + Math.Max(CalculateTreeHeight(node.Left), CalculateTreeHeight(node.Right));
         }
 
+        /// <summary>
+        /// Подсчитывает количество узлов в дереве.
+        /// </summary>
+        /// <param name="node">Корень дерева.</param>
+        /// <returns>Количество узлов.</returns>
         private int CountTreeNodes(TreeNode node)
         {
             if (node == null) return 0;
@@ -274,9 +442,19 @@ namespace AlgoVis.Core.Core
         }
     }
 
-    // Конвертер для связных списков
+    /// <summary>
+    /// Конвертер для связных списков.
+    /// </summary>
     public class LinkedListStructureConverter : BaseStructureConverter
     {
+        /// <summary>
+        /// Конвертирует структуру связного списка в значение переменной.
+        /// </summary>
+        /// <param name="structure">Структура связного списка.</param>
+        /// <returns>Значение переменной, представляющее список.</returns>
+        /// <exception cref="InvalidOperationException">
+        /// Выбрасывается, если состояние структуры некорректно.
+        /// </exception>
         public override IVariableValue ConvertToVariableValue(IDataStructure structure)
         {
             var state = structure.GetState();
@@ -300,6 +478,15 @@ namespace AlgoVis.Core.Core
             throw new InvalidOperationException("Invalid linked list state");
         }
 
+        /// <summary>
+        /// Конвертирует значение переменной в структуру связного списка.
+        /// </summary>
+        /// <param name="value">Значение переменной.</param>
+        /// <param name="structureType">Тип структуры данных.</param>
+        /// <returns>Структура связного списка.</returns>
+        /// <exception cref="InvalidOperationException">
+        /// Выбрасывается, если формат значения некорректен.
+        /// </exception>
         public override IDataStructure ConvertFromVariableValue(IVariableValue value, string structureType)
         {
             if (value is ObjectValue obj && obj.GetProperty("values") is ArrayValue arrayValue)
@@ -311,11 +498,21 @@ namespace AlgoVis.Core.Core
             throw new InvalidOperationException("Invalid linked list format");
         }
 
+        /// <summary>
+        /// Проверяет, поддерживает ли конвертер указанный тип структуры.
+        /// </summary>
+        /// <param name="structureType">Тип структуры данных.</param>
+        /// <returns>true, если тип "linkedlist"; иначе false.</returns>
         public override bool CanConvert(string structureType)
         {
             return structureType.ToLower() == "linkedlist";
         }
 
+        /// <summary>
+        /// Конвертирует связный список в массив значений.
+        /// </summary>
+        /// <param name="head">Голова списка.</param>
+        /// <returns>Массив значений.</returns>
         private ArrayValue ConvertLinkedListToArray(ListNode head)
         {
             var values = new List<int>();
@@ -328,6 +525,11 @@ namespace AlgoVis.Core.Core
             return ArrayValue.CreateIntArray(values.ToArray());
         }
 
+        /// <summary>
+        /// Конвертирует массив значений в связный список.
+        /// </summary>
+        /// <param name="arrayValue">Массив значений.</param>
+        /// <returns>Голова списка.</returns>
         private ListNode ConvertArrayToLinkedList(ArrayValue arrayValue)
         {
             if (arrayValue.Length == 0)
@@ -355,9 +557,19 @@ namespace AlgoVis.Core.Core
         }
     }
 
-    // Конвертер для графов
+    /// <summary>
+    /// Конвертер для графов.
+    /// </summary>
+    /// <remarks>
+    /// Базовая реализация, требует доработки для полной поддержки графов.
+    /// </remarks>
     public class GraphStructureConverter : BaseStructureConverter
     {
+        /// <summary>
+        /// Конвертирует структуру графа в значение переменной.
+        /// </summary>
+        /// <param name="structure">Структура графа.</param>
+        /// <returns>Базовое значение переменной для графа.</returns>
         public override IVariableValue ConvertToVariableValue(IDataStructure structure)
         {
             // Реализация для графов
@@ -370,12 +582,23 @@ namespace AlgoVis.Core.Core
             return new ObjectValue(properties);
         }
 
+        /// <summary>
+        /// Конвертирует значение переменной в структуру графа.
+        /// </summary>
+        /// <param name="value">Значение переменной.</param>
+        /// <param name="structureType">Тип структуры данных.</param>
+        /// <returns>Базовая структура графа.</returns>
         public override IDataStructure ConvertFromVariableValue(IVariableValue value, string structureType)
         {
             // Реализация для графов
             return StructureFactory.CreateStructure(structureType, null);
         }
 
+        /// <summary>
+        /// Проверяет, поддерживает ли конвертер указанный тип структуры.
+        /// </summary>
+        /// <param name="structureType">Тип структуры данных.</param>
+        /// <returns>true, если тип "graph"; иначе false.</returns>
         public override bool CanConvert(string structureType)
         {
             return structureType.ToLower() == "graph";

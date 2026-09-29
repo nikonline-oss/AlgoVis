@@ -18,21 +18,53 @@ using System.Threading.Tasks;
 
 namespace AlgoVis.Models.Models.DataStructures
 {
+    /// <summary>
+    /// Представляет контекст выполнения алгоритма для визуализации.
+    /// Содержит все необходимые данные и состояния для работы алгоритма.
+    /// </summary>
     public class ExecutionContext
     {
+        /// <summary>Запрос на выполнение пользовательского алгоритма</summary>
         public CustomAlgorithmRequest Request { get; set; }
+
+        /// <summary>Текущая структура данных</summary>
         public IDataStructure Structure { get; set; }
+
+        /// <summary>Статистика выполнения алгоритма</summary>
         public AlgorithmStatistics Statistics { get; set; }
+
+        /// <summary>Список шагов визуализации</summary>
         public List<VisualizationStep> VisualizationSteps { get; set; }
+
+        /// <summary>Область видимости переменных</summary>
         public IVariableScope Variables { get; set; }
+
+        /// <summary>Стек вызовов функций</summary>
         public FunctionStack FunctionStack { get; set; }
+
+        /// <summary>История выполнения шагов</summary>
         public StepExecutionHistory StepHistory { get; set; }
+
+        /// <summary>Парсер выражений</summary>
         public IParser ExpressionParser { get; set; }
+
+        /// <summary>Исполнитель операций</summary>
         public IOperationExecutor OperationExecutor { get; set; }
 
-
+        /// <summary>
+        /// Добавляет шаг визуализации на основе выполненного шага алгоритма.
+        /// </summary>
+        /// <param name="step">Шаг алгоритма, для которого создается визуализация.</param>
+        /// <param name="operation">Тип операции, выполненной на этом шаге.</param>
+        /// <param name="description">Описание шага для отображения в визуализации.</param>
+        /// <param name="highlights">Список подсвечиваемых элементов (опционально).</param>
+        /// <param name="metadata">Метаданные шага (опционально).</param>
+        /// <remarks>
+        /// Метод проверяет флаг step.visualize перед созданием шага визуализации.
+        /// Если параметр highlights не указан, создается пустой список.
+        /// </remarks>
         public void AddVisualizationStep(AlgorithmStep step, string operation, string description,
-    List<HighlightedElement> highlights = null, Dictionary<string, object> metadata = null)
+            List<HighlightedElement> highlights = null, Dictionary<string, object> metadata = null)
         {
             // Проверяем, нужно ли визуализировать этот шаг
             if (!step.visualize)
@@ -78,15 +110,20 @@ namespace AlgoVis.Models.Models.DataStructures
             Statistics.Steps++;
         }
 
-
         /// <summary>
-        /// Символ, обозначающий что значение является выражением
+        /// Символ, обозначающий что значение является выражением (=)
         /// </summary>
         private const string ExpressionPrefix = "=";
 
         /// <summary>
-        /// Обрабатывает метаданные, парся выражения помеченные специальным символом
+        /// Обрабатывает метаданные, парся выражения помеченные специальным символом.
         /// </summary>
+        /// <param name="metadata">Исходные метаданные.</param>
+        /// <returns>Обработанные метаданные с вычисленными выражениями.</returns>
+        /// <remarks>
+        /// Если значение строки начинается с '=', метод пытается вычислить это выражение.
+        /// В случае ошибки возвращается оригинальное значение.
+        /// </remarks>
         private Dictionary<string, object> ProcessMetadata(Dictionary<string, object> metadata)
         {
             var processedMetadata = new Dictionary<string, object>();
@@ -121,8 +158,10 @@ namespace AlgoVis.Models.Models.DataStructures
         }
 
         /// <summary>
-        /// Проверяет, помечена ли строка как выражение
+        /// Проверяет, помечена ли строка как выражение.
         /// </summary>
+        /// <param name="value">Проверяемая строка.</param>
+        /// <returns>true, если строка начинается с символа '=', иначе false.</returns>
         private bool IsMarkedAsExpression(string value)
         {
             return !string.IsNullOrWhiteSpace(value) &&
@@ -130,16 +169,23 @@ namespace AlgoVis.Models.Models.DataStructures
         }
 
         /// <summary>
-        /// Извлекает выражение из строки (убирает символ выражения)
+        /// Извлекает выражение из строки (убирает символ выражения).
         /// </summary>
+        /// <param name="markedValue">Строка с символом выражения в начале.</param>
+        /// <returns>Выражение без символа '=' в начале.</returns>
         private string ExtractExpression(string markedValue)
         {
             return markedValue.Trim().Substring(ExpressionPrefix.Length).Trim();
         }
 
         /// <summary>
-        /// Пытается распарсить и вычислить выражение
+        /// Пытается распарсить и вычислить выражение.
         /// </summary>
+        /// <param name="expression">Выражение для вычисления.</param>
+        /// <returns>Результат вычисления выражения или оригинальное выражение с символом '=' в случае ошибки.</returns>
+        /// <remarks>
+        /// Если парсер или исполнитель операций не инициализированы, возвращает выражение с символом '='.
+        /// </remarks>
         private object TryParseExpression(string expression)
         {
             if (ExpressionParser == null || OperationExecutor == null)
@@ -164,6 +210,5 @@ namespace AlgoVis.Models.Models.DataStructures
                 return $"{ExpressionPrefix}{expression}";
             }
         }
-
     }
 }

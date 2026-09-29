@@ -6,47 +6,39 @@ using System.Threading.Tasks;
 
 namespace AlgoVis.Models.Models.Visualization
 {
-    // Sorting algorithms
+    /// <summary>
+    /// Представляет шаг визуализации алгоритма сортировки.
+    /// Наследует базовый класс <see cref="VisualizationStepBase"/>.
+    /// </summary>
     public class SortingStep : VisualizationStepBase
     {
+        /// <summary>
+        /// Текущее состояние массива на данном шаге сортировки.
+        /// </summary>
         public int[] array { get; set; } = Array.Empty<int>();
+
+        /// <summary>
+        /// Индексы элементов, которые в данный момент сравниваются.
+        /// Может быть null, если на этом шаге сравнения не происходит.
+        /// </summary>
         public int[]? comparing { get; set; }
+
+        /// <summary>
+        /// Индексы элементов, которые в данный момент меняются местами.
+        /// Может быть null, если на этом шаге обмена не происходит.
+        /// </summary>
         public int[]? swapping { get; set; }
+
+        /// <summary>
+        /// Индексы элементов, которые уже находятся на своих окончательных позициях.
+        /// Может быть null, если на этом шаге нет отсортированных элементов.
+        /// </summary>
         public int[]? sorted { get; set; }
+
+        /// <summary>
+        /// Индекс опорного элемента (пивота) для алгоритмов быстрой сортировки.
+        /// Может быть null, если алгоритм не использует опорный элемент.
+        /// </summary>
         public int? pivotIndex { get; set; }
-    }
-
-    // Searching algorithms
-    public class SearchingStep : VisualizationStepBase
-    {
-        public int[] array { get; set; } = Array.Empty<int>();
-        public int? currentIndex { get; set; }
-        public int? targetIndex { get; set; }
-        public int? leftBound { get; set; }
-        public int? rightBound { get; set; }
-        public int? midIndex { get; set; }
-    }
-
-    // Graph algorithms
-    public class GraphStep : VisualizationStepBase
-    {
-        public int[][] Graph { get; set; } = Array.Empty<int[]>();
-        public int? CurrentNode { get; set; }
-        public int[]? VisitedNodes { get; set; }
-        public int[]? Path { get; set; }
-        public int? FromNode { get; set; }
-        public int? ToNode { get; set; }
-    }
-
-    // Pathfinding algorithms
-    public class PathfindingStep : VisualizationStepBase
-    {
-        public int[][] Grid { get; set; } = Array.Empty<int[]>();
-        public int[]? CurrentPosition { get; set; }
-        public int[]? StartPosition { get; set; }
-        public int[]? EndPosition { get; set; }
-        public int[][]? OpenSet { get; set; }
-        public int[][]? ClosedSet { get; set; }
-        public int[][]? Path { get; set; }
     }
 }

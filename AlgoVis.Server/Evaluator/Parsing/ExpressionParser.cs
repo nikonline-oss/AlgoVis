@@ -9,20 +9,41 @@ using System.Threading.Tasks;
 
 namespace AlgoVis.Evaluator.Evaluator.Parsing
 {
+    /// <summary>
+    /// Интерфейс парсера для разбора математических выражений.
+    /// </summary>
     public interface IParser
     {
+        /// <summary>
+        /// Разбирает строковое выражение в AST (Abstract Syntax Tree).
+        /// </summary>
+        /// <param name="expression">Строковое представление выражения для разбора.</param>
+        /// <returns>Корневой узел AST представления выражения.</returns>
         IExpressionNode Parse(string expression);
     }
 
+    /// <summary>
+    /// Парсер математических выражений с поддержкой операторов, функций, переменных и доступа к членам.
+    /// </summary>
     public class ExpressionParser : IParser
     {
         private readonly ITokenizer _tokenizer;
 
+        /// <summary>
+        /// Инициализирует новый экземпляр парсера выражений.
+        /// </summary>
+        /// <param name="tokenizer">Токенизатор для разбиения выражения на токены. Если не указан, используется ExpressionTokenizer по умолчанию.</param>
         public ExpressionParser(ITokenizer tokenizer = null)
         {
             _tokenizer = tokenizer ?? new ExpressionTokenizer();
         }
 
+        /// <summary>
+        /// Разбирает строковое выражение в AST.
+        /// </summary>
+        /// <param name="expression">Строковое выражение для разбора.</param>
+        /// <returns>Корневой узел AST представления выражения.</returns>
+        /// <exception cref="ParseException">Выбрасывается при ошибке разбора выражения.</exception>
         public IExpressionNode Parse(string expression)
         {
             if (string.IsNullOrWhiteSpace(expression))
@@ -43,18 +64,29 @@ namespace AlgoVis.Evaluator.Evaluator.Parsing
             }
         }
 
-        // Внутренний класс для инкапсуляции логики парсинга
+        /// <summary>
+        /// Внутренний класс для инкапсуляции логики разбора выражения по алгоритму операторного предшествования.
+        /// </summary>
         private class ParserCore
         {
             private readonly IReadOnlyList<Token> _tokens;
             private int _position;
 
+            /// <summary>
+            /// Инициализирует новый экземпляр парсера с заданным списком токенов.
+            /// </summary>
+            /// <param name="tokens">Список токенов для разбора.</param>
             public ParserCore(IReadOnlyList<Token> tokens)
             {
                 _tokens = tokens;
                 _position = 0;
             }
 
+            /// <summary>
+            /// Основной метод разбора выражения из списка токенов.
+            /// </summary>
+            /// <returns>Корневой узел AST представления выражения.</returns>
+            /// <exception cref="ParseException">Выбрасывается при наличии лишних токенов в конце выражения.</exception>
             public IExpressionNode Parse()
             {
                 if (_tokens.Count == 0)
@@ -68,6 +100,11 @@ namespace AlgoVis.Evaluator.Evaluator.Parsing
                 return expression;
             }
 
+            /// <summary>
+            /// Разбирает выражение с учетом приоритетов операторов (алгоритм операторного предшествования).
+            /// </summary>
+            /// <param name="precedence">Минимальный приоритет оператора для разбора.</param>
+            /// <returns>Узел AST, представляющий выражение.</returns>
             private IExpressionNode ParseExpression(int precedence = 0)
             {
                 var left = ParsePrimary();
@@ -92,6 +129,11 @@ namespace AlgoVis.Evaluator.Evaluator.Parsing
                 return left;
             }
 
+            /// <summary>
+            /// Разбирает первичные выражения (числа, строки, переменные, функции, скобки, унарные операторы).
+            /// </summary>
+            /// <returns>Узел AST, представляющий первичное выражение.</returns>
+            /// <exception cref="ParseException">Выбрасывается при неожиданном токене.</exception>
             private IExpressionNode ParsePrimary()
             {
                 var token = CurrentToken;
@@ -108,6 +150,10 @@ namespace AlgoVis.Evaluator.Evaluator.Parsing
                 };
             }
 
+            /// <summary>
+            /// Разбирает числовой литерал.
+            /// </summary>
+            /// <returns>Узел константы с целым или вещественным значением.</returns>
             private IExpressionNode ParseNumber()
             {
                 var token = ExpectAndConsume(TokenType.Number);
@@ -119,12 +165,20 @@ namespace AlgoVis.Evaluator.Evaluator.Parsing
                     : new ConstantNode(new DoubleValue(value));
             }
 
+            /// <summary>
+            /// Разбирает строковый литерал.
+            /// </summary>
+            /// <returns>Узел константы со строковым значением.</returns>
             private IExpressionNode ParseString()
             {
                 var token = ExpectAndConsume(TokenType.String);
                 return new ConstantNode(new StringValue(token.Value));
             }
 
+            /// <summary>
+            /// Разбирает переменную с возможным доступом к членам (свойствам, методам, элементам массива).
+            /// </summary>
+            /// <returns>Узел переменной или доступа к члену.</returns>
             private IExpressionNode ParseVariable()
             {
                 var token = ExpectAndConsume(TokenType.Variable);
@@ -132,6 +186,11 @@ namespace AlgoVis.Evaluator.Evaluator.Parsing
                 return ParseMemberAccess(node);
             }
 
+            /// <summary>
+            /// Разбирает унарный оператор (унарный плюс, минус или логическое отрицание).
+            /// </summary>
+            /// <returns>Узел унарной операции.</returns>
+            /// <exception cref="ParseException">Выбрасывается при неизвестном унарном операторе.</exception>
             private IExpressionNode ParseUnaryOperator()
             {
                 var token = ExpectAndConsume(TokenType.Operator);
@@ -146,6 +205,11 @@ namespace AlgoVis.Evaluator.Evaluator.Parsing
                 };
             }
 
+            /// <summary>
+            /// Разбирает цепочку обращений к членам (свойствам, методам, элементам массива).
+            /// </summary>
+            /// <param name="leftNode">Целевой узел для доступа.</param>
+            /// <returns>Узел доступа к члену.</returns>
             private IExpressionNode ParseMemberAccess(IExpressionNode leftNode)
             {
                 IExpressionNode node = leftNode;
@@ -170,6 +234,11 @@ namespace AlgoVis.Evaluator.Evaluator.Parsing
                 return node;
             }
 
+            /// <summary>
+            /// Разбирает доступ к свойству или вызов метода.
+            /// </summary>
+            /// <param name="target">Целевой узел, к члену которого осуществляется доступ.</param>
+            /// <returns>Узел доступа к свойству или вызова метода.</returns>
             private IExpressionNode ParsePropertyAccess(IExpressionNode target)
             {
                 ExpectAndConsume(TokenType.Dot);
@@ -186,6 +255,11 @@ namespace AlgoVis.Evaluator.Evaluator.Parsing
                 return new MemberAccessNode(target, propertyToken.Value);
             }
 
+            /// <summary>
+            /// Разбирает доступ к элементу массива.
+            /// </summary>
+            /// <param name="target">Целевой узел массива.</param>
+            /// <returns>Узел доступа к элементу массива.</returns>
             private IExpressionNode ParseArrayAccess(IExpressionNode target)
             {
                 ExpectAndConsume(TokenType.LeftBracket);
@@ -197,6 +271,12 @@ namespace AlgoVis.Evaluator.Evaluator.Parsing
                 return new ArrayAccessNode(target, indexExpression);
             }
 
+            /// <summary>
+            /// Разбирает вызов метода.
+            /// </summary>
+            /// <param name="target">Целевой узел, метод которого вызывается.</param>
+            /// <param name="methodName">Имя вызываемого метода.</param>
+            /// <returns>Узел вызова метода.</returns>
             private IExpressionNode ParseMethodCall(IExpressionNode target, string methodName)
             {
                 ExpectAndConsume(TokenType.LeftParenthesis);
@@ -219,6 +299,10 @@ namespace AlgoVis.Evaluator.Evaluator.Parsing
                 return new MethodCallNode(target, methodName, arguments);
             }
 
+            /// <summary>
+            /// Разбирает вызов функции.
+            /// </summary>
+            /// <returns>Узел вызова функции.</returns>
             private IExpressionNode ParseFunctionCall()
             {
                 var functionToken = ExpectAndConsume(TokenType.Function);
@@ -242,6 +326,10 @@ namespace AlgoVis.Evaluator.Evaluator.Parsing
                 return new FunctionCallNode(functionToken.Value, arguments);
             }
 
+            /// <summary>
+            /// Разбирает выражение в скобках.
+            /// </summary>
+            /// <returns>Узел выражения в скобках.</returns>
             private IExpressionNode ParseParenthesizedExpression()
             {
                 ExpectAndConsume(TokenType.LeftParenthesis);
@@ -250,9 +338,18 @@ namespace AlgoVis.Evaluator.Evaluator.Parsing
                 return expression;
             }
 
+            /// <summary>
+            /// Получает текущий токен или токен конца выражения.
+            /// </summary>
             private Token CurrentToken =>
                 _position < _tokens.Count ? _tokens[_position] : Token.EndOfExpression;
 
+            /// <summary>
+            /// Проверяет, что текущий токен имеет ожидаемый тип.
+            /// </summary>
+            /// <param name="expectedType">Ожидаемый тип токена.</param>
+            /// <returns>Текущий токен.</returns>
+            /// <exception cref="ParseException">Выбрасывается при несоответствии типа токена.</exception>
             private Token Expect(TokenType expectedType)
             {
                 var current = CurrentToken;
@@ -262,6 +359,12 @@ namespace AlgoVis.Evaluator.Evaluator.Parsing
                 return current;
             }
 
+            /// <summary>
+            /// Проверяет тип текущего токена и перемещает позицию парсера вперед.
+            /// </summary>
+            /// <param name="expectedType">Ожидаемый тип токена.</param>
+            /// <returns>Текущий токен.</returns>
+            /// <exception cref="ParseException">Выбрасывается при несоответствии типа токена.</exception>
             private Token ExpectAndConsume(TokenType expectedType)
             {
                 var token = Expect(expectedType);
@@ -269,6 +372,12 @@ namespace AlgoVis.Evaluator.Evaluator.Parsing
                 return token;
             }
 
+            /// <summary>
+            /// Создает исключение ParseException для неожиданного токена.
+            /// </summary>
+            /// <param name="token">Неожиданный токен.</param>
+            /// <param name="expected">Ожидаемый тип токена (опционально).</param>
+            /// <returns>Исключение ParseException.</returns>
             private ParseException CreateUnexpectedTokenException(Token token, TokenType? expected = null)
             {
                 var message = expected.HasValue

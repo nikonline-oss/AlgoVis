@@ -7,7 +7,23 @@ from .ir_control import IRFor, IRBreak, IRContinue, IRIf, IRWhile
 
 
 class ASTtoIR(ast.NodeVisitor):
+    """
+    Преобразователь абстрактного синтаксического дерева (AST) в промежуточное представление (IR).
+    
+    Наследует от ast.NodeVisitor для обхода AST и трансляции Python кода
+    в промежуточное представление для дальнейшей конвертации в ЯВА формат.
+    
+    Attributes:
+        program (dict): Структура программы в IR формате
+        current_class (IRClass): Текущий обрабатываемый класс
+        current_method (IRMethod): Текущий обрабатываемый метод
+        _pending_assigns (list): Список отложенных присваиваний
+    """
+    
     def __init__(self):
+        """
+        Инициализирует преобразователь с пустой структурой программы.
+        """
         self.program = {
             "classes": {},
             "functions": {},
@@ -27,10 +43,17 @@ class ASTtoIR(ast.NodeVisitor):
 
     def visit_If(self, node: ast.If):
         """
-        if a > b:
-            ...
+        Обрабатывает условный оператор if.
+        
+        Преобразует AST узел if в IR представление, включая обработку сравнений
+        и формирование ветвей true/false.
+        
+        Args:
+            node (ast.If): Узел AST оператора if
+            
+        Raises:
+            NotImplementedError: Если используется неподдерживаемый оператор сравнения
         """
-
         # 1. Если условие — Compare, делаем IRCompare
         if isinstance(node.test, ast.Compare):
             left = ast.unparse(node.test.left)
@@ -74,6 +97,12 @@ class ASTtoIR(ast.NodeVisitor):
         self._emit(ir_if)
 
     def visit_ClassDef(self, node: ast.ClassDef):
+        """
+        Обрабатывает определение класса.
+        
+        Args:
+            node (ast.ClassDef): Узел AST определения класса
+        """
         ir_class = IRClass(node.name)
         self.program["classes"][node.name] = ir_class
 
@@ -83,6 +112,12 @@ class ASTtoIR(ast.NodeVisitor):
         self.current_class = None
 
     def visit_FunctionDef(self, node: ast.FunctionDef):
+        """
+        Обрабатывает определение функции/метода.
+        
+        Args:
+            node (ast.FunctionDef): Узел AST определения функции
+        """
         params = [arg.arg for arg in node.args.args]
 
         ir_method = IRMethod(node.name, params)
@@ -101,7 +136,12 @@ class ASTtoIR(ast.NodeVisitor):
         self.current_method = prev
 
     def visit_Assign(self, node: ast.Assign):
-
+        """
+        Обрабатывает оператор присваивания.
+        
+        Args:
+            node (ast.Assign): Узел AST оператора присваивания
+        """
         target = ast.unparse(node.targets[0])
         value = ast.unparse(node.value)
 
@@ -113,6 +153,12 @@ class ASTtoIR(ast.NodeVisitor):
         self._emit(stmt)
 
     def visit_Compare(self, node: ast.Compare):
+        """
+        Обрабатывает оператор сравнения.
+        
+        Args:
+            node (ast.Compare): Узел AST оператора сравнения
+        """
         left = ast.unparse(node.left)
         right = ast.unparse(node.comparators[0])
 
@@ -120,12 +166,27 @@ class ASTtoIR(ast.NodeVisitor):
         self._emit(stmt)
 
     def visit_Return(self, node: ast.Return):
+        """
+        Обрабатывает оператор return.
+        
+        Args:
+            node (ast.Return): Узел AST оператора return
+        """
         value = ast.unparse(node.value) if node.value else None
         self._emit(IRReturn(value))
 
     def visit_For(self, node: ast.For):
         """
-        for i in range(...)
+        Обрабатывает цикл for.
+        
+        Поддерживает только циклы вида for ... in range(...).
+        
+        Args:
+            node (ast.For): Узел AST цикла for
+            
+        Raises:
+            NotImplementedError: Если используется не range() итерируемый объект
+            ValueError: Если range() имеет неподдерживаемое количество аргументов
         """
         if not isinstance(node.iter, ast.Call):
             raise NotImplementedError("Поддерживается только for ... in range()")
@@ -171,12 +232,33 @@ class ASTtoIR(ast.NodeVisitor):
         self._emit(ir_for)
 
     def visit_Break(self, node: ast.Break):
+        """
+        Обрабатывает оператор break.
+        
+        Args:
+            node (ast.Break): Узел AST оператора break
+        """
         self._emit(IRBreak())
 
     def visit_Continue(self, node: ast.Continue):
+        """
+        Обрабатывает оператор continue.
+        
+        Args:
+            node (ast.Continue): Узел AST оператора continue
+        """
         self._emit(IRContinue())
 
     def _emit(self, stmt):
+        """
+        Добавляет оператор в текущий контекст выполнения.
+        
+        В зависимости от текущего контекста (метод, условие if, цикл),
+        добавляет оператор в соответствующее тело.
+        
+        Args:
+            stmt: Оператор IR для добавления
+        """
         if self.current_method:
             if hasattr(self.current_method, "body"):
                 self.current_method.body.append(stmt)

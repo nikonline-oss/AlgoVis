@@ -28,6 +28,13 @@ using ExecutionContext = AlgoVis.Models.Models.DataStructures.ExecutionContext;
 
 namespace AlgoVis.Core.Core
 {
+    /// <summary>
+    /// Интерпретатор пользовательских алгоритмов.
+    /// </summary>
+    /// <remarks>
+    /// Этот класс выполняет пользовательские алгоритмы, описанные в виде последовательности шагов.
+    /// Поддерживает переменные разных типов, выражения, условия и визуализацию выполнения.
+    /// </remarks>
     public class AlgorithmInterpreter : ICustomAlgorithmInterpreter
     {
         private readonly IOperationExecutor _operationExecutor;
@@ -37,6 +44,17 @@ namespace AlgoVis.Core.Core
         private readonly IStepExecutor _stepExecutor;
         private readonly UniversalStructureConverter _structureConverter;
 
+        /// <summary>
+        /// Инициализирует новый экземпляр класса <see cref="AlgorithmInterpreter"/>.
+        /// </summary>
+        /// <param name="operationExecutor">Исполнитель операций.</param>
+        /// <param name="expressionParser">Парсер выражений.</param>
+        /// <param name="variableManager">Менеджер переменных.</param>
+        /// <param name="functionManager">Менеджер функций.</param>
+        /// <param name="stepExecutor">Исполнитель шагов.</param>
+        /// <remarks>
+        /// Если параметры не переданы, используются реализации по умолчанию.
+        /// </remarks>
         public AlgorithmInterpreter(
             IOperationExecutor operationExecutor = null,
             IParser expressionParser = null,
@@ -52,6 +70,15 @@ namespace AlgoVis.Core.Core
             _structureConverter = new UniversalStructureConverter();
         }
 
+        /// <summary>
+        /// Выполняет пользовательский алгоритм.
+        /// </summary>
+        /// <param name="request">Запрос на выполнение алгоритма.</param>
+        /// <param name="structure">Структура данных для алгоритма.</param>
+        /// <returns>Результат выполнения алгоритма.</returns>
+        /// <exception cref="ArgumentNullException">
+        /// Выбрасывается, если запрос или структура данных равны null.
+        /// </exception>
         public CustomAlgorithmResult Execute(CustomAlgorithmRequest request, IDataStructure structure)
         {
             if (request == null)
@@ -90,6 +117,12 @@ namespace AlgoVis.Core.Core
             }
         }
 
+        /// <summary>
+        /// Создает контекст выполнения для алгоритма.
+        /// </summary>
+        /// <param name="request">Запрос на выполнение алгоритма.</param>
+        /// <param name="structure">Структура данных.</param>
+        /// <returns>Контекст выполнения.</returns>
         private ExecutionContext CreateExecutionContext(CustomAlgorithmRequest request, IDataStructure structure)
         {
             return new ExecutionContext
@@ -106,6 +139,16 @@ namespace AlgoVis.Core.Core
             };
         }
 
+        /// <summary>
+        /// Инициализирует выполнение алгоритма.
+        /// </summary>
+        /// <param name="context">Контекст выполнения.</param>
+        /// <exception cref="ArgumentException">
+        /// Выбрасывается, если имя переменной пустое.
+        /// </exception>
+        /// <remarks>
+        /// Инициализирует переменные, стандартные переменные и переменную структуры.
+        /// </remarks>
         private void InitializeExecution(ExecutionContext context)
         {
             InitializeStructureVariable(context);
@@ -133,6 +176,12 @@ namespace AlgoVis.Core.Core
             InitializeStandardVariables(context);
         }
 
+        /// <summary>
+        /// Инициализирует примитивную переменную.
+        /// </summary>
+        /// <param name="variableDef">Определение переменной.</param>
+        /// <param name="context">Контекст выполнения.</param>
+        /// <returns>Значение переменной.</returns>
         private IVariableValue InitializePrimitiveVariable(VariableDefinition variableDef, ExecutionContext context)
         {
             var initialValue = variableDef.initialValue?.ToString().ToLower() ?? "";
@@ -149,6 +198,15 @@ namespace AlgoVis.Core.Core
             };
         }
 
+        /// <summary>
+        /// Инициализирует переменную массива.
+        /// </summary>
+        /// <param name="variableDef">Определение переменной.</param>
+        /// <param name="context">Контекст выполнения.</param>
+        /// <returns>Значение массива.</returns>
+        /// <remarks>
+        /// Поддерживает инициализацию из JSON массива и простого массива через запятую.
+        /// </remarks>
         private IVariableValue InitializeArrayVariable(VariableDefinition variableDef, ExecutionContext context)
         {
             var initialValue = variableDef.initialValue?.ToString() ?? "";
@@ -173,6 +231,15 @@ namespace AlgoVis.Core.Core
             return ParseSimpleArray(initialValue);
         }
 
+        /// <summary>
+        /// Инициализирует переменную объекта.
+        /// </summary>
+        /// <param name="variableDef">Определение переменной.</param>
+        /// <param name="context">Контекст выполнения.</param>
+        /// <returns>Значение объекта.</returns>
+        /// <remarks>
+        /// Поддерживает инициализацию из JSON объекта.
+        /// </remarks>
         private IVariableValue InitializeObjectVariable(VariableDefinition variableDef, ExecutionContext context)
         {
             var initialValue = variableDef.initialValue?.ToString() ?? "";
@@ -182,7 +249,6 @@ namespace AlgoVis.Core.Core
 
             try
             {
-
                 // Пробуем парсить как JSON объект
                 if (IsJsonObject(initialValue))
                 {
@@ -211,6 +277,12 @@ namespace AlgoVis.Core.Core
         }
 
         // Вспомогательные методы для создания значений
+
+        /// <summary>
+        /// Создает целочисленное значение.
+        /// </summary>
+        /// <param name="value">Строковое представление числа.</param>
+        /// <returns>Целочисленное значение.</returns>
         private IVariableValue CreateIntValue(string value)
         {
             if (int.TryParse(value, out int result))
@@ -218,6 +290,11 @@ namespace AlgoVis.Core.Core
             return new IntValue(0);
         }
 
+        /// <summary>
+        /// Создает значение с плавающей запятой.
+        /// </summary>
+        /// <param name="value">Строковое представление числа.</param>
+        /// <returns>Значение с плавающей запятой.</returns>
         private IVariableValue CreateDoubleValue(string value)
         {
             if (double.TryParse(value, NumberStyles.Any, CultureInfo.InvariantCulture, out double result))
@@ -225,6 +302,14 @@ namespace AlgoVis.Core.Core
             return new DoubleValue(0);
         }
 
+        /// <summary>
+        /// Создает логическое значение.
+        /// </summary>
+        /// <param name="value">Строковое представление логического значения.</param>
+        /// <returns>Логическое значение.</returns>
+        /// <remarks>
+        /// Поддерживает различные форматы: "true"/"false", "1"/"0", "yes"/"no", "да"/"нет".
+        /// </remarks>
         private IVariableValue CreateBoolValue(string value)
         {
             if (bool.TryParse(value, out bool result))
@@ -235,6 +320,14 @@ namespace AlgoVis.Core.Core
             return new BoolValue(lowerValue == "true" || lowerValue == "1" || lowerValue == "yes" || lowerValue == "да");
         }
 
+        /// <summary>
+        /// Создает строковое значение.
+        /// </summary>
+        /// <param name="value">Строковое значение.</param>
+        /// <returns>Строковое значение.</returns>
+        /// <remarks>
+        /// Убирает обрамляющие кавычки, если они есть.
+        /// </remarks>
         private IVariableValue CreateStringValue(string value)
         {
             // Убираем кавычки если они есть
@@ -246,6 +339,11 @@ namespace AlgoVis.Core.Core
             return new StringValue(value);
         }
 
+        /// <summary>
+        /// Парсит простой массив из строки через запятую.
+        /// </summary>
+        /// <param name="value">Строковое представление массива.</param>
+        /// <returns>Массив значений.</returns>
         private IVariableValue ParseSimpleArray(string value)
         {
             var items = new List<IVariableValue>();
@@ -281,6 +379,11 @@ namespace AlgoVis.Core.Core
             return new ArrayValue(items);
         }
 
+        /// <summary>
+        /// Парсит JSON элемент в словарь значений переменных.
+        /// </summary>
+        /// <param name="element">JSON элемент для парсинга.</param>
+        /// <returns>Словарь значений переменных.</returns>
         private Dictionary<string, IVariableValue> ParseJsonElementToDictionary(JsonElement element)
         {
             var dict = new Dictionary<string, IVariableValue>();
@@ -294,6 +397,11 @@ namespace AlgoVis.Core.Core
             return dict;
         }
 
+        /// <summary>
+        /// Парсит JSON элемент в значение переменной.
+        /// </summary>
+        /// <param name="element">JSON элемент для парсинга.</param>
+        /// <returns>Значение переменной.</returns>
         private IVariableValue ParseJsonElementValue(JsonElement element)
         {
             return element.ValueKind switch
@@ -311,6 +419,11 @@ namespace AlgoVis.Core.Core
             };
         }
 
+        /// <summary>
+        /// Парсит JSON массив в массив значений переменных.
+        /// </summary>
+        /// <param name="element">JSON элемент, представляющий массив.</param>
+        /// <returns>Массив значений переменных.</returns>
         private IVariableValue ParseJsonArray(JsonElement element)
         {
             var array = new List<IVariableValue>();
@@ -321,6 +434,11 @@ namespace AlgoVis.Core.Core
             return new ArrayValue(array);
         }
 
+        /// <summary>
+        /// Проверяет, является ли строка JSON массивом.
+        /// </summary>
+        /// <param name="value">Строка для проверки.</param>
+        /// <returns>true, если строка является JSON массивом; иначе false.</returns>
         private bool IsJsonArray(string value)
         {
             if (string.IsNullOrWhiteSpace(value))
@@ -330,6 +448,11 @@ namespace AlgoVis.Core.Core
             return trimmed.StartsWith("[") && trimmed.EndsWith("]");
         }
 
+        /// <summary>
+        /// Проверяет, является ли строка JSON объектом.
+        /// </summary>
+        /// <param name="value">Строка для проверки.</param>
+        /// <returns>true, если строка является JSON объектом; иначе false.</returns>
         private bool IsJsonObject(string value)
         {
             if (string.IsNullOrWhiteSpace(value))
@@ -339,6 +462,13 @@ namespace AlgoVis.Core.Core
             return trimmed.StartsWith("{") && trimmed.EndsWith("}");
         }
 
+        /// <summary>
+        /// Инициализирует стандартные переменные.
+        /// </summary>
+        /// <param name="context">Контекст выполнения.</param>
+        /// <remarks>
+        /// Инициализирует переменные: temp, swapped, last_comparison, result.
+        /// </remarks>
         private void InitializeStandardVariables(ExecutionContext context)
         {
             var standardVars = new Dictionary<string, IVariableValue>
@@ -358,6 +488,10 @@ namespace AlgoVis.Core.Core
             }
         }
 
+        /// <summary>
+        /// Инициализирует переменную структуры данных.
+        /// </summary>
+        /// <param name="context">Контекст выполнения.</param>
         private void InitializeStructureVariable(ExecutionContext context)
         {
             try
@@ -380,7 +514,13 @@ namespace AlgoVis.Core.Core
             }
         }
 
-        // Остальные методы остаются без изменений
+        /// <summary>
+        /// Выполняет алгоритм.
+        /// </summary>
+        /// <param name="context">Контекст выполнения.</param>
+        /// <exception cref="InvalidOperationException">
+        /// Выбрасывается, если нет шагов для выполнения или не найдена точка входа.
+        /// </exception>
         private void ExecuteAlgorithm(ExecutionContext context)
         {
             if (context.Request.steps == null || !context.Request.steps.Any())
@@ -417,6 +557,12 @@ namespace AlgoVis.Core.Core
             _stepExecutor.Execute(entryPoint, context);
         }
 
+        /// <summary>
+        /// Вычисляет значение выражения.
+        /// </summary>
+        /// <param name="expression">Выражение для вычисления.</param>
+        /// <param name="context">Контекст выполнения.</param>
+        /// <returns>Результат вычисления выражения.</returns>
         private IVariableValue EvaluateExpression(string expression, ExecutionContext context)
         {
             try
@@ -431,6 +577,12 @@ namespace AlgoVis.Core.Core
             }
         }
 
+        /// <summary>
+        /// Вычисляет логическое условие.
+        /// </summary>
+        /// <param name="condition">Условие для вычисления.</param>
+        /// <param name="context">Контекст выполнения.</param>
+        /// <returns>Результат вычисления условия.</returns>
         private bool EvaluateCondition(string condition, ExecutionContext context)
         {
             try
@@ -445,8 +597,25 @@ namespace AlgoVis.Core.Core
             }
         }
 
+        /// <summary>
+        /// Вычисляет высоту дерева.
+        /// </summary>
+        /// <param name="node">Корень дерева.</param>
+        /// <returns>Высота дерева.</returns>
         private int CalculateTreeHeight(TreeNode node) => node == null ? 0 : 1 + Math.Max(CalculateTreeHeight(node.Left), CalculateTreeHeight(node.Right));
+
+        /// <summary>
+        /// Подсчитывает количество узлов в дереве.
+        /// </summary>
+        /// <param name="node">Корень дерева.</param>
+        /// <returns>Количество узлов.</returns>
         private int CountTreeNodes(TreeNode node) => node == null ? 0 : 1 + CountTreeNodes(node.Left) + CountTreeNodes(node.Right);
+
+        /// <summary>
+        /// Вычисляет длину связного списка.
+        /// </summary>
+        /// <param name="head">Голова списка.</param>
+        /// <returns>Длина списка.</returns>
         private int CalculateListLength(ListNode head)
         {
             int count = 0;
@@ -459,6 +628,12 @@ namespace AlgoVis.Core.Core
             return count;
         }
 
+        /// <summary>
+        /// Создает результат успешного выполнения алгоритма.
+        /// </summary>
+        /// <param name="context">Контекст выполнения.</param>
+        /// <param name="executionTime">Время выполнения.</param>
+        /// <returns>Результат выполнения алгоритма.</returns>
         private CustomAlgorithmResult CreateSuccessResult(ExecutionContext context, TimeSpan executionTime)
         {
             return new CustomAlgorithmResult
@@ -479,6 +654,11 @@ namespace AlgoVis.Core.Core
             };
         }
 
+        /// <summary>
+        /// Конвертирует переменные в словарь.
+        /// </summary>
+        /// <param name="variables">Область видимости переменных.</param>
+        /// <returns>Словарь переменных.</returns>
         private Dictionary<string, object> ConvertVariablesToDictionary(IVariableScope variables)
         {
             var result = new Dictionary<string, object>();
@@ -497,6 +677,11 @@ namespace AlgoVis.Core.Core
             return result;
         }
 
+        /// <summary>
+        /// Конвертирует значение переменной в объект.
+        /// </summary>
+        /// <param name="value">Значение переменной.</param>
+        /// <returns>Объект, представляющий значение переменной.</returns>
         private object ConvertVariableValue(object value)
         {
             if (value is IVariableValue variableValue)
@@ -516,6 +701,11 @@ namespace AlgoVis.Core.Core
             return value;
         }
 
+        /// <summary>
+        /// Конвертирует значение массива в список объектов.
+        /// </summary>
+        /// <param name="arrayValue">Значение массива.</param>
+        /// <returns>Список объектов.</returns>
         private List<object> ConvertArrayValue(ArrayValue arrayValue)
         {
             var result = new List<object>();
@@ -526,6 +716,11 @@ namespace AlgoVis.Core.Core
             return result;
         }
 
+        /// <summary>
+        /// Конвертирует значение объекта в словарь.
+        /// </summary>
+        /// <param name="objectValue">Значение объекта.</param>
+        /// <returns>Словарь свойств объекта.</returns>
         private Dictionary<string, object> ConvertObjectValue(ObjectValue objectValue)
         {
             var result = new Dictionary<string, object>();
@@ -542,6 +737,11 @@ namespace AlgoVis.Core.Core
             return result;
         }
 
+        /// <summary>
+        /// Создает выходные данные для результата алгоритма.
+        /// </summary>
+        /// <param name="context">Контекст выполнения.</param>
+        /// <returns>Словарь выходных данных.</returns>
         private Dictionary<string, object> CreateOutputData(ExecutionContext context)
         {
             return new Dictionary<string, object>
@@ -555,6 +755,13 @@ namespace AlgoVis.Core.Core
             };
         }
 
+        /// <summary>
+        /// Создает результат с ошибкой выполнения.
+        /// </summary>
+        /// <param name="ex">Исключение, вызвавшее ошибку.</param>
+        /// <param name="executionTime">Время выполнения.</param>
+        /// <param name="context">Контекст выполнения.</param>
+        /// <returns>Результат с ошибкой.</returns>
         private CustomAlgorithmResult CreateErrorResult(Exception ex, TimeSpan executionTime, ExecutionContext context)
         {
             return new CustomAlgorithmResult
@@ -571,6 +778,13 @@ namespace AlgoVis.Core.Core
             };
         }
 
+        /// <summary>
+        /// Создает результат с критической ошибкой.
+        /// </summary>
+        /// <param name="ex">Исключение, вызвавшее ошибку.</param>
+        /// <param name="executionTime">Время выполнения.</param>
+        /// <param name="request">Запрос на выполнение алгоритма.</param>
+        /// <returns>Результат с критической ошибкой.</returns>
         private CustomAlgorithmResult CreateCriticalErrorResult(Exception ex, TimeSpan executionTime, CustomAlgorithmRequest request)
         {
             return new CustomAlgorithmResult

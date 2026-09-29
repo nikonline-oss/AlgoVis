@@ -7,20 +7,30 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 
-// For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
 namespace AlgoVis.Server.Controllers
 {
+    /// <summary>
+    /// Контроллер для анализа и выполнения алгоритмов.
+    /// </summary>
+    /// <remarks>
+    /// Этот контроллер предоставляет endpoint для отправки кода алгоритма,
+    /// его трансляции в формат, понятный системе, и выполнения на сгенерированных данных.
+    /// </remarks>
     [Route("api/[controller]")]
     [ApiController]
     public class Analyze : ControllerBase
     {
         private readonly GigaChatService _service;
-
         private readonly RandomStructureFactory _factory;
-
         private readonly AlgorithmManager _algorithmManager;
 
+        /// <summary>
+        /// Конструктор контроллера Analyze.
+        /// </summary>
+        /// <remarks>
+        /// Инициализирует экземпляры AlgorithmManager, RandomStructureFactory и GigaChatService.
+        /// </remarks>
         public Analyze()
         {
             _algorithmManager = new AlgorithmManager();
@@ -28,21 +38,20 @@ namespace AlgoVis.Server.Controllers
             _service = new GigaChatService();
         }
 
-        // GET: api/<Analize>
-        [HttpGet]
-        public IEnumerable<string> Get()
-        {
-            return new string[] { "value1", "value2" };
-        }
-
-        // GET api/<Analize>/5
-        [HttpGet("{id}")]
-        public string Get(int id)
-        {
-            return "value";
-        }
-
-        // POST api/<Analyze>
+        /// <summary>
+        /// Обрабатывает запрос на анализ и выполнение алгоритма.
+        /// </summary>
+        /// <param name="request">Запрос, содержащий код алгоритма и параметры визуализации.</param>
+        /// <returns>Результат выполнения алгоритма или сообщение об ошибке.</returns>
+        /// <response code="200">Успешное выполнение алгоритма.</response>
+        /// <response code="400">Неверный запрос или ошибка при выполнении.</response>
+        /// <remarks>
+        /// Последовательность действий:
+        /// 1. Перевод Python кода в JSON представление алгоритма
+        /// 2. Десериализация в объект CustomAlgorithmRequest
+        /// 3. Генерация структуры данных для алгоритма
+        /// 4. Выполнение алгоритма на сгенерированной структуре
+        /// </remarks>
         [HttpPost]
         public async Task<IActionResult> Post([FromBody] AnalyzeRequest request)
         {
@@ -97,6 +106,15 @@ namespace AlgoVis.Server.Controllers
             }
         }
 
+        /// <summary>
+        /// Выполняет перевод Python кода в JSON представление алгоритма через внешний сервис.
+        /// </summary>
+        /// <param name="request">Запрос на анализ, содержащий исходный код.</param>
+        /// <returns>Результат трансляции, содержащий JSON алгоритма и информацию о валидации.</returns>
+        /// <remarks>
+        /// Отправляет POST запрос на локальный сервер перевода (localhost:5001/translate)
+        /// и обрабатывает ответ. В случае неудачи возвращает объект с Success = false.
+        /// </remarks>
         private async Task<TranslationResult> TranslatePythonCode(AnalyzeRequest request)
         {
             try
@@ -165,51 +183,96 @@ namespace AlgoVis.Server.Controllers
                 };
             }
         }
-
-
-        // PUT api/<Analize>/5
-        [HttpPut("{id}")]
-        public void Put(int id, [FromBody] string value)
-        {
-        }
-
-        // DELETE api/<Analize>/5
-        [HttpDelete("{id}")]
-        public void Delete(int id)
-        {
-        }
     }
 
-    public class AnallyzeRequest
-    {
-        public string code { get; set; } = string.Empty;
-        public string language { get; set; } = "python";
-    }
-
+    /// <summary>
+    /// Запрос на анализ алгоритма.
+    /// </summary>
     public class AnalyzeRequest
     {
+        /// <summary>
+        /// Исходный код алгоритма на Python для анализа.
+        /// </summary>
         public string Code { get; set; }
+
+        /// <summary>
+        /// Типы визуализации для генерации.
+        /// </summary>
+        /// <remarks>
+        /// По умолчанию: compare, swap, condition, assign, complete.
+        /// </remarks>
         public string[] VisualizeTypes { get; set; }
+
+        /// <summary>
+        /// Директория с модификаторами для трансляции.
+        /// </summary>
         public string ModsDir { get; set; }
+
+        /// <summary>
+        /// Флаг валидации кода.
+        /// </summary>
         public bool? Validate { get; set; }
+
+        /// <summary>
+        /// Флаг генерации визуализации.
+        /// </summary>
         public bool? GenerateVisualization { get; set; }
+
+        /// <summary>
+        /// Флаг включения статистики.
+        /// </summary>
         public bool? IncludeStatistics { get; set; }
     }
 
+    /// <summary>
+    /// Ответ от сервиса трансляции Python кода.
+    /// </summary>
     public class TranslationServiceResponse
     {
+        /// <summary>
+        /// Флаг успешности трансляции.
+        /// </summary>
         public bool success { get; set; }
+
+        /// <summary>
+        /// Результат трансляции в формате JSON.
+        /// </summary>
         public object yava { get; set; }
+
+        /// <summary>
+        /// Результат валидации кода.
+        /// </summary>
         public object validation { get; set; }
+
+        /// <summary>
+        /// Статистика выполнения алгоритма.
+        /// </summary>
         public object statistics { get; set; }
+
+        /// <summary>
+        /// Сообщение от сервиса трансляции.
+        /// </summary>
         public string message { get; set; }
     }
 
+    /// <summary>
+    /// Результат трансляции Python кода.
+    /// </summary>
     public class TranslationResult
     {
+        /// <summary>
+        /// Флаг успешности трансляции.
+        /// </summary>
         public bool Success { get; set; }
+
+        /// <summary>
+        /// JSON представление алгоритма.
+        /// </summary>
         public string JavaJson { get; set; }
+
+        /// <summary>
+        /// Результат валидации кода.
+        /// </summary>
         public object ValidationResult { get; set; }
     }
-
 }

@@ -11,9 +11,27 @@ using AlgoVis.Evaluator.Evaluator.Core;
 
 namespace AlgoVis.Models.Models.Operations.Handlers
 {
-    // Обработчик вызова функций
+    /// <summary>
+    /// Обработчик операций вызова функций.
+    /// </summary>
+    /// <remarks>
+    /// Управляет вызовами пользовательских функций, созданием контекста функции,
+    /// инициализацией параметров и управлением стеком вызовов.
+    /// </remarks>
     public class FunctionCallOperationHandler : BaseOperationHandler
     {
+        /// <summary>
+        /// Выполняет операцию вызова функции.
+        /// </summary>
+        /// <param name="step">Шаг алгоритма с информацией о вызове функции.</param>
+        /// <param name="context">Контекст выполнения алгоритма.</param>
+        /// <exception cref="ArgumentException">
+        /// Выбрасывается, если не указано имя функции или функция не найдена.
+        /// </exception>
+        /// <remarks>
+        /// Создает новый контекст функции, инициализирует параметры,
+        /// добавляет вызов в стек и переходит к точке входа функции.
+        /// </remarks>
         public override void Execute(AlgorithmStep step, ExecutionContext context)
         {
             if (string.IsNullOrEmpty(step.functionName))
@@ -52,6 +70,15 @@ namespace AlgoVis.Models.Models.Operations.Handlers
             context.OperationExecutor.Execute(FindStep(function.entryPoint, context.Request), context);
         }
 
+        /// <summary>
+        /// Инициализирует параметры функции значениями из контекста вызова.
+        /// </summary>
+        /// <param name="step">Шаг алгоритма с параметрами вызова.</param>
+        /// <param name="functionContext">Контекст создаваемой функции.</param>
+        /// <param name="context">Текущий контекст выполнения алгоритма.</param>
+        /// <remarks>
+        /// Вычисляет значения параметров и устанавливает их в контексте функции.
+        /// </remarks>
         private void InitializeFunctionParameters(AlgorithmStep step, FunctionContext functionContext, ExecutionContext context)
         {
             foreach (var param in step.functionParameters)

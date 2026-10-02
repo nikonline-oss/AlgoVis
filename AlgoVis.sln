@@ -9,6 +9,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AlgoVis.Server", "AlgoVis.S
 EndProject
 Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "PythonAnalizations", "PythonAnalizations\PythonAnalizations.pyproj", "{514C26DA-53EE-4890-BBFB-5B0178151413}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AlgoVis.Parser", "AlgoVis.Parser\AlgoVis.Parser.csproj", "{54CC2958-9038-4BD8-A618-7A8A0AD7E06B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AlgoVis.Parser.Cli", "AlgoVis.Parser.Cli\AlgoVis.Parser.Cli.csproj", "{87DAAB1F-DF79-470E-AF2B-375861EF8CD2}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +31,14 @@ Global
 		{A5E19428-C0C5-4CC2-B441-9E7DD71CDA8C}.Release|Any CPU.Build.0 = Release|Any CPU
 		{514C26DA-53EE-4890-BBFB-5B0178151413}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{514C26DA-53EE-4890-BBFB-5B0178151413}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{54CC2958-9038-4BD8-A618-7A8A0AD7E06B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{54CC2958-9038-4BD8-A618-7A8A0AD7E06B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{54CC2958-9038-4BD8-A618-7A8A0AD7E06B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{54CC2958-9038-4BD8-A618-7A8A0AD7E06B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{87DAAB1F-DF79-470E-AF2B-375861EF8CD2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{87DAAB1F-DF79-470E-AF2B-375861EF8CD2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{87DAAB1F-DF79-470E-AF2B-375861EF8CD2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{87DAAB1F-DF79-470E-AF2B-375861EF8CD2}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

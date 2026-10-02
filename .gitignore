@@ -367,3 +367,4 @@ chapi-service/build/
 chapi-service/.kotlin/
 chapi-service/.idea/
 chapi-service/*.iml
+traces/

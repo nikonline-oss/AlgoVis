@@ -36,6 +36,10 @@ public sealed class TraceStep
     [JsonPropertyName("annotation")] public string? Annotation { get; set; }
     [JsonPropertyName("stats")]      public TraceStepStats? Stats { get; set; }
     [JsonPropertyName("snapshot")]   public Dictionary<string, object?>? Snapshot { get; set; }
+
+    // НОВОЕ: сжатый снимок переменных на каждом шаге
+    [JsonPropertyName("vars")]
+    public Dictionary<string, object?>? Vars { get; set; }
 }
 
 public sealed class StateChange

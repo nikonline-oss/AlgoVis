@@ -3,15 +3,13 @@ using AlgoVis.Yawa.Yawa.Statements;
 
 namespace AlgoVis.Yawa.Runtime;
 
-/// <summary>
-/// Записывает шаги исполнения в TraceSession.
-/// </summary>
 public sealed class TraceRecorder
 {
     private readonly TraceSession _session;
     private readonly InterpreterOptions _options;
     private readonly List<string> _currentHighlights = new();
     private string? _pendingAnnotation;
+    private Frame? _currentFrame;
 
     public Statistics Stats { get; } = new();
 
@@ -27,15 +25,12 @@ public sealed class TraceRecorder
 
     public TraceSession Session => _session;
 
+    public void SetFrame(Frame frame) => _currentFrame = frame;
+
     public void AddHighlight(string target) => _currentHighlights.Add(target);
-
     public void SetAnnotation(string text) => _pendingAnnotation = text;
-
     public void ClearHighlights() => _currentHighlights.Clear();
 
-    /// <summary>
-    /// Записать шаг. target/old/new — для diff; kind — "assign", "compare", "swap" и т.д.
-    /// </summary>
     public void Record(
         string kind,
         string? nodeId,
@@ -73,13 +68,16 @@ public sealed class TraceRecorder
             _pendingAnnotation = null;
         }
 
+        // Сжатый снимок переменных — на каждом шаге.
+        if (_currentFrame is not null)
+            step.Vars = SnapshotVars(_currentFrame);
+
         _session.Steps.Add(step);
     }
 
-    /// <summary>Записать полный snapshot состояния.</summary>
     public void RecordSnapshot(Frame root, string? label = null)
     {
-        var snapshot = SnapshotState(root);
+        var snapshot = FullSnapshot(root);
         var step = new TraceStep
         {
             N = _session.Steps.Count,
@@ -96,12 +94,14 @@ public sealed class TraceRecorder
                 UserCounters = new Dictionary<string, long>(Stats.UserCounters)
             }
         };
+        if (_currentFrame is not null)
+            step.Vars = SnapshotVars(_currentFrame);
         _session.Steps.Add(step);
     }
 
     public void Finalize(Frame root, RuntimeValue? returnValue)
     {
-        _session.FinalState = SnapshotState(root);
+        _session.FinalState = FullSnapshot(root);
         _session.Statistics = new TraceStatistics
         {
             TotalSteps = _session.Steps.Count,
@@ -111,6 +111,89 @@ public sealed class TraceRecorder
             UserCounters = new Dictionary<string, long>(Stats.UserCounters),
             StructureSizes = CollectStructureSizes(root)
         };
+    }
+
+    // ───────── Helpers ─────────
+
+    /// <summary>Сжатый снимок: скаляры полностью, массивы/объекты коротко.</summary>
+    private Dictionary<string, object?> SnapshotVars(Frame frame)
+    {
+        var d = new Dictionary<string, object?>();
+        foreach (var (k, v) in frame.AllVisible())
+        {
+            if (k.StartsWith("__")) continue;
+            d[k] = ToCompact(v);
+        }
+        return d;
+    }
+
+    private object? ToCompact(RuntimeValue v)
+    {
+        switch (v)
+        {
+            case IntValue i:    return i.Value;
+            case FloatValue f:  return f.Value;
+            case StringValue s: return s.Value;
+            case BoolValue b:   return b.Value;
+            case NullValue:     return null;
+
+            case ArrayValue a:
+                if (a.Count <= 16)
+                    return new Dictionary<string, object?>
+                    {
+                        ["__type"] = a.ElementType is null ? "array" : $"array<{a.ElementType}>",
+                        ["items"] = a.Items.Select(x => x.ToJson()).ToList()
+                    };
+                return new Dictionary<string, object?>
+                {
+                    ["__type"] = a.ElementType is null ? "array" : $"array<{a.ElementType}>",
+                    ["length"] = a.Count
+                };
+
+            case ObjectValue o:
+                return new Dictionary<string, object?>
+                {
+                    ["__type"] = o.ClassName ?? "object",
+                    ["fields"] = o.Fields.Count
+                };
+
+            case TreeValue t:
+                return new Dictionary<string, object?>
+                {
+                    ["__type"] = "tree",
+                    ["size"] = CountTreeNodes(t.Root),
+                    ["root"] = t.Root?.Value.ToJson()
+                };
+
+            case TreeNodeValue tn:
+                return new Dictionary<string, object?>
+                {
+                    ["__type"] = "tree_node",
+                    ["value"] = tn.Value.ToJson()
+                };
+
+            case GraphValue g:
+                return new Dictionary<string, object?>
+                {
+                    ["__type"] = "graph",
+                    ["nodes"] = g.Nodes.Count,
+                    ["edges"] = g.Edges.Count
+                };
+
+            default:
+                return v.ToString();
+        }
+    }
+
+    private Dictionary<string, object?> FullSnapshot(Frame frame)
+    {
+        var result = new Dictionary<string, object?>();
+        foreach (var (k, v) in frame.AllVisible())
+        {
+            if (k.StartsWith("__")) continue;
+            result[k] = v.ToJson();
+        }
+        return result;
     }
 
     private Dictionary<string, int> CollectStructureSizes(Frame root)
@@ -132,14 +215,6 @@ public sealed class TraceRecorder
         return 1 + CountTreeNodes(node.Left) + CountTreeNodes(node.Right);
     }
 
-    private Dictionary<string, object?> SnapshotState(Frame frame)
-    {
-        var result = new Dictionary<string, object?>();
-        foreach (var (k, v) in frame.AllVisible())
-            result[k] = v.ToJson();
-        return result;
-    }
-
     public static void SetStructureDescriptor(TraceSession session, Frame root)
     {
         foreach (var (k, v) in root.AllVisible())
@@ -151,11 +226,11 @@ public sealed class TraceRecorder
                 Type = v.TypeName,
                 VisualKind = v switch
                 {
-                    ArrayValue => "array",
-                    TreeValue => "tree",
-                    GraphValue => "graph",
+                    ArrayValue  => "array",
+                    TreeValue   => "tree",
+                    GraphValue  => "graph",
                     ObjectValue => "object",
-                    _ => "scalar"
+                    _           => "scalar"
                 }
             });
         }

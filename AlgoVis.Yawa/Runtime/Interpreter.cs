@@ -42,29 +42,44 @@ public sealed class Interpreter
 
         var globalFrame = new Frame("<global>");
 
+        // 1. Глобальные переменные (если объявлены в YAWA)
         foreach (var (name, g) in _program.Globals)
         {
             var val = g.Value is null ? NullValue.Instance : Eval.Eval(g.Value, globalFrame);
             globalFrame.Declare(name, val);
         }
 
-        Recorder.Record("init", null);
-        Recorder.RecordSnapshot(globalFrame, "start");
-
+        // 2. Входные аргументы — часть НАЧАЛЬНОГО состояния.
+        // Вычисляем их сразу и объявляем в globalFrame, чтобы они попали
+        // в init-шаг и первый snapshot.
         var entryFn = _functions[_program.Entry.Function];
         var entryArgs = _program.Entry.Args
             .Select(e => Eval.Eval(e, globalFrame))
             .ToList();
 
-        for (int i = 0; i < entryArgs.Count && i < entryFn.Params.Count; i++)
+        if (entryArgs.Count != entryFn.Params.Count)
+            throw new YawaRuntimeException(
+                $"Entry '{entryFn.Name}': expected {entryFn.Params.Count} args, got {entryArgs.Count}");
+
+        for (int i = 0; i < entryArgs.Count; i++)
         {
             var argName = entryFn.Params[i].Name;
             globalFrame.Declare(argName, entryArgs[i]);
         }
 
+        // 3. Пишем init и стартовый snapshot — теперь со всеми входными данными
+        Recorder.SetFrame(globalFrame);
+        Recorder.Record("init", null);
+        Recorder.RecordSnapshot(globalFrame, "start");
+
         try
         {
-            var result = CallFunction(_program.Entry.Function, entryArgs, globalFrame, null, syncLocalsBackToCaller: true);
+            var result = CallFunction(_program.Entry.Function, entryArgs, globalFrame, null,
+                                      syncLocalsBackToCaller: true);
+
+            if (result is not NullValue)
+                globalFrame.Declare("__return__", result);
+
             Recorder.Record("end", null);
             Recorder.Finalize(globalFrame, result);
         }
@@ -117,6 +132,7 @@ public sealed class Interpreter
         for (int i = 0; i < fn.Params.Count; i++)
             frame.Declare(fn.Params[i].Name, args[i]);
 
+        Recorder.SetFrame(frame);
         Recorder.Record("call", nodeId, consumeHighlights: true);
 
         if (_options.SnapshotEvery > 0 && Recorder.Session.Steps.Count % _options.SnapshotEvery == 0)
@@ -137,6 +153,7 @@ public sealed class Interpreter
         }
         finally
         {
+            Recorder.SetFrame(callerFrame);
             Recorder.RecordSnapshot(frame, $"exit {name}");
         }
     }
@@ -159,6 +176,7 @@ public sealed class Interpreter
     private void ExecuteStatement(YawaStatement stmt, Frame frame)
     {
         CheckLimits();
+        Recorder.SetFrame(frame);
 
         switch (stmt)
         {
@@ -303,7 +321,12 @@ public sealed class Interpreter
         {
             for (var i = from; i < to; i += step)
             {
+                var oldVal = frame.Has(s.Var) ? frame.Get(s.Var) : null;
                 frame.Declare(s.Var, new IntValue(i));
+                Recorder.Record("for", s.NodeId, new[]
+                {
+            new Trace.StateChange { Target = s.Var, Old = oldVal?.ToJson(), New = i }
+        });
                 try { ExecuteBlock(s.Body, frame); }
                 catch (BreakException) { break; }
                 catch (ContinueException) { continue; }
@@ -313,7 +336,12 @@ public sealed class Interpreter
         {
             for (var i = from; i > to; i += step)
             {
+                var oldVal = frame.Has(s.Var) ? frame.Get(s.Var) : null;
                 frame.Declare(s.Var, new IntValue(i));
+                Recorder.Record("for", s.NodeId, new[]
+                {
+            new Trace.StateChange { Target = s.Var, Old = oldVal?.ToJson(), New = i }
+        });
                 try { ExecuteBlock(s.Body, frame); }
                 catch (BreakException) { break; }
                 catch (ContinueException) { continue; }
@@ -331,7 +359,12 @@ public sealed class Interpreter
         };
         foreach (var item in items.ToList())
         {
+            var oldVal = frame.Has(s.Var) ? frame.Get(s.Var) : null;
             frame.Declare(s.Var, item);
+            Recorder.Record("foreach", s.NodeId, new[]
+            {
+        new Trace.StateChange { Target = s.Var, Old = oldVal?.ToJson(), New = item.ToJson() }
+    });
             try { ExecuteBlock(s.Body, frame); }
             catch (BreakException) { break; }
             catch (ContinueException) { continue; }

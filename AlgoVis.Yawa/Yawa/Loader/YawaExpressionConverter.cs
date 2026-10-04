@@ -142,6 +142,14 @@ public sealed class YawaExpressionConverter : JsonConverter<YawaExpression>
                 writer.WriteEndArray();
                 break;
 
+            case InstantiateExpr inst:
+                writer.WriteString("instantiate", inst.ClassName);
+                writer.WritePropertyName("args");
+                writer.WriteStartArray();
+                foreach (var a in inst.Args) WriteExpr(writer, a, options);
+                writer.WriteEndArray();
+                break;
+
             default:
                 throw new NotSupportedException($"Write not implemented for {value.GetType().Name}");
         }
@@ -244,6 +252,18 @@ public sealed class YawaExpressionConverter : JsonConverter<YawaExpression>
 
         if (el.TryGetProperty("len", out var lenProp))
             return new LenExpr { Target = ParseElement(lenProp.Clone()), NodeId = ReadId(el) };
+
+        if (el.TryGetProperty("instantiate", out var instProp))
+        {
+            if (instProp.ValueKind != JsonValueKind.String)
+                throw new JsonException("'instantiate' must be a string");
+            return new InstantiateExpr
+            {
+                ClassName = instProp.GetString() ?? "",
+                Args = ParseArgs(el, "args"),
+                NodeId = ReadId(el)
+            };
+        }
 
         if (el.TryGetProperty("dict", out var dictProp))
         {

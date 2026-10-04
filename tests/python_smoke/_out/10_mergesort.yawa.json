@@ -109,11 +109,11 @@
                 {
                   "op": "expr",
                   "value": {
-                    "call": "push",
+                    "call_method": {
+                      "ref": "result"
+                    },
+                    "name": "append",
                     "args": [
-                      {
-                        "ref": "result"
-                      },
                       {
                         "index": [
                           {
@@ -147,11 +147,11 @@
                 {
                   "op": "expr",
                   "value": {
-                    "call": "push",
+                    "call_method": {
+                      "ref": "result"
+                    },
+                    "name": "append",
                     "args": [
-                      {
-                        "ref": "result"
-                      },
                       {
                         "index": [
                           {
@@ -204,11 +204,11 @@
             {
               "op": "expr",
               "value": {
-                "call": "push",
+                "call_method": {
+                  "ref": "result"
+                },
+                "name": "append",
                 "args": [
-                  {
-                    "ref": "result"
-                  },
                   {
                     "index": [
                       {
@@ -259,11 +259,11 @@
             {
               "op": "expr",
               "value": {
-                "call": "push",
+                "call_method": {
+                  "ref": "result"
+                },
+                "name": "append",
                 "args": [
-                  {
-                    "ref": "result"
-                  },
                   {
                     "index": [
                       {

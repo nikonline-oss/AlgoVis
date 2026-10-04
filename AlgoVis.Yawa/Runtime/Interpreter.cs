@@ -112,17 +112,19 @@ public sealed class Interpreter
     {
         CheckLimits();
 
-        // Builtin?
-        if (Builtins.Names.Contains(name))
-        {
-            var result = Builtins.Call(name, args, Recorder);
-            if (name == "print")
-                Recorder.Record("call", nodeId);
-            return result;
-        }
-
+        // Сначала ищем пользовательскую функцию — она перекрывает builtin.
         if (!_functions.TryGetValue(name, out var fn))
+        {
+            // Пользовательской нет — пробуем builtin.
+            if (Builtins.Names.Contains(name))
+            {
+                var result = Builtins.Call(name, args, Recorder);
+                if (name == "print")
+                    Recorder.Record("call", nodeId);
+                return result;
+            }
             throw new YawaRuntimeException($"Unknown function: {name}");
+        }
 
         var frame = new Frame(name, callerFrame);
         if (args.Count != fn.Params.Count)
@@ -133,6 +135,10 @@ public sealed class Interpreter
             frame.Declare(fn.Params[i].Name, args[i]);
 
         Recorder.SetFrame(frame);
+        var argRepr = args.Count == 0
+            ? ""
+            : "(" + string.Join(", ", args.Select(ShortRepr)) + ")";
+        Recorder.SetAnnotation($"→ {name}{argRepr}");
         Recorder.Record("call", nodeId, consumeHighlights: true);
 
         if (_options.SnapshotEvery > 0 && Recorder.Session.Steps.Count % _options.SnapshotEvery == 0)
@@ -156,6 +162,79 @@ public sealed class Interpreter
             Recorder.SetFrame(callerFrame);
             Recorder.RecordSnapshot(frame, $"exit {name}");
         }
+    }
+
+    /// <summary>
+    /// Создаёт объект указанного класса. Если есть ClassName__init — вызывает.
+    /// Возвращаемое значение __init игнорируется (как в Python).
+    /// </summary>
+    public RuntimeValue Instantiate(string className, List<YawaExpression> argExprs, Frame frame, string? nodeId)
+    {
+        var obj = new ObjectValue();
+        obj.SetField("__type__", new StringValue(className));
+
+        var initName = $"{className}.__init__";
+        if (_functions.ContainsKey(initName))
+        {
+            var args = new List<RuntimeValue> { obj };
+            foreach (var expr in argExprs)
+                args.Add(Eval.Eval(expr, frame));
+
+            CallFunction(initName, args, frame, nodeId);   // возврат игнорируем
+        }
+        else if (argExprs.Count > 0)
+        {
+            throw new YawaRuntimeException(
+                $"Class '{className}' has no __init__, but {argExprs.Count} args provided");
+        }
+
+        return obj;
+    }
+    /// <summary>
+    /// Вызов метода obj.name(args).
+    /// Приоритет:
+    ///   1. Если obj имеет __type__ = ClassName и есть функция ClassName__name — вызываем её.
+    ///   2. Иначе, если name — builtin-метод (append/pop/insert/remove), мапим и вызываем builtin.
+    ///   3. Иначе, вызываем глобальную функцию name с receiver первым аргументом.
+    /// </summary>
+    public RuntimeValue CallMethod(RuntimeValue receiver, string name, List<YawaExpression> argExprs, Frame frame, string? nodeId)
+    {
+        // 1. Метод класса
+        if (receiver is ObjectValue obj && obj.ClassName is { } cls)
+        {
+            var qualified = $"{cls}.{name}";
+            if (_functions.ContainsKey(qualified))
+            {
+                var args = new List<RuntimeValue> { receiver };
+                foreach (var expr in argExprs)
+                    args.Add(Eval.Eval(expr, frame));
+                return CallFunction(qualified, args, frame, nodeId);
+            }
+        }
+
+        // 2. Builtin-метод для коллекций (append → push, pop → pop, ...)
+        var builtinName = name switch
+        {
+            "append" => "push",
+            "pop" => "pop",
+            "insert" => "insert",
+            "remove" => "remove",
+            _ => name
+        };
+
+        if (Builtins.Names.Contains(builtinName))
+        {
+            var args = new List<RuntimeValue> { receiver };
+            foreach (var expr in argExprs)
+                args.Add(Eval.Eval(expr, frame));
+            return Builtins.Call(builtinName, args, Recorder);
+        }
+
+        // 3. Fallback — глобальная функция с receiver первым аргументом.
+        var defaultArgs = new List<RuntimeValue> { receiver };
+        foreach (var expr in argExprs)
+            defaultArgs.Add(Eval.Eval(expr, frame));
+        return CallFunction(name, defaultArgs, frame, nodeId);
     }
 
     private static void SyncLocals(YawaFunction fn, Frame funcFrame, Frame callerFrame)
@@ -250,6 +329,7 @@ public sealed class Interpreter
                 });
                     break;
                 }
+
             case IndexExpr ix:
                 {
                     var targetVal = Eval.Eval(ix.Target, frame);
@@ -258,18 +338,18 @@ public sealed class Interpreter
                     // Массив
                     if (targetVal is ArrayValue arr)
                     {
-                        var idx = (int)Evaluator.AsInt(idxVal, "index");
+                        var idx = (int)Evaluator.AsInt(idxVal, "array index");
                         var old = arr[idx];
                         arr[idx] = value;
                         var targetName = RenderTargetPath(ix.Target, frame);
                         Recorder.Record("assign", nodeId, new[]
                         {
-                            new Trace.StateChange { Target = $"{targetName}[{idx}]", Old = old.ToJson(), New = value.ToJson() }
-                        });
+                        new Trace.StateChange { Target = $"{targetName}[{idx}]", Old = old.ToJson(), New = value.ToJson() }
+                    });
                         break;
                     }
 
-                    // Словарь
+                    // Словарь / ObjectValue
                     if (targetVal is ObjectValue obj)
                     {
                         var key = idxVal is StringValue sv ? sv.Value : idxVal.ToString();
@@ -278,13 +358,15 @@ public sealed class Interpreter
                         var targetName = RenderTargetPath(ix.Target, frame);
                         Recorder.Record("assign", nodeId, new[]
                         {
-                            new Trace.StateChange { Target = $"{targetName}[\"{key}\"]", Old = old?.ToJson(), New = value.ToJson() }
-                        });
+                        new Trace.StateChange { Target = $"{targetName}[\"{key}\"]", Old = old?.ToJson(), New = value.ToJson() }
+                    });
                         break;
                     }
 
-                    throw new YawaRuntimeException($"assign to non-array/non-dict index");
+                    throw new YawaRuntimeException(
+                        $"assign to non-array/non-dict index (target={targetVal.TypeName})");
                 }
+
             case FieldExpr fl:
                 {
                     var targetVal = Eval.Eval(fl.Target, frame);
@@ -311,6 +393,7 @@ public sealed class Interpreter
                     else throw new YawaRuntimeException($"assign field on {targetVal.TypeName}");
                     break;
                 }
+
             default:
                 throw new YawaRuntimeException($"Invalid assignment target: {target.GetType().Name}");
         }
@@ -358,8 +441,16 @@ public sealed class Interpreter
 
                     Recorder.Stats.Comparisons++;
 
-                    if (bin.A is IndexExpr ai) Recorder.AddHighlight(RenderIndexPath(ai, frame));
-                    if (bin.B is IndexExpr bi) Recorder.AddHighlight(RenderIndexPath(bi, frame));
+                    if (bin.A is IndexExpr ai)
+                    {
+                        var path = RenderIndexPathSafe(ai, frame);
+                        if (path is not null) Recorder.AddHighlight(path);
+                    }
+                    if (bin.B is IndexExpr bi)
+                    {
+                        var path = RenderIndexPathSafe(bi, frame);
+                        if (path is not null) Recorder.AddHighlight(path);
+                    }
 
                     var diff = new List<Trace.StateChange>();
                     if (a is not null)
@@ -474,6 +565,10 @@ public sealed class Interpreter
         IEnumerable<RuntimeValue> items = collection switch
         {
             ArrayValue a => a.Items,
+            StringValue str => str.Value.Select(c => (RuntimeValue)new StringValue(c.ToString())),
+            ObjectValue obj => obj.Fields
+                .Where(kv => !kv.Key.StartsWith("__"))
+                .Select(kv => (RuntimeValue)new StringValue(kv.Key)),
             _ => throw new YawaRuntimeException($"foreach on {collection.TypeName}")
         };
         foreach (var item in items.ToList())
@@ -527,8 +622,16 @@ public sealed class Interpreter
         var b = Eval.Eval(s.B, frame);
 
         Recorder.Stats.Comparisons++;
-        if (s.A is IndexExpr ai) Recorder.AddHighlight(RenderIndexPath(ai, frame));
-        if (s.B is IndexExpr bi) Recorder.AddHighlight(RenderIndexPath(bi, frame));
+        if (s.A is IndexExpr ai)
+        {
+            var path = RenderIndexPathSafe(ai, frame);
+            if (path is not null) Recorder.AddHighlight(path);
+        }
+        if (s.B is IndexExpr bi)
+        {
+            var path = RenderIndexPathSafe(bi, frame);
+            if (path is not null) Recorder.AddHighlight(path);
+        }
 
         if (s.Label is not null) Recorder.SetAnnotation(s.Label);
 
@@ -542,8 +645,27 @@ public sealed class Interpreter
     private string RenderIndexPath(IndexExpr ix, Frame frame)
     {
         var targetName = RenderTargetPath(ix.Target, frame);
-        var idx = (int)Evaluator.AsInt(Eval.Eval(ix.Index, frame), "index");
-        return $"{targetName}[{idx}]";
+        var idxVal = Eval.Eval(ix.Index, frame);
+        if (idxVal is IntValue iv) return $"{targetName}[{iv.Value}]";
+        if (idxVal is StringValue sv) return $"{targetName}[\"{sv.Value}\"]";
+        return $"{targetName}[?]";
+    }
+
+    /// <summary>
+    /// Безопасная версия: возвращает null, если индекс не int (например,
+    /// словарный доступ node["value"]). Нужна для автоматической подсветки
+    /// в RecordComparisonIfApplicable, где падать нельзя.
+    /// </summary>
+    private string? RenderIndexPathSafe(IndexExpr ix, Frame frame)
+    {
+        try
+        {
+            var targetName = RenderTargetPath(ix.Target, frame);
+            var idxVal = Eval.Eval(ix.Index, frame);
+            if (idxVal is IntValue iv) return $"{targetName}[{iv.Value}]";
+            return null;
+        }
+        catch { return null; }
     }
 
     private void ExecuteMakeNode(MakeNodeStatement s, Frame frame)
@@ -598,6 +720,12 @@ public sealed class Interpreter
             arr?.Highlights.Remove(i);
         }
         Recorder.Record("unmark", s.NodeId);
+    }
+
+    private static string ShortRepr(RuntimeValue v)
+    {
+        var s = v.ToString() ?? "?";
+        return s.Length > 40 ? s[..37] + "..." : s;
     }
 
     private void CheckLimits()

@@ -131,11 +131,11 @@ public sealed class TraceRecorder
     {
         switch (v)
         {
-            case IntValue i:    return i.Value;
-            case FloatValue f:  return f.Value;
+            case IntValue i: return i.Value;
+            case FloatValue f: return f.Value;
             case StringValue s: return s.Value;
-            case BoolValue b:   return b.Value;
-            case NullValue:     return null;
+            case BoolValue b: return b.Value;
+            case NullValue: return null;
 
             case ArrayValue a:
                 if (a.Count <= 16)
@@ -151,6 +151,9 @@ public sealed class TraceRecorder
                 };
 
             case ObjectValue o:
+                // Если объект похож на узел бинарного дерева — отдаём рекурсивно.
+                if (o.HasField("value") && (o.HasField("left") || o.HasField("right")))
+                    return ObjectAsTreeNode(o);
                 return new Dictionary<string, object?>
                 {
                     ["__type"] = o.ClassName ?? "object",
@@ -162,7 +165,7 @@ public sealed class TraceRecorder
                 {
                     ["__type"] = "tree",
                     ["size"] = CountTreeNodes(t.Root),
-                    ["root"] = t.Root?.Value.ToJson()
+                    ["root"] = TreeNodeToJson(t.Root)
                 };
 
             case TreeNodeValue tn:
@@ -196,6 +199,33 @@ public sealed class TraceRecorder
         return result;
     }
 
+    private static object? ObjectAsTreeNode(ObjectValue o)
+    {
+        var value = o.HasField("value") ? o.GetField("value") : NullValue.Instance;
+
+        object? leftJson = null;
+        if (o.HasField("left"))
+        {
+            var lv = o.GetField("left");
+            if (lv is ObjectValue lo) leftJson = ObjectAsTreeNode(lo);
+        }
+
+        object? rightJson = null;
+        if (o.HasField("right"))
+        {
+            var rv = o.GetField("right");
+            if (rv is ObjectValue ro) rightJson = ObjectAsTreeNode(ro);
+        }
+
+        return new Dictionary<string, object?>
+        {
+            ["__type"] = "tree_node",
+            ["value"] = value.ToJson(),
+            ["left"] = leftJson,
+            ["right"] = rightJson
+        };
+    }
+
     private Dictionary<string, int> CollectStructureSizes(Frame root)
     {
         var sizes = new Dictionary<string, int>();
@@ -226,13 +256,24 @@ public sealed class TraceRecorder
                 Type = v.TypeName,
                 VisualKind = v switch
                 {
-                    ArrayValue  => "array",
-                    TreeValue   => "tree",
-                    GraphValue  => "graph",
+                    ArrayValue => "array",
+                    TreeValue => "tree",
+                    GraphValue => "graph",
                     ObjectValue => "object",
-                    _           => "scalar"
+                    _ => "scalar"
                 }
             });
         }
+    }
+    private static object? TreeNodeToJson(TreeNodeValue? node)
+    {
+        if (node is null) return null;
+        return new Dictionary<string, object?>
+        {
+            ["value"] = node.Value.ToJson(),
+            ["left"] = TreeNodeToJson(node.Left),
+            ["right"] = TreeNodeToJson(node.Right),
+            ["color"] = node.HighlightColor
+        };
     }
 }

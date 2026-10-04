@@ -8,6 +8,67 @@
   "globals": {},
   "functions": [
     {
+      "name": "Counter.__init__",
+      "params": [
+        {
+          "name": "self"
+        }
+      ],
+      "returns": null,
+      "body": [
+        {
+          "op": "assign",
+          "target": {
+            "field": [
+              {
+                "ref": "self"
+              },
+              "value"
+            ]
+          },
+          "value": {
+            "lit": 0
+          }
+        }
+      ]
+    },
+    {
+      "name": "Counter.inc",
+      "params": [
+        {
+          "name": "self"
+        }
+      ],
+      "returns": null,
+      "body": [
+        {
+          "op": "assign",
+          "target": {
+            "field": [
+              {
+                "ref": "self"
+              },
+              "value"
+            ]
+          },
+          "value": {
+            "bin": "\u002B",
+            "a": {
+              "field": [
+                {
+                  "ref": "self"
+                },
+                "value"
+              ]
+            },
+            "b": {
+              "lit": 1
+            }
+          }
+        }
+      ]
+    },
+    {
       "name": "main",
       "params": [],
       "returns": null,
@@ -18,30 +79,28 @@
             "ref": "c"
           },
           "value": {
-            "call": "Counter",
+            "instantiate": "Counter",
             "args": []
           }
         },
         {
           "op": "expr",
           "value": {
-            "call": "inc",
-            "args": [
-              {
-                "ref": "c"
-              }
-            ]
+            "call_method": {
+              "ref": "c"
+            },
+            "name": "inc",
+            "args": []
           }
         },
         {
           "op": "expr",
           "value": {
-            "call": "inc",
-            "args": [
-              {
-                "ref": "c"
-              }
-            ]
+            "call_method": {
+              "ref": "c"
+            },
+            "name": "inc",
+            "args": []
           }
         }
       ]

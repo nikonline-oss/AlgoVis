@@ -44,11 +44,11 @@
         {
           "op": "expr",
           "value": {
-            "call": "push",
+            "call_method": {
+              "ref": "visited"
+            },
+            "name": "append",
             "args": [
-              {
-                "ref": "visited"
-              },
               {
                 "ref": "node"
               }

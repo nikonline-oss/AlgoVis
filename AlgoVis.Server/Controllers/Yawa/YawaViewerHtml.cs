@@ -14,25 +14,13 @@ internal static class YawaViewerHtml
 <title>AlgoVis — визуализатор алгоритмов</title>
 <style>
   :root {
-    --bg-0: #070a14;
-    --bg-1: #0d1220;
-    --bg-2: #141a2b;
-    --bg-3: #1c2338;
-    --border: #232a42;
-    --border-hi: #2f3854;
-    --text: #e8ecf4;
-    --text-dim: #8b95ad;
-    --text-muted: #5a6478;
-    --accent: #6366f1;
-    --accent-hi: #818cf8;
-    --accent-glow: rgba(99, 102, 241, 0.35);
+    --bg-0: #070a14; --bg-1: #0d1220; --bg-2: #141a2b; --bg-3: #1c2338;
+    --border: #232a42; --border-hi: #2f3854;
+    --text: #e8ecf4; --text-dim: #8b95ad; --text-muted: #5a6478;
+    --accent: #6366f1; --accent-hi: #818cf8; --accent-glow: rgba(99,102,241,0.35);
     --pink: #ec4899;
-    --cmp: #f59e0b;
-    --swap: #10b981;
-    --assign: #3b82f6;
-    --mark: #ec4899;
-    --call: #a855f7;
-    --danger: #ef4444;
+    --cmp: #f59e0b; --swap: #10b981; --assign: #3b82f6;
+    --mark: #ec4899; --call: #a855f7; --danger: #ef4444;
     --mono: ui-monospace, 'SF Mono', Menlo, 'JetBrains Mono', monospace;
     --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   }
@@ -42,24 +30,20 @@ internal static class YawaViewerHtml
     background: radial-gradient(1200px 600px at 20% -10%, #182042 0%, transparent 60%),
                 radial-gradient(900px 500px at 100% 100%, #1a1230 0%, transparent 55%),
                 var(--bg-0);
-    color: var(--text);
-    font-family: var(--sans);
-    min-height: 100vh;
+    color: var(--text); font-family: var(--sans); min-height: 100vh;
     font-size: 14px; line-height: 1.5;
   }
   .app { max-width: 1500px; margin: 0 auto; padding: 24px 28px 60px; }
 
   header {
     display: flex; align-items: center; justify-content: space-between;
-    margin-bottom: 24px; padding-bottom: 18px;
-    border-bottom: 1px solid var(--border);
+    margin-bottom: 24px; padding-bottom: 18px; border-bottom: 1px solid var(--border);
   }
   .brand { display: flex; align-items: center; gap: 14px; }
   .logo {
     width: 40px; height: 40px; border-radius: 10px;
     background: linear-gradient(135deg, var(--accent) 0%, var(--pink) 100%);
-    display: flex; align-items: center; justify-content: center;
-    font-size: 22px;
+    display: flex; align-items: center; justify-content: center; font-size: 22px;
     box-shadow: 0 6px 20px -6px var(--accent-glow);
   }
   .brand h1 { margin: 0; font-size: 20px; font-weight: 600; letter-spacing: -0.01em; }
@@ -76,18 +60,14 @@ internal static class YawaViewerHtml
 
   .card {
     background: linear-gradient(180deg, var(--bg-2) 0%, var(--bg-1) 100%);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 16px;
-    box-shadow: 0 4px 16px -8px rgba(0,0,0,0.5);
-    margin-bottom: 16px;
+    border: 1px solid var(--border); border-radius: 10px; padding: 16px;
+    box-shadow: 0 4px 16px -8px rgba(0,0,0,0.5); margin-bottom: 16px;
   }
   .card:last-child { margin-bottom: 0; }
   .card-title {
     font-size: 11px; font-weight: 600; letter-spacing: 0.08em;
     text-transform: uppercase; color: var(--text-muted);
-    margin: 0 0 12px;
-    display: flex; align-items: center; justify-content: space-between;
+    margin: 0 0 12px; display: flex; align-items: center; justify-content: space-between;
   }
   .card-title .badge {
     font-size: 10px; padding: 1px 6px; border-radius: 3px;
@@ -95,38 +75,26 @@ internal static class YawaViewerHtml
     text-transform: none; letter-spacing: 0;
   }
 
-  /* ─── Tabs ─── */
-  .tabs {
-    display: flex; gap: 4px; margin-bottom: 12px;
-    background: var(--bg-1); padding: 3px; border-radius: 6px;
-  }
+  .tabs { display: flex; gap: 4px; margin-bottom: 12px; background: var(--bg-1); padding: 3px; border-radius: 6px; }
   .tab {
-    flex: 1; padding: 6px 10px; border-radius: 4px;
-    background: transparent; border: none;
+    flex: 1; padding: 6px 10px; border-radius: 4px; background: transparent; border: none;
     color: var(--text-dim); font-family: inherit; font-size: 12px;
     cursor: pointer; transition: all 0.15s ease;
   }
   .tab:hover { color: var(--text); }
-  .tab.active {
-    background: var(--bg-3); color: var(--text);
-    box-shadow: 0 2px 6px -2px rgba(0,0,0,0.4);
-  }
+  .tab.active { background: var(--bg-3); color: var(--text); box-shadow: 0 2px 6px -2px rgba(0,0,0,0.4); }
 
-  /* ─── Samples ─── */
   .samples { display: flex; flex-direction: column; gap: 6px; }
   .sample-btn {
     display: flex; align-items: center; gap: 10px;
     padding: 10px 12px; background: transparent;
     border: 1px solid transparent; border-radius: 6px;
     color: var(--text); font-family: inherit; font-size: 13px;
-    text-align: left; cursor: pointer; width: 100%;
-    transition: all 0.15s ease;
+    text-align: left; cursor: pointer; width: 100%; transition: all 0.15s ease;
   }
   .sample-btn .icon {
-    width: 26px; height: 26px; flex-shrink: 0;
-    border-radius: 6px; background: var(--bg-3);
-    display: flex; align-items: center; justify-content: center;
-    font-size: 14px;
+    width: 26px; height: 26px; flex-shrink: 0; border-radius: 6px;
+    background: var(--bg-3); display: flex; align-items: center; justify-content: center; font-size: 14px;
   }
   .sample-btn:hover { background: var(--bg-3); border-color: var(--border-hi); }
   .sample-btn.active {
@@ -136,25 +104,15 @@ internal static class YawaViewerHtml
   }
   .sample-btn.active .icon { background: linear-gradient(135deg, var(--accent), var(--pink)); }
 
-  /* ─── Code editor ─── */
   .code-area {
-    width: 100%; min-height: 320px;
-    padding: 12px;
-    background: var(--bg-0);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    color: var(--text);
-    font-family: var(--mono); font-size: 12.5px; line-height: 1.55;
-    resize: vertical;
-    tab-size: 4;
-    outline: none;
-    transition: border 0.15s ease;
+    width: 100%; min-height: 320px; padding: 12px;
+    background: var(--bg-0); border: 1px solid var(--border); border-radius: 8px;
+    color: var(--text); font-family: var(--mono); font-size: 12.5px; line-height: 1.55;
+    resize: vertical; tab-size: 4; outline: none; transition: border 0.15s ease;
   }
   .code-area:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
 
-  .code-actions {
-    display: flex; gap: 8px; margin-top: 10px; align-items: center;
-  }
+  .code-actions { display: flex; gap: 8px; margin-top: 10px; align-items: center; }
 
   .btn {
     display: inline-flex; align-items: center; justify-content: center; gap: 6px;
@@ -162,44 +120,30 @@ internal static class YawaViewerHtml
     background: var(--bg-2); border: 1px solid var(--border);
     border-radius: 6px; color: var(--text);
     font-family: inherit; font-size: 13px; font-weight: 500;
-    cursor: pointer; transition: all 0.15s ease;
-    user-select: none;
+    cursor: pointer; transition: all 0.15s ease; user-select: none;
   }
-  .btn:hover:not(:disabled) {
-    background: var(--bg-3); border-color: var(--border-hi);
-    transform: translateY(-1px);
-  }
+  .btn:hover:not(:disabled) { background: var(--bg-3); border-color: var(--border-hi); transform: translateY(-1px); }
   .btn:disabled { opacity: 0.4; cursor: not-allowed; }
   .btn.primary {
     background: linear-gradient(135deg, var(--accent), #4f46e5);
-    border-color: var(--accent);
-    box-shadow: 0 4px 14px -4px var(--accent-glow);
+    border-color: var(--accent); box-shadow: 0 4px 14px -4px var(--accent-glow);
   }
-  .btn.primary:hover:not(:disabled) {
-    background: linear-gradient(135deg, var(--accent-hi), #6366f1);
-  }
+  .btn.primary:hover:not(:disabled) { background: linear-gradient(135deg, var(--accent-hi), #6366f1); }
   .btn .icon { font-size: 15px; line-height: 1; }
 
-  /* ─── Error banner ─── */
   .error-banner {
-    display: none;
-    margin-top: 10px;
-    padding: 10px 14px;
+    display: none; margin-top: 10px; padding: 10px 14px;
     background: linear-gradient(90deg, rgba(239,68,68,0.18), rgba(239,68,68,0.05));
-    border-left: 3px solid var(--danger);
-    border-radius: 6px;
-    font-family: var(--mono); font-size: 12.5px;
-    color: #fecaca;
+    border-left: 3px solid var(--danger); border-radius: 6px;
+    font-family: var(--mono); font-size: 12.5px; color: #fecaca;
     white-space: pre-wrap; word-break: break-word;
   }
   .error-banner.show { display: block; }
   .error-banner .head {
-    font-family: var(--sans); font-weight: 600;
-    color: var(--danger); margin-bottom: 4px;
-    font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em;
+    font-family: var(--sans); font-weight: 600; color: var(--danger);
+    margin-bottom: 4px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em;
   }
 
-  /* ─── Stats ─── */
   .stats-grid {
     display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
     gap: 10px; margin-bottom: 20px;
@@ -213,113 +157,72 @@ internal static class YawaViewerHtml
     content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
     background: linear-gradient(90deg, var(--accent), var(--pink)); opacity: 0.7;
   }
-  .stat .label {
-    font-size: 11px; color: var(--text-muted);
-    text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px;
-  }
+  .stat .label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; }
   .stat .value {
-    font-size: 24px; font-weight: 700; font-family: var(--mono);
-    letter-spacing: -0.02em;
+    font-size: 24px; font-weight: 700; font-family: var(--mono); letter-spacing: -0.02em;
     background: linear-gradient(135deg, var(--text) 0%, var(--text-dim) 100%);
-    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-    background-clip: text;
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
   }
 
-  /* ─── Workspace ─── */
-  .workspace {
-    display: grid; grid-template-columns: minmax(0, 1fr) 280px;
-    gap: 16px; margin-bottom: 16px;
-  }
+  .workspace { display: grid; grid-template-columns: minmax(0, 1fr) 280px; gap: 16px; margin-bottom: 16px; }
   @media (max-width: 1100px) { .workspace { grid-template-columns: 1fr; } }
 
-  .array-wrap {
-    padding: 24px 16px;
-    background:
-      radial-gradient(circle at 50% 0%, rgba(99,102,241,0.06), transparent 70%),
-      var(--bg-1);
+  .viz-wrap {
+    padding: 16px;
+    background: radial-gradient(circle at 50% 0%, rgba(99,102,241,0.06), transparent 70%), var(--bg-1);
     border: 1px solid var(--border); border-radius: 10px;
-    min-height: 140px;
-    display: flex; align-items: center; justify-content: center;
+    min-height: 180px; display: flex; align-items: center; justify-content: center;
+    overflow: auto;
   }
+
+  /* Array */
   .array { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
   .cell {
-    position: relative;
-    min-width: 52px; height: 52px; padding: 0 12px;
+    position: relative; min-width: 52px; height: 52px; padding: 0 12px;
     display: flex; align-items: center; justify-content: center;
     background: linear-gradient(180deg, var(--bg-3) 0%, var(--bg-2) 100%);
     border: 2px solid var(--border-hi); border-radius: 6px;
-    font-family: var(--mono); font-size: 18px; font-weight: 600;
-    color: var(--text);
+    font-family: var(--mono); font-size: 18px; font-weight: 600; color: var(--text);
     transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     box-shadow: 0 2px 8px -2px rgba(0,0,0,0.4);
   }
   .cell .idx {
     position: absolute; top: -8px; left: 50%; transform: translateX(-50%);
     font-size: 9px; color: var(--text-muted);
-    background: var(--bg-0); padding: 1px 5px; border-radius: 3px;
-    font-weight: 400;
+    background: var(--bg-0); padding: 1px 5px; border-radius: 3px; font-weight: 400;
   }
-  .cell.hl-cmp {
-    border-color: var(--cmp);
-    background: linear-gradient(180deg, rgba(245,158,11,0.20), rgba(245,158,11,0.08));
-    box-shadow: 0 0 0 3px rgba(245,158,11,0.18), 0 4px 16px -4px rgba(245,158,11,0.5);
-    transform: translateY(-3px) scale(1.06);
-    color: #fde68a;
-  }
-  .cell.hl-swap {
-    border-color: var(--swap);
-    background: linear-gradient(180deg, rgba(16,185,129,0.20), rgba(16,185,129,0.08));
-    box-shadow: 0 0 0 3px rgba(16,185,129,0.18), 0 4px 16px -4px rgba(16,185,129,0.5);
-    transform: translateY(-3px) scale(1.06);
-    color: #a7f3d0;
-  }
-  .cell.hl-mark {
-    border-color: var(--mark);
-    background: linear-gradient(180deg, rgba(236,72,153,0.20), rgba(236,72,153,0.08));
-    box-shadow: 0 0 0 3px rgba(236,72,153,0.18), 0 4px 16px -4px rgba(236,72,153,0.5);
-    transform: translateY(-3px) scale(1.06);
-    color: #fbcfe8;
-  }
+  .cell.hl-cmp { border-color: var(--cmp); background: linear-gradient(180deg, rgba(245,158,11,0.20), rgba(245,158,11,0.08)); box-shadow: 0 0 0 3px rgba(245,158,11,0.18), 0 4px 16px -4px rgba(245,158,11,0.5); transform: translateY(-3px) scale(1.06); color: #fde68a; }
+  .cell.hl-swap { border-color: var(--swap); background: linear-gradient(180deg, rgba(16,185,129,0.20), rgba(16,185,129,0.08)); box-shadow: 0 0 0 3px rgba(16,185,129,0.18), 0 4px 16px -4px rgba(16,185,129,0.5); transform: translateY(-3px) scale(1.06); color: #a7f3d0; }
+  .cell.hl-mark { border-color: var(--mark); background: linear-gradient(180deg, rgba(236,72,153,0.20), rgba(236,72,153,0.08)); box-shadow: 0 0 0 3px rgba(236,72,153,0.18), 0 4px 16px -4px rgba(236,72,153,0.5); transform: translateY(-3px) scale(1.06); color: #fbcfe8; }
   .empty-array { color: var(--text-muted); font-style: italic; font-size: 13px; }
 
-  /* ─── Variables ─── */
-  .vars-card { padding: 14px; min-height: 140px; }
-  .vars {
-    display: flex; flex-direction: column; gap: 4px;
-    max-height: 400px; overflow-y: auto;
+  /* Tree SVG */
+  .tree-svg { display: block; max-width: 100%; height: auto; }
+  .tree-node-circle {
+    fill: var(--bg-3); stroke: var(--border-hi); stroke-width: 2;
+    transition: all 0.3s ease;
   }
+  .tree-node-circle.hl { fill: rgba(245,158,11,0.25); stroke: var(--cmp); stroke-width: 3; filter: drop-shadow(0 0 8px rgba(245,158,11,0.6)); }
+  .tree-node-circle.new { fill: rgba(16,185,129,0.25); stroke: var(--swap); stroke-width: 3; filter: drop-shadow(0 0 8px rgba(16,185,129,0.6)); }
+  .tree-node-text { fill: var(--text); font-family: ui-monospace, monospace; font-size: 13px; font-weight: 600; text-anchor: middle; dominant-baseline: central; }
+  .tree-edge { stroke: var(--border-hi); stroke-width: 2; fill: none; transition: all 0.3s ease; }
+  .tree-edge.hl { stroke: var(--cmp); stroke-width: 3; }
+
+  /* Variables */
+  .vars-card { padding: 14px; min-height: 140px; }
+  .vars { display: flex; flex-direction: column; gap: 4px; max-height: 400px; overflow-y: auto; }
   .vars::-webkit-scrollbar { width: 8px; }
   .vars::-webkit-scrollbar-thumb { background: var(--bg-3); border-radius: 4px; }
   .var-row {
-    display: grid;
-    grid-template-columns: 1fr auto;
-    align-items: center; gap: 10px;
-    padding: 6px 10px;
-    background: var(--bg-1);
-    border: 1px solid transparent;
-    border-radius: 6px;
-    font-family: var(--mono); font-size: 13px;
-    transition: all 0.2s ease;
+    display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 10px;
+    padding: 6px 10px; background: var(--bg-1);
+    border: 1px solid transparent; border-radius: 6px;
+    font-family: var(--mono); font-size: 13px; transition: all 0.2s ease;
   }
-  .var-row .name {
-    color: var(--text-dim);
-    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-  }
-  .var-row .name .type {
-    color: var(--text-muted);
-    font-size: 10px; margin-left: 6px; padding: 1px 5px;
-    background: var(--bg-3); border-radius: 3px;
-  }
-  .var-row .value {
-    color: var(--text); font-weight: 600;
-    text-align: right; overflow: hidden; text-overflow: ellipsis;
-    white-space: nowrap; max-width: 140px;
-  }
-  .var-row.changed {
-    background: linear-gradient(90deg, rgba(99,102,241,0.14), transparent);
-    border-color: rgba(99,102,241,0.4);
-    animation: pulse-var 0.7s ease;
-  }
+  .var-row .name { color: var(--text-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .var-row .name .type { color: var(--text-muted); font-size: 10px; margin-left: 6px; padding: 1px 5px; background: var(--bg-3); border-radius: 3px; }
+  .var-row .value { color: var(--text); font-weight: 600; text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 140px; }
+  .var-row.changed { background: linear-gradient(90deg, rgba(99,102,241,0.14), transparent); border-color: rgba(99,102,241,0.4); animation: pulse-var 0.7s ease; }
   .var-row.array-var .value { color: #60a5fa; }
   .var-row.tree-var .value { color: #a855f7; }
   .var-row.object-var .value { color: #fbbf24; }
@@ -328,109 +231,62 @@ internal static class YawaViewerHtml
     70%  { box-shadow: 0 0 0 8px rgba(99,102,241,0); }
     100% { box-shadow: 0 0 0 0 rgba(99,102,241,0); }
   }
-  .vars-empty {
-    color: var(--text-muted); font-size: 12px;
-    font-style: italic; padding: 8px;
-  }
+  .vars-empty { color: var(--text-muted); font-size: 12px; font-style: italic; padding: 8px; }
 
-  /* ─── Timeline ─── */
-  .timeline {
-    position: relative; height: 6px; background: var(--bg-3);
-    border-radius: 3px; margin: 14px 0; overflow: hidden; cursor: pointer;
-  }
-  .timeline-fill {
-    height: 100%;
-    background: linear-gradient(90deg, var(--accent), var(--pink));
-    border-radius: 3px;
-    transition: width 0.15s ease;
-    box-shadow: 0 0 8px var(--accent-glow);
-  }
+  /* Timeline */
+  .timeline { position: relative; height: 6px; background: var(--bg-3); border-radius: 3px; margin: 14px 0; overflow: hidden; cursor: pointer; }
+  .timeline-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--pink)); border-radius: 3px; transition: width 0.15s ease; box-shadow: 0 0 8px var(--accent-glow); }
 
-  /* ─── Annotation ─── */
   .annotation {
     min-height: 32px; padding: 6px 14px;
     background: linear-gradient(90deg, rgba(99,102,241,0.12), transparent);
-    border-left: 3px solid var(--accent);
-    border-radius: 6px; margin-bottom: 14px;
-    font-size: 13px;
-    display: flex; align-items: center; gap: 8px;
+    border-left: 3px solid var(--accent); border-radius: 6px; margin-bottom: 14px;
+    font-size: 13px; display: flex; align-items: center; gap: 8px;
   }
   .annotation:empty { display: none; }
-  .annotation .badge {
-    font-size: 10px; font-weight: 700; letter-spacing: 0.08em;
-    text-transform: uppercase;
-    padding: 2px 8px; background: var(--accent); color: white; border-radius: 3px;
-  }
+  .annotation .badge { font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; padding: 2px 8px; background: var(--accent); color: white; border-radius: 3px; }
 
-  /* ─── Controls ─── */
-  .controls {
-    display: flex; gap: 6px; align-items: center;
-    flex-wrap: wrap; margin-bottom: 16px;
-  }
+  .controls { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; margin-bottom: 16px; }
   .ctrl {
     display: inline-flex; align-items: center; justify-content: center; gap: 6px;
     min-width: 40px; height: 38px; padding: 0 12px;
-    background: var(--bg-2); border: 1px solid var(--border);
-    border-radius: 6px; color: var(--text);
-    font-family: inherit; font-size: 13px; font-weight: 500;
-    cursor: pointer; transition: all 0.15s ease;
-    user-select: none;
+    background: var(--bg-2); border: 1px solid var(--border); border-radius: 6px;
+    color: var(--text); font-family: inherit; font-size: 13px; font-weight: 500;
+    cursor: pointer; transition: all 0.15s ease; user-select: none;
   }
-  .ctrl:hover:not(:disabled) {
-    background: var(--bg-3); border-color: var(--border-hi);
-    transform: translateY(-1px);
-  }
+  .ctrl:hover:not(:disabled) { background: var(--bg-3); border-color: var(--border-hi); transform: translateY(-1px); }
   .ctrl:disabled { opacity: 0.4; cursor: not-allowed; }
   .ctrl.primary {
     background: linear-gradient(135deg, var(--accent), #4f46e5);
-    border-color: var(--accent);
-    box-shadow: 0 4px 14px -4px var(--accent-glow);
+    border-color: var(--accent); box-shadow: 0 4px 14px -4px var(--accent-glow);
     min-width: 130px;
   }
-  .ctrl.primary:hover:not(:disabled) {
-    background: linear-gradient(135deg, var(--accent-hi), #6366f1);
-  }
+  .ctrl.primary:hover:not(:disabled) { background: linear-gradient(135deg, var(--accent-hi), #6366f1); }
   .ctrl .icon { font-size: 15px; line-height: 1; }
   .pos {
     display: inline-flex; align-items: center; height: 38px; padding: 0 14px;
-    background: var(--bg-1); border: 1px solid var(--border);
-    border-radius: 6px; font-family: var(--mono);
-    font-size: 13px; color: var(--text-dim); margin: 0 4px;
+    background: var(--bg-1); border: 1px solid var(--border); border-radius: 6px;
+    font-family: var(--mono); font-size: 13px; color: var(--text-dim); margin: 0 4px;
   }
   .pos b { color: var(--text); font-weight: 600; }
 
-  /* ─── Steps ─── */
   .steps-card { padding: 0; overflow: hidden; }
-  .steps-head {
-    padding: 14px 16px; border-bottom: 1px solid var(--border);
-    display: flex; align-items: center; justify-content: space-between;
-  }
+  .steps-head { padding: 14px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
   .steps-head .title { font-size: 13px; font-weight: 600; }
   .steps-head .count { font-size: 11px; color: var(--text-muted); font-family: var(--mono); }
   .steps { max-height: 420px; overflow-y: auto; padding: 6px; }
   .steps::-webkit-scrollbar { width: 10px; }
   .steps::-webkit-scrollbar-thumb { background: var(--bg-3); border-radius: 5px; }
-  .steps::-webkit-scrollbar-thumb:hover { background: var(--border-hi); }
   .step {
-    display: grid; grid-template-columns: 46px 90px 1fr;
-    gap: 12px; align-items: center;
+    display: grid; grid-template-columns: 46px 90px 1fr; gap: 12px; align-items: center;
     padding: 7px 10px; border-radius: 6px;
     font-family: var(--mono); font-size: 12px;
-    cursor: pointer; transition: background 0.1s ease;
-    border-left: 2px solid transparent;
+    cursor: pointer; transition: background 0.1s ease; border-left: 2px solid transparent;
   }
   .step:hover { background: var(--bg-3); }
-  .step.current {
-    background: linear-gradient(90deg, rgba(99,102,241,0.14), transparent);
-    border-left-color: var(--accent);
-  }
+  .step.current { background: linear-gradient(90deg, rgba(99,102,241,0.14), transparent); border-left-color: var(--accent); }
   .step .n { color: var(--text-muted); text-align: right; font-size: 11px; }
-  .step .k {
-    font-size: 10px; font-weight: 700; letter-spacing: 0.05em;
-    text-transform: uppercase;
-    padding: 2px 6px; border-radius: 3px; text-align: center;
-    background: var(--bg-3); color: var(--text-dim);
-  }
+  .step .k { font-size: 10px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; padding: 2px 6px; border-radius: 3px; text-align: center; background: var(--bg-3); color: var(--text-dim); }
   .step[data-kind="compare"] .k { background: rgba(245,158,11,0.18); color: var(--cmp); }
   .step[data-kind="swap"]    .k { background: rgba(16,185,129,0.18); color: var(--swap); }
   .step[data-kind="assign"]  .k { background: rgba(59,130,246,0.18); color: var(--assign); }
@@ -438,37 +294,19 @@ internal static class YawaViewerHtml
   .step[data-kind="call"]    .k { background: rgba(168,85,247,0.18); color: var(--call); }
   .step[data-kind="mark"]    .k { background: rgba(236,72,153,0.18); color: var(--mark); }
   .step[data-kind="snapshot"] .k { background: rgba(139,149,173,0.15); color: var(--text-dim); }
-  .step .d {
-    color: var(--text-dim);
-    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-  }
+  .step .d { color: var(--text-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .step .d .val { color: var(--text); font-weight: 500; }
   .step .d .ann { color: var(--cmp); font-family: var(--sans); font-style: italic; }
   .step .d .arrow { color: var(--text-muted); margin: 0 2px; }
 
-  /* ─── Empty state ─── */
   .empty { text-align: center; padding: 60px 20px; color: var(--text-muted); }
   .empty .icon { font-size: 48px; margin-bottom: 12px; opacity: 0.6; }
   .empty .title { font-size: 15px; color: var(--text-dim); margin-bottom: 4px; }
-
-  .loading {
-    display: inline-block; width: 16px; height: 16px;
-    border: 2px solid var(--border-hi); border-top-color: var(--accent);
-    border-radius: 50%; animation: spin 0.7s linear infinite;
-  }
+  .loading { display: inline-block; width: 16px; height: 16px; border: 2px solid var(--border-hi); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
 
-  .hint {
-    display: flex; gap: 12px; align-items: center;
-    font-size: 11px; color: var(--text-muted);
-    margin-left: auto; flex-wrap: wrap;
-  }
-  .hint kbd {
-    display: inline-block; padding: 1px 6px;
-    background: var(--bg-3); border: 1px solid var(--border-hi);
-    border-bottom-width: 2px; border-radius: 3px;
-    font-family: var(--mono); font-size: 10px;
-  }
+  .hint { display: flex; gap: 12px; align-items: center; font-size: 11px; color: var(--text-muted); margin-left: auto; flex-wrap: wrap; }
+  .hint kbd { display: inline-block; padding: 1px 6px; background: var(--bg-3); border: 1px solid var(--border-hi); border-bottom-width: 2px; border-radius: 3px; font-family: var(--mono); font-size: 10px; }
 </style>
 </head>
 <body>
@@ -546,9 +384,9 @@ def main():
 
         <div class="workspace">
           <div class="card" style="padding: 16px; margin-bottom: 0;">
-            <h3 class="card-title" id="array-title">Структура данных</h3>
-            <div class="array-wrap">
-              <div class="array" id="arr"></div>
+            <h3 class="card-title" id="viz-title">Структура данных</h3>
+            <div class="viz-wrap" id="viz-wrap">
+              <div id="viz-content"></div>
             </div>
           </div>
 
@@ -605,11 +443,9 @@ let currentStep = 0;
 let isPlaying = false;
 let playTimer = null;
 let lastVars = {};
-let lastArray = null;
 
 const $ = (id) => document.getElementById(id);
 
-// ─── Helpers ────────────────────────────────────────────
 function fmt(x) {
   if (x === null || x === undefined) return 'null';
   if (typeof x === 'object') return JSON.stringify(x);
@@ -634,6 +470,13 @@ function typeOf(v) {
     return 'object';
   }
   return '?';
+}
+function looksLikeTree(v) {
+  if (!v || typeof v !== 'object') return false;
+  if (v.__type === 'tree') return true;
+  if (v.__type === 'tree_node') return true;
+  // ObjectValue-подобный: {value, left, right}
+  return 'value' in v && ('left' in v || 'right' in v);
 }
 
 // ─── Tabs ───────────────────────────────────────────────
@@ -673,32 +516,24 @@ async function loadSamples() {
   }
 }
 
-// ─── Run sample ─────────────────────────────────────────
 async function runSample(name, btn) {
   document.querySelectorAll('.sample-btn').forEach(b => b.classList.remove('active'));
   if (btn) btn.classList.add('active');
-
   showLoading();
-
   try {
     const r = await fetch('/api/yawa/run-sample?name=' + encodeURIComponent(name), { method: 'POST' });
     const data = await r.json();
     if (data.error) { alert('Ошибка: ' + data.error); return; }
     loadSession(data);
-  } catch (e) {
-    showError('Ошибка: ' + e.message);
-  }
+  } catch (e) { showError('Ошибка: ' + e.message); }
 }
 
-// ─── Run Python ─────────────────────────────────────────
 async function runPython() {
   const code = $('code-input').value;
   if (!code.trim()) return;
-
   showLoading();
   $('error-banner').classList.remove('show');
   document.querySelectorAll('.sample-btn').forEach(b => b.classList.remove('active'));
-
   try {
     const r = await fetch('/api/yawa/run-python', {
       method: 'POST',
@@ -706,7 +541,6 @@ async function runPython() {
       body: JSON.stringify({ code })
     });
     const data = await r.json();
-
     if (data.error) {
       const parts = [];
       if (data.line !== undefined && data.line > 0) parts.push('Строка ' + (data.line + 1) + ':' + data.column);
@@ -722,14 +556,10 @@ async function runPython() {
       $('content').style.display = 'none';
       return;
     }
-
     loadSession(data);
-  } catch (e) {
-    showError('Сеть: ' + e.message);
-  }
+  } catch (e) { showError('Сеть: ' + e.message); }
 }
 
-// ─── Common ─────────────────────────────────────────────
 function showLoading() {
   $('empty-state').innerHTML = '<div class="loading"></div>';
   $('empty-state').style.display = 'block';
@@ -745,10 +575,7 @@ function loadSession(data) {
   session = data;
   currentStep = 0;
   lastVars = {};
-  lastArray = null;
-  snapshots = session.steps
-    .map((s, i) => s.snapshot ? i : -1)
-    .filter(i => i >= 0);
+  snapshots = session.steps.map((s, i) => s.snapshot ? i : -1).filter(i => i >= 0);
 
   $('header-meta').innerHTML =
     '<span class="pill">yawa 1.0</span>' +
@@ -765,91 +592,66 @@ function loadSession(data) {
   renderStep(firstSnap >= 0 ? firstSnap : 0);
 }
 
-// ─── Stats ──────────────────────────────────────────────
 function renderStats() {
   const s = session.statistics;
   const items = [
-    ['Шагов',     s.total_steps],
-    ['Сравнений', s.comparisons],
-    ['Обменов',   s.swaps],
-    ['Обращений', s.memory_accesses],
+    ['Шагов', s.total_steps], ['Сравнений', s.comparisons],
+    ['Обменов', s.swaps], ['Обращений', s.memory_accesses],
   ];
   if (s.user_counters) for (const [k, v] of Object.entries(s.user_counters)) items.push([k, v]);
   if (s.structure_sizes) for (const [k, v] of Object.entries(s.structure_sizes)) items.push(['размер ' + k, v]);
-
   $('stats').innerHTML = items.map(([k, v]) =>
-    '<div class="stat"><div class="label">' + esc(k) + '</div><div class="value">' +
-    esc(v) + '</div></div>').join('');
+    '<div class="stat"><div class="label">' + esc(k) + '</div><div class="value">' + esc(v) + '</div></div>').join('');
 }
 
-// ─── Steps list ─────────────────────────────────────────
 function renderStepsList() {
   const box = $('steps');
   box.innerHTML = session.steps.map((s, i) => {
     let d = '';
     if (s.diff && s.diff.length) {
       d = s.diff.filter(x => !String(x.target).startsWith('compare.'))
-                  .map(x =>
-        esc(x.target) + '<span class="arrow">=</span><span class="val">' +
-        esc(fmt(x.new)) + '</span>').join(' ');
+                  .map(x => esc(x.target) + '<span class="arrow">=</span><span class="val">' +
+                            esc(fmt(x.new)) + '</span>').join(' ');
     }
     if (!d && s.annotation) d = '<span class="ann">' + esc(s.annotation) + '</span>';
-    if (!d && s.snapshot)   d = '<span style="color:var(--text-muted);">snapshot</span>';
+    if (!d && s.snapshot) d = '<span style="color:var(--text-muted);">snapshot</span>';
     if (!d) d = '&nbsp;';
-
     return '<div class="step" data-idx="' + i + '" data-kind="' + s.kind + '">' +
              '<span class="n">#' + s.n + '</span>' +
              '<span class="k">' + s.kind + '</span>' +
              '<span class="d">' + d + '</span>' +
            '</div>';
   }).join('');
-
   box.querySelectorAll('.step').forEach(el => {
     el.onclick = () => renderStep(+el.dataset.idx);
   });
 }
 
-// ─── State reconstruction ───────────────────────────────
 function stateAt(stepIdx) {
   let snapIdx = -1;
   for (const i of snapshots) if (i <= stepIdx) snapIdx = i;
-
   let state = {};
   if (snapIdx >= 0) state = JSON.parse(JSON.stringify(session.steps[snapIdx].snapshot));
-
   for (let i = snapIdx + 1; i <= stepIdx; i++) {
     const st = session.steps[i];
     if (!st.diff) continue;
     for (const d of st.diff) {
       const t = String(d.target);
       if (t.startsWith('compare.') || t.startsWith('__')) continue;
-
       let m = t.match(/^([A-Za-z_]\w*)\[(\d+)\]$/);
-      if (m) {
-        const arr = state[m[1]];
-        if (Array.isArray(arr)) arr[+m[2]] = d.new;
-        continue;
-      }
-
+      if (m) { const arr = state[m[1]]; if (Array.isArray(arr)) arr[+m[2]] = d.new; continue; }
       m = t.match(/^([A-Za-z_]\w*)\.(\w+)$/);
-      if (m && m[1] !== 'object') {
-        const obj = state[m[1]];
-        if (obj && typeof obj === 'object') obj[m[2]] = d.new;
-        continue;
-      }
-
+      if (m && m[1] !== 'object') { const obj = state[m[1]]; if (obj && typeof obj === 'object') obj[m[2]] = d.new; continue; }
       if (/^[A-Za-z_]\w*$/.test(t)) state[t] = d.new;
     }
   }
   return state;
 }
 
-// ─── Render step ────────────────────────────────────────
 function renderStep(idx) {
   if (!session) return;
   idx = Math.max(0, Math.min(session.steps.length - 1, idx));
   currentStep = idx;
-
   const st = session.steps[idx];
 
   document.querySelectorAll('.step').forEach(el =>
@@ -873,37 +675,46 @@ function renderStep(idx) {
     if (m) changed.add(m[1]);
   }
 
-  // Массив
-  let arrName = null;
-  if (Array.isArray(state.A)) arrName = 'A';
+  // Ищем что показать в главной панели: приоритет — массив A, потом дерево, потом любой массив, потом любое дерево
+  let displayName = null;
+  let displayValue = null;
+  let displayType = null;
+
+  if (Array.isArray(state.A)) { displayName = 'A'; displayValue = state.A; displayType = 'array'; }
   else {
     for (const [k, v] of Object.entries(state)) {
-      if (Array.isArray(v)) { arrName = k; break; }
+      if (Array.isArray(v)) { displayName = k; displayValue = v; displayType = 'array'; break; }
     }
   }
-  $('array-title').textContent = arrName ? ('Массив ' + arrName) : 'Структура данных';
-
-  const arrBox = $('arr');
-  if (arrName) {
-    const A = state[arrName];
-    const hl = new Set(st.highlight || []);
-    const cls = hlClass(st.kind);
-
-    arrBox.innerHTML = A.map((v, i) => {
-      const key = arrName + '[' + i + ']';
-      const isHl = hl.has(key);
-      return '<div class="cell ' + (isHl ? cls : '') + '">' +
-                '<span class="idx">' + i + '</span>' +
-                esc(fmt(v)) +
-             '</div>';
-    }).join('');
-    lastArray = A.slice();
-  } else {
-    arrBox.innerHTML = '<div class="empty-array">нет массива на этом шаге</div>';
-    lastArray = null;
+  if (!displayName) {
+    for (const [k, v] of Object.entries(state)) {
+      if (looksLikeTree(v)) { displayName = k; displayValue = v; displayType = 'tree'; break; }
+    }
   }
 
-  // Переменные — берём из step.vars
+  const vizBox = $('viz-content');
+  const vizWrap = $('viz-wrap');
+
+  if (displayType === 'array') {
+    $('viz-title').textContent = 'Массив ' + displayName;
+    const hl = new Set(st.highlight || []);
+    const cls = hlClass(st.kind);
+    vizBox.innerHTML = '<div class="array">' + displayValue.map((v, i) => {
+      const key = displayName + '[' + i + ']';
+      const isHl = hl.has(key);
+      return '<div class="cell ' + (isHl ? cls : '') + '">' +
+                '<span class="idx">' + i + '</span>' + esc(fmt(v)) + '</div>';
+    }).join('') + '</div>';
+  } else if (displayType === 'tree') {
+    $('viz-title').textContent = 'Дерево ' + displayName;
+    const hl = new Set(st.highlight || []);
+    vizBox.innerHTML = renderTreeSvg(displayValue, hl);
+  } else {
+    $('viz-title').textContent = 'Структура данных';
+    vizBox.innerHTML = '<div class="empty-array">нет массива или дерева на этом шаге</div>';
+  }
+
+  // Переменные
   const varsFromStep = st.vars || {};
   renderVars(varsFromStep, changed);
   lastVars = Object.fromEntries(
@@ -919,6 +730,83 @@ function hlClass(kind) {
     case 'assign':  return 'hl-mark';
     default:        return 'hl-cmp';
   }
+}
+
+// ─── Tree SVG rendering ─────────────────────────────────
+function renderTreeSvg(tree, hlSet) {
+  // Нормализуем вход: может быть {__type:"tree",root:...} или {value,left,right}
+  let root = tree;
+  if (tree && tree.__type === 'tree') root = tree.root;
+  if (!root) return '<div class="empty-array">дерево пустое</div>';
+
+  // Размеры
+  const NODE_R = 22;
+  const H_GAP = 50;
+  const V_GAP = 75;
+
+  // Собираем все узлы с их позициями через in-order traversal
+  const nodes = [];
+  let inorderIdx = 0;
+
+  function layout(node, depth) {
+    if (!node) return;
+    layout(node.left, depth + 1);
+    nodes.push({ node, x: inorderIdx * (2 * NODE_R + H_GAP), y: depth * V_GAP + NODE_R + 20, idx: inorderIdx, depth });
+    inorderIdx++;
+    layout(node.right, depth + 1);
+  }
+  layout(root, 0);
+
+  if (nodes.length === 0) return '<div class="empty-array">дерево пустое</div>';
+
+  const width  = Math.max(...nodes.map(n => n.x)) + 2 * NODE_R + 40;
+  const height = Math.max(...nodes.map(n => n.y)) + 2 * NODE_R + 20;
+
+  // Edges
+  let edges = '';
+  let nodeCircles = '';
+
+  // Индекс по node для быстрого поиска позиций
+  const posByNode = new Map();
+  for (const n of nodes) posByNode.set(n.node, n);
+
+  for (const n of nodes) {
+    const nnode = n.node;
+    if (nnode.left) {
+      const c = posByNode.get(nnode.left);
+      if (c) {
+        const mx = (n.x + c.x) / 2;
+        const my = (n.y + c.y) / 2;
+        edges += '<path class="tree-edge" d="M ' + n.x + ' ' + n.y + ' Q ' + mx + ' ' + my + ' ' + c.x + ' ' + c.y + '"/>';
+      }
+    }
+    if (nnode.right) {
+      const c = posByNode.get(nnode.right);
+      if (c) {
+        const mx = (n.x + c.x) / 2;
+        const my = (n.y + c.y) / 2;
+        edges += '<path class="tree-edge" d="M ' + n.x + ' ' + n.y + ' Q ' + mx + ' ' + my + ' ' + c.x + ' ' + c.y + '"/>';
+      }
+    }
+  }
+
+  // Определяем какой узел подсвечен: сначала по highlight (например "root"), потом по diff
+  const hlNode = null;
+
+  for (const n of nodes) {
+    const val = fmt(n.node.value);
+    const isRoot = (n.node === root);
+    nodeCircles +=
+      '<g>' +
+        '<circle class="tree-node-circle" cx="' + n.x + '" cy="' + n.y + '" r="' + NODE_R + '"/>' +
+        '<text class="tree-node-text" x="' + n.x + '" y="' + n.y + '">' + esc(val) + '</text>' +
+      '</g>';
+  }
+
+  return '<svg class="tree-svg" viewBox="0 0 ' + width + ' ' + height + '" ' +
+         'width="' + Math.min(width, 900) + '" height="' + height + '">' +
+         edges + nodeCircles +
+         '</svg>';
 }
 
 function renderVars(vars, changed) {
@@ -940,33 +828,28 @@ function renderVars(vars, changed) {
   box.innerHTML = entries.map(([name, value]) => {
     let t, displayValue;
     if (isScalar(value)) {
-      t = typeOf(value);
-      displayValue = fmt(value);
+      t = typeOf(value); displayValue = fmt(value);
+    } else if (looksLikeTree(value)) {
+      t = 'tree';
+      const size = countTreeNodes(value);
+      displayValue = 'tree(' + size + ' узлов)';
     } else if (value && typeof value === 'object' && value.__type) {
       t = value.__type;
       if (value.__type.startsWith('array')) {
         if (value.items) displayValue = '[' + value.items.map(x => fmt(x)).join(', ') + ']';
         else displayValue = 'array[' + (value.length ?? '?') + ']';
-      } else if (value.__type === 'tree') {
-        displayValue = 'tree(root=' + fmt(value.root) + ', size=' + value.size + ')';
-      } else if (value.__type === 'tree_node') {
-        displayValue = 'node(' + fmt(value.value) + ')';
       } else if (value.__type === 'graph') {
         displayValue = 'graph(' + value.nodes + 'N, ' + value.edges + 'E)';
       } else if (value.fields !== undefined) {
         displayValue = value.__type + '{' + value.fields + '}';
-      } else {
-        displayValue = value.__type;
-      }
+      } else displayValue = value.__type;
     } else {
-      t = typeOf(value);
-      displayValue = fmt(value);
+      t = typeOf(value); displayValue = fmt(value);
     }
 
     const cls = isScalar(value) ? '' :
                 t.startsWith('array') ? 'array-var' :
-                t === 'tree' || t === 'tree_node' ? 'tree-var' :
-                'object-var';
+                t === 'tree' || t === 'tree_node' ? 'tree-var' : 'object-var';
 
     const reallyChanged = changed.has(name) && lastVars[name] !== undefined &&
                           JSON.stringify(lastVars[name]) !== JSON.stringify(value);
@@ -982,7 +865,15 @@ function renderVars(vars, changed) {
   }).join('');
 }
 
-// ─── Controls ───────────────────────────────────────────
+function countTreeNodes(v) {
+  if (!v) return 0;
+  if (v.__type === 'tree') return v.size || countTreeNodes(v.root);
+  if (v.__type === 'tree_node' || ('value' in v)) {
+    return 1 + countTreeNodes(v.left) + countTreeNodes(v.right);
+  }
+  return 0;
+}
+
 function setupControls() {
   $('btn-first').onclick = () => renderStep(0);
   $('btn-last').onclick  = () => renderStep(session.steps.length - 1);
@@ -990,18 +881,14 @@ function setupControls() {
   $('btn-next').onclick  = () => renderStep(currentStep + 10);
   $('btn-prev1').onclick = () => renderStep(currentStep - 1);
   $('btn-next1').onclick = () => renderStep(currentStep + 1);
-
   $('btn-play').onclick = togglePlay;
-
   $('timeline').onclick = (e) => {
     const rect = $('timeline').getBoundingClientRect();
     const p = (e.clientX - rect.left) / rect.width;
     renderStep(Math.round(p * (session.steps.length - 1)));
   };
-
   $('btn-run-python').onclick = runPython;
   $('btn-clear-code').onclick = () => { $('code-input').value = ''; $('code-input').focus(); };
-
   document.addEventListener('keydown', (e) => {
     if (e.target && e.target.tagName === 'TEXTAREA') return;
     if (!session) return;
@@ -1019,21 +906,17 @@ function togglePlay() {
   isPlaying = !isPlaying;
   $('play-label').textContent = isPlaying ? 'Пауза' : 'Воспроизвести';
   $('btn-play').querySelector('.icon').textContent = isPlaying ? '⏸' : '▶';
-
   if (isPlaying) {
     playTimer = setInterval(() => {
       if (currentStep >= session.steps.length - 1) {
-        clearInterval(playTimer);
-        isPlaying = false;
+        clearInterval(playTimer); isPlaying = false;
         $('play-label').textContent = 'Воспроизвести';
         $('btn-play').querySelector('.icon').textContent = '▶';
         return;
       }
       renderStep(currentStep + 1);
     }, 150);
-  } else {
-    clearInterval(playTimer);
-  }
+  } else clearInterval(playTimer);
 }
 
 setupControls();

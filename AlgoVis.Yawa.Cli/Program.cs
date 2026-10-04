@@ -211,9 +211,17 @@ static int RunExec(string[] args)
             Directory.CreateDirectory(dir);
 
         var json = JsonSerializer.Serialize(session, new JsonSerializerOptions { WriteIndented = true });
-        File.WriteAllText(outPath, json);
+        File.WriteAllText(outPath, json, System.Text.Encoding.UTF8);
         Console.WriteLine();
         Console.WriteLine($"💾 Trace written to {outPath} ({json.Length} bytes)");
+    }
+
+    // Если в trace есть шаг kind="error" — программа упала в момент выполнения.
+    var errorStep = session.Steps.FirstOrDefault(s => s.Kind == "error");
+    if (errorStep is not null)
+    {
+        Console.Error.WriteLine($"❌ RUNTIME: {errorStep.Annotation}");
+        return 2;
     }
 
     return 0;

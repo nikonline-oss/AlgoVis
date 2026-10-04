@@ -53,6 +53,28 @@
       ]
     },
     {
+      "name": "inner",
+      "params": [
+        {
+          "name": "x"
+        }
+      ],
+      "returns": null,
+      "body": [
+        {
+          "op": "return",
+          "value": {
+            "call": "outer__inner",
+            "args": [
+              {
+                "ref": "x"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
       "name": "main",
       "params": [],
       "returns": null,

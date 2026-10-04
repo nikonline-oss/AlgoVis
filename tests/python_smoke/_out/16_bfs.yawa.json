@@ -114,11 +114,11 @@
                 {
                   "op": "expr",
                   "value": {
-                    "call": "push",
+                    "call_method": {
+                      "ref": "visited"
+                    },
+                    "name": "append",
                     "args": [
-                      {
-                        "ref": "visited"
-                      },
                       {
                         "ref": "node"
                       }
@@ -142,11 +142,11 @@
                     {
                       "op": "expr",
                       "value": {
-                        "call": "push",
+                        "call_method": {
+                          "ref": "queue"
+                        },
+                        "name": "append",
                         "args": [
-                          {
-                            "ref": "queue"
-                          },
                           {
                             "ref": "neighbor"
                           }

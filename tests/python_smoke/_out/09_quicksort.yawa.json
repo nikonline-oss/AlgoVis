@@ -114,11 +114,11 @@
                 {
                   "op": "expr",
                   "value": {
-                    "call": "push",
+                    "call_method": {
+                      "ref": "left"
+                    },
+                    "name": "append",
                     "args": [
-                      {
-                        "ref": "left"
-                      },
                       {
                         "index": [
                           {
@@ -137,11 +137,11 @@
                 {
                   "op": "expr",
                   "value": {
-                    "call": "push",
+                    "call_method": {
+                      "ref": "right"
+                    },
+                    "name": "append",
                     "args": [
-                      {
-                        "ref": "right"
-                      },
                       {
                         "index": [
                           {

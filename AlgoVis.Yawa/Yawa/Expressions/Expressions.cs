@@ -106,3 +106,11 @@ public sealed class DictExpr : YawaExpression
     /// <summary>Список пар ключ-значение.</summary>
     public List<DictEntry> Items { get; set; } = new();
 }
+public sealed class InstantiateExpr : YawaExpression
+{
+    [JsonPropertyName("instantiate")]
+    public string ClassName { get; set; } = "";
+
+    [JsonPropertyName("args")]
+    public List<YawaExpression> Args { get; set; } = new();
+}

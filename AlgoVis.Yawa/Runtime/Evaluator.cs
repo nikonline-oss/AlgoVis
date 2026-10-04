@@ -42,6 +42,8 @@ public sealed class Evaluator
                     }
                     return obj;
                 }
+            case InstantiateExpr inst:
+                return _interp.Instantiate(inst.ClassName, inst.Args, frame, inst.NodeId);
             default:
                 throw new YawaRuntimeException($"Unknown expression type: {expr.GetType().Name}");
         }
@@ -71,11 +73,7 @@ public sealed class Evaluator
 
         if (target is ObjectValue obj)
         {
-            var key = index switch
-            {
-                StringValue s2 => s2.Value,
-                _ => index.ToString()
-            };
+            var key = index is StringValue sv ? sv.Value : index.ToString();
             _interp.Recorder.Stats.MemoryAccesses++;
             if (!obj.HasField(key))
                 throw new YawaRuntimeException($"Key '{key}' not found in dictionary");
@@ -162,10 +160,7 @@ public sealed class Evaluator
     private RuntimeValue EvalCallMethod(CallMethodExpr cm, Frame frame)
     {
         var receiver = Eval(cm.Receiver, frame);
-        // Метод — глобальная функция с receiver как первый аргумент.
-        var args = new List<YawaExpression> { cm.Receiver };
-        args.AddRange(cm.Args);
-        return _interp.CallFunction(cm.Name, args, frame, cm.NodeId);
+        return _interp.CallMethod(receiver, cm.Name, cm.Args, frame, cm.NodeId);
     }
 
     private RuntimeValue EvalNewObject(NewObjectExpr no, Frame frame)

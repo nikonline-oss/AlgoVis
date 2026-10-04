@@ -18,6 +18,15 @@ public sealed class PythonToYawa
     private readonly HashSet<string> _functionNames = new();
     private readonly List<YawaFunction> _pendingNestedFunctions = new();
     private string _currentFunctionPrefix = "";
+    /// <summary>Стек префиксов вложенных функций. Верхний элемент — текущий.</summary>
+    private readonly Stack<string> _prefixStack = new();
+
+    /// <summary>Карта переименования: имя внутри функции → полное имя top-level.</summary>
+    private readonly Stack<Dictionary<string, string>> _renameStack = new();
+
+    private Dictionary<string, string>? _currentRenameMap;
+    private readonly HashSet<string> _classNames = new(StringComparer.Ordinal);
+
 
     public PythonToYawa(string source)
     {
@@ -48,6 +57,18 @@ public sealed class PythonToYawa
             }
         };
 
+        // Первый проход: собираем имена классов, чтобы знать,
+        // где call это instantiate, а где — обычная функция.
+        foreach (var child in root.NamedChildren())
+        {
+            if (child.Type == "class_definition")
+            {
+                var nameNode = child.NamedChildren().FirstOrDefault(c => c.Type == "identifier");
+                if (nameNode.IsValid)
+                    _classNames.Add(Text(nameNode));
+            }
+        }
+
         // Top-level: функции, глобальные присваивания, импорты
         foreach (var child in root.NamedChildren())
         {
@@ -69,13 +90,56 @@ public sealed class PythonToYawa
                         throw Err($"Дублирующаяся функция: {fn.Name}", fnode);
                     program.Functions.Add(fn);
 
+                    // Добавляем все nested функции и создаём алиасы-обёртки.
                     foreach (var nested in _pendingNestedFunctions)
                     {
                         if (_functionNames.Add(nested.Name))
                             program.Functions.Add(nested);
+
+                        // Извлекаем короткое имя (после последнего "__") и создаём алиас,
+                        // если такого top-level имени ещё нет.
+                        var shortName = nested.Name.Contains("__")
+                            ? nested.Name[(nested.Name.LastIndexOf("__", StringComparison.Ordinal) + 2)..]
+                            : nested.Name;
+
+                        if (shortName != nested.Name && !_functionNames.Contains(shortName))
+                        {
+                            var wrapper = new YawaFunction
+                            {
+                                Name = shortName,
+                                Params = nested.Params.Select(p => new YawaParam { Name = p.Name }).ToList(),
+                                Returns = nested.Returns
+                            };
+
+                            // return outer__inner(p1, p2, ...)
+                            wrapper.Body.Add(new ReturnStatement
+                            {
+                                Value = new CallExpr
+                                {
+                                    Name = nested.Name,
+                                    Args = nested.Params
+                                        .Select(p => (YawaExpression)new RefExpr { Name = p.Name })
+                                        .ToList()
+                                }
+                            });
+
+                            program.Functions.Add(wrapper);
+                            _functionNames.Add(shortName);
+                        }
                     }
                     _pendingNestedFunctions.Clear();
                     break;
+
+                case "class_definition":
+                    {
+                        var methods = ConvertClass(child);
+                        foreach (var m in methods)
+                        {
+                            if (_functionNames.Add(m.Name))
+                                program.Functions.Add(m);
+                        }
+                        break;
+                    }
 
                 case "expression_statement":
                     {
@@ -158,6 +222,7 @@ public sealed class PythonToYawa
         var paramsNode = children.FirstOrDefault(c => c.Type == "parameters");
         var returnType = children.FirstOrDefault(c => c.Type == "type");
         var block = children.FirstOrDefault(c => c.Type == "block");
+        var savedRenameMap = _currentRenameMap;
 
         if (!nameNode.IsValid)
             throw Err("Функция без имени", node);
@@ -169,9 +234,31 @@ public sealed class PythonToYawa
         };
 
         var savedPrefix = _currentFunctionPrefix;
-        _currentFunctionPrefix = string.IsNullOrEmpty(savedPrefix)
+        var newPrefix = string.IsNullOrEmpty(savedPrefix)
             ? fn.Name
             : savedPrefix + "__" + fn.Name;
+        _currentFunctionPrefix = newPrefix;
+
+        // Собираем имена вложенных функций ДО обработки body,
+        // чтобы успеть переименовать их вызовы внутри тела.
+        var renameMap = new Dictionary<string, string>(StringComparer.Ordinal);
+        if (block.IsValid)
+        {
+            foreach (var child in block.NamedChildren())
+            {
+                if (child.Type == "function_definition")
+                {
+                    var childName = child.NamedChildren()
+                        .FirstOrDefault(c => c.Type == "identifier");
+                    if (childName.IsValid)
+                    {
+                        var n = Text(childName);
+                        renameMap[n] = newPrefix + "__" + n;
+                    }
+                }
+            }
+        }
+        _currentRenameMap = renameMap;
 
         if (paramsNode.IsValid)
         {
@@ -230,11 +317,76 @@ public sealed class PythonToYawa
 
         if (block.IsValid)
             fn.Body = ConvertBlock(block);
+        _currentRenameMap = null;
+        _currentFunctionPrefix = savedPrefix;
 
 
         _currentFunctionPrefix = savedPrefix;
 
         return fn;
+    }
+
+    /// <summary>
+    /// Конвертирует класс в набор top-level функций:
+    ///   ClassName__init, ClassName__method1, ...
+    /// Сами классы в YAWA не существуют — есть только объекты с полем __type__.
+    /// </summary>
+    private List<YawaFunction> ConvertClass(TsNode node)
+    {
+        var children = node.NamedChildren().ToList();
+        var nameNode = children.FirstOrDefault(c => c.Type == "identifier");
+        var block = children.FirstOrDefault(c => c.Type == "block");
+
+        if (!nameNode.IsValid)
+            throw Err("Класс без имени", node);
+
+        var className = Text(nameNode);
+        var result = new List<YawaFunction>();
+
+        if (!block.IsValid) return result;
+
+        foreach (var stmt in block.NamedChildren())
+        {
+            if (stmt.Type == "function_definition")
+            {
+                _pendingNestedFunctions.Clear();
+                var fn = ConvertFunction(stmt);
+                fn.Name = $"{className}.{fn.Name}";
+                result.Add(fn);
+
+                // Nested внутри метода — с префиксом метода.
+                foreach (var nested in _pendingNestedFunctions)
+                    result.Add(nested);
+                _pendingNestedFunctions.Clear();
+            }
+            else if (stmt.Type == "decorated_definition")
+            {
+                var inner = stmt.NamedChildren()
+                    .FirstOrDefault(n => n.Type == "function_definition");
+                if (!inner.IsValid)
+                    throw Err("Поддерживаются только декораторы над методами", stmt);
+
+                _pendingNestedFunctions.Clear();
+                var fn = ConvertFunction(inner);
+                fn.Name = $"{className}.{fn.Name}";
+                result.Add(fn);
+                _pendingNestedFunctions.Clear();
+            }
+            else if (stmt.Type == "expression_statement")
+            {
+                // Атрибуты уровня класса пока игнорируем — можно добавить позже.
+            }
+            else if (stmt.Type == "comment")
+            {
+                // пропускаем
+            }
+            else
+            {
+                _warnings.Add($"Пропущен член класса: {stmt.Type}");
+            }
+        }
+
+        return result;
     }
 
     private (string Key, YawaGlobal Value)? ConvertGlobalAssignment(TsNode assign)
@@ -327,6 +479,12 @@ public sealed class PythonToYawa
 
             case "comment":
                 return null;
+
+            case "class_definition":
+                throw Err(
+                    "Классы не поддерживаются транспайлером. " +
+                    "Используйте словари или именованные структуры (dict/tuple).",
+                    node);
 
             default:
                 throw Err($"Неподдерживаемый statement: {node.Type}", node);
@@ -1004,6 +1162,22 @@ public sealed class PythonToYawa
         if (callee.Type == "identifier")
         {
             var name = Text(callee);
+
+            // Переименование вложенных функций: если внутри текущей функции
+            // есть локальная функция с таким именем — вызываем её полное имя.
+            if (_currentRenameMap is not null && _currentRenameMap.TryGetValue(name, out var renamed))
+                name = renamed;
+
+            // Это вызов класса? → instantiate
+            if (_classNames.Contains(name))
+            {
+                return new InstantiateExpr
+                {
+                    ClassName = name,
+                    Args = args
+                };
+            }
+
             var mapped = name switch
             {
                 "len" => "length",
@@ -1017,7 +1191,8 @@ public sealed class PythonToYawa
             return new CallExpr { Name = mapped, Args = args };
         }
 
-        // Методы: A.append(x) → push(A, x); A.pop() → pop(A)
+        // Методы: obj.method(...) → CallMethodExpr.
+        // Интерпретатор решит: ClassName__method или builtin (append/pop/...).
         if (callee.Type == "attribute")
         {
             var attrChildren = callee.NamedChildren().ToList();
@@ -1027,20 +1202,14 @@ public sealed class PythonToYawa
             var receiver = attrChildren[0];
             var methodName = Text(attrChildren[1]);
 
-            var mapped = methodName switch
+            // Оставляем имя «как в Python» — интерпретатор сам смапит append → push
+            // для встроенных коллекций.
+            return new CallMethodExpr
             {
-                "append" => "push",
-                "pop" => "pop",
-                "insert" => "insert",
-                "remove" => "remove",
-                _ => methodName
+                Receiver = ConvertExpr(receiver),
+                Name = methodName,
+                Args = args
             };
-
-            // receiver передаём первым аргументом
-            var allArgs = new List<YawaExpression> { ConvertExpr(receiver) };
-            allArgs.AddRange(args);
-
-            return new CallExpr { Name = mapped, Args = allArgs };
         }
 
         throw Err("Неподдерживаемый вызываемый объект", callee);

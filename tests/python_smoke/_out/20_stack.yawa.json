@@ -47,11 +47,11 @@
                 {
                   "op": "expr",
                   "value": {
-                    "call": "push",
+                    "call_method": {
+                      "ref": "stack"
+                    },
+                    "name": "append",
                     "args": [
-                      {
-                        "ref": "stack"
-                      },
                       {
                         "ref": "ch"
                       }
@@ -101,12 +101,11 @@
                     {
                       "op": "expr",
                       "value": {
-                        "call": "pop",
-                        "args": [
-                          {
-                            "ref": "stack"
-                          }
-                        ]
+                        "call_method": {
+                          "ref": "stack"
+                        },
+                        "name": "pop",
+                        "args": []
                       }
                     }
                   ],

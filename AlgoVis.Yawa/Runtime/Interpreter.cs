@@ -436,13 +436,23 @@ public sealed class Interpreter
 
     private string RenderTargetPath(YawaExpression expr, Frame frame)
     {
-        return expr switch
+        switch (expr)
         {
-            RefExpr r => r.Name,
-            IndexExpr ix => RenderTargetPath(ix.Target, frame),
-            FieldExpr fl => RenderTargetPath(fl.Target, frame) + "." + fl.FieldName,
-            _ => "<expr>"
-        };
+            case RefExpr r:
+                return r.Name;
+            case IndexExpr ix:
+                {
+                    var inner = RenderTargetPath(ix.Target, frame);
+                    var idxVal = Eval.Eval(ix.Index, frame);
+                    if (idxVal is IntValue iv) return $"{inner}[{iv.Value}]";
+                    if (idxVal is StringValue sv) return $"{inner}[\"{sv.Value}\"]";
+                    return $"{inner}[?]";
+                }
+            case FieldExpr fl:
+                return RenderTargetPath(fl.Target, frame) + "." + fl.FieldName;
+            default:
+                return "<expr>";
+        }
     }
 
     private void ExecuteIf(IfStatement s, Frame frame)

@@ -5,7 +5,7 @@ namespace AlgoVis.Server.Controllers.Yawa;
 /// </summary>
 internal static class YawaViewerHtml
 {
-  public static readonly string Value = """
+    public static readonly string Value = """
 <!doctype html>
 <html lang="ru">
 <head>
@@ -175,6 +175,32 @@ internal static class YawaViewerHtml
     overflow: auto;
   }
 
+  /* Variable selector chips */
+  .viz-selector {
+    display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px;
+  }
+  .viz-chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 5px 10px;
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text-dim); font-family: var(--mono); font-size: 12px;
+    cursor: pointer; transition: all 0.15s ease;
+  }
+  .viz-chip:hover { background: var(--bg-3); border-color: var(--border-hi); color: var(--text); }
+  .viz-chip.active {
+    background: linear-gradient(135deg, rgba(99,102,241,0.20), rgba(99,102,241,0.05));
+    border-color: var(--accent); color: var(--text);
+    box-shadow: 0 0 0 1px rgba(99,102,241,0.35), 0 4px 14px -6px var(--accent-glow);
+  }
+  .viz-chip .kind-badge {
+    font-size: 9px; padding: 1px 5px; border-radius: 3px;
+    background: var(--bg-3); color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 0.05em;
+  }
+  .viz-chip.active .kind-badge { background: rgba(99,102,241,0.35); color: #c7d2fe; }
+
   /* Array */
   .array { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
   .cell {
@@ -194,7 +220,67 @@ internal static class YawaViewerHtml
   .cell.hl-cmp { border-color: var(--cmp); background: linear-gradient(180deg, rgba(245,158,11,0.20), rgba(245,158,11,0.08)); box-shadow: 0 0 0 3px rgba(245,158,11,0.18), 0 4px 16px -4px rgba(245,158,11,0.5); transform: translateY(-3px) scale(1.06); color: #fde68a; }
   .cell.hl-swap { border-color: var(--swap); background: linear-gradient(180deg, rgba(16,185,129,0.20), rgba(16,185,129,0.08)); box-shadow: 0 0 0 3px rgba(16,185,129,0.18), 0 4px 16px -4px rgba(16,185,129,0.5); transform: translateY(-3px) scale(1.06); color: #a7f3d0; }
   .cell.hl-mark { border-color: var(--mark); background: linear-gradient(180deg, rgba(236,72,153,0.20), rgba(236,72,153,0.08)); box-shadow: 0 0 0 3px rgba(236,72,153,0.18), 0 4px 16px -4px rgba(236,72,153,0.5); transform: translateY(-3px) scale(1.06); color: #fbcfe8; }
-  .empty-array { color: var(--text-muted); font-style: italic; font-size: 13px; }
+  .cell.dim { opacity: 0.35; }
+
+  /* Matrix */
+  .matrix-wrap { overflow-x: auto; }
+  .matrix {
+    border-collapse: separate; border-spacing: 4px;
+    font-family: var(--mono); margin: 0 auto;
+  }
+  .matrix th {
+    font-size: 10px; color: var(--text-muted); font-weight: 500;
+    padding: 0 6px; text-align: center;
+    font-family: var(--sans);
+  }
+  .mcell {
+    min-width: 42px; height: 42px; padding: 4px 8px;
+    text-align: center; vertical-align: middle;
+    background: linear-gradient(180deg, var(--bg-3) 0%, var(--bg-2) 100%);
+    border: 2px solid var(--border-hi); border-radius: 5px;
+    font-size: 15px; font-weight: 600; color: var(--text);
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .mcell.hl-cmp {
+    border-color: var(--cmp);
+    background: linear-gradient(180deg, rgba(245,158,11,0.25), rgba(245,158,11,0.10));
+    box-shadow: 0 0 0 3px rgba(245,158,11,0.20); color: #fde68a;
+    transform: scale(1.08);
+  }
+  .mcell.hl-swap {
+    border-color: var(--swap);
+    background: linear-gradient(180deg, rgba(16,185,129,0.25), rgba(16,185,129,0.10));
+    box-shadow: 0 0 0 3px rgba(16,185,129,0.20); color: #a7f3d0;
+    transform: scale(1.08);
+  }
+  .mcell.hl-mark {
+    border-color: var(--mark);
+    background: linear-gradient(180deg, rgba(236,72,153,0.25), rgba(236,72,153,0.10));
+    box-shadow: 0 0 0 3px rgba(236,72,153,0.20); color: #fbcfe8;
+    transform: scale(1.08);
+  }
+
+  /* Set */
+  .set-list { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
+  .set-chip {
+    display: inline-flex; align-items: center; padding: 6px 12px;
+    background: var(--bg-3); border: 2px solid var(--border-hi); border-radius: 999px;
+    font-family: var(--mono); font-size: 14px; font-weight: 600; color: var(--text);
+    transition: all 0.2s ease;
+  }
+  .set-chip.hl { border-color: var(--cmp); background: rgba(245,158,11,0.20); color: #fde68a; }
+  .set-empty { color: var(--text-muted); font-style: italic; }
+
+  /* Dict */
+  .dict-list { display: flex; flex-direction: column; gap: 4px; width: 100%; max-width: 500px; }
+  .dict-row {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+    padding: 8px 12px;
+    background: var(--bg-3); border: 1px solid var(--border-hi); border-radius: 6px;
+    font-family: var(--mono); font-size: 13px;
+  }
+  .dict-row .k { color: #fbbf24; font-weight: 600; }
+  .dict-row .v { color: var(--text); text-align: right; }
 
   /* Tree SVG */
   .tree-svg { display: block; max-width: 100%; height: auto; }
@@ -208,7 +294,7 @@ internal static class YawaViewerHtml
   .tree-edge { stroke: var(--border-hi); stroke-width: 2; fill: none; transition: all 0.3s ease; }
   .tree-edge.hl { stroke: var(--cmp); stroke-width: 3; }
 
-  /* Variables */
+  /* Variables panel */
   .vars-card { padding: 14px; min-height: 140px; }
   .vars { display: flex; flex-direction: column; gap: 4px; max-height: 400px; overflow-y: auto; }
   .vars::-webkit-scrollbar { width: 8px; }
@@ -218,7 +304,10 @@ internal static class YawaViewerHtml
     padding: 6px 10px; background: var(--bg-1);
     border: 1px solid transparent; border-radius: 6px;
     font-family: var(--mono); font-size: 13px; transition: all 0.2s ease;
+    cursor: pointer;
   }
+  .var-row:hover { border-color: var(--border-hi); }
+  .var-row.selected { border-color: var(--accent); background: rgba(99,102,241,0.10); }
   .var-row .name { color: var(--text-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .var-row .name .type { color: var(--text-muted); font-size: 10px; margin-left: 6px; padding: 1px 5px; background: var(--bg-3); border-radius: 3px; }
   .var-row .value { color: var(--text); font-weight: 600; text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 140px; }
@@ -233,7 +322,6 @@ internal static class YawaViewerHtml
   }
   .vars-empty { color: var(--text-muted); font-size: 12px; font-style: italic; padding: 8px; }
 
-  /* Timeline */
   .timeline { position: relative; height: 6px; background: var(--bg-3); border-radius: 3px; margin: 14px 0; overflow: hidden; cursor: pointer; }
   .timeline-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--pink)); border-radius: 3px; transition: width 0.15s ease; box-shadow: 0 0 8px var(--accent-glow); }
 
@@ -245,6 +333,7 @@ internal static class YawaViewerHtml
   }
   .annotation:empty { display: none; }
   .annotation .badge { font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; padding: 2px 8px; background: var(--accent); color: white; border-radius: 3px; }
+  .annotation .ret { color: #a7f3d0; font-family: var(--mono); font-weight: 600; }
 
   .controls { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; margin-bottom: 16px; }
   .ctrl {
@@ -292,6 +381,7 @@ internal static class YawaViewerHtml
   .step[data-kind="assign"]  .k { background: rgba(59,130,246,0.18); color: var(--assign); }
   .step[data-kind="declare"] .k { background: rgba(59,130,246,0.18); color: var(--assign); }
   .step[data-kind="call"]    .k { background: rgba(168,85,247,0.18); color: var(--call); }
+  .step[data-kind="return"]  .k { background: rgba(16,185,129,0.18); color: var(--swap); }
   .step[data-kind="mark"]    .k { background: rgba(236,72,153,0.18); color: var(--mark); }
   .step[data-kind="snapshot"] .k { background: rgba(139,149,173,0.15); color: var(--text-dim); }
   .step .d { color: var(--text-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -304,7 +394,6 @@ internal static class YawaViewerHtml
   .empty .title { font-size: 15px; color: var(--text-dim); margin-bottom: 4px; }
   .loading { display: inline-block; width: 16px; height: 16px; border: 2px solid var(--border-hi); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
-
   .hint { display: flex; gap: 12px; align-items: center; font-size: 11px; color: var(--text-muted); margin-left: auto; flex-wrap: wrap; }
   .hint kbd { display: inline-block; padding: 1px 6px; background: var(--bg-3); border: 1px solid var(--border-hi); border-bottom-width: 2px; border-radius: 3px; font-family: var(--mono); font-size: 10px; }
 </style>
@@ -384,7 +473,11 @@ def main():
 
         <div class="workspace">
           <div class="card" style="padding: 16px; margin-bottom: 0;">
-            <h3 class="card-title" id="viz-title">Структура данных</h3>
+            <h3 class="card-title">
+              <span id="viz-title">Структура данных</span>
+              <span class="badge" id="viz-kind-badge" style="display:none;"></span>
+            </h3>
+            <div class="viz-selector" id="viz-selector"></div>
             <div class="viz-wrap" id="viz-wrap">
               <div id="viz-content"></div>
             </div>
@@ -443,9 +536,11 @@ let currentStep = 0;
 let isPlaying = false;
 let playTimer = null;
 let lastVars = {};
+let selectedVar = null;   // имя переменной для главной визуализации
 
 const $ = (id) => document.getElementById(id);
 
+// ─── Helpers ────────────────────────────────────────────
 function fmt(x) {
   if (x === null || x === undefined) return 'null';
   if (typeof x === 'object') return JSON.stringify(x);
@@ -464,19 +559,62 @@ function typeOf(v) {
   if (typeof v === 'number') return Number.isInteger(v) ? 'int' : 'float';
   if (typeof v === 'string') return 'string';
   if (typeof v === 'boolean') return 'bool';
-  if (Array.isArray(v)) return 'array';
+  if (Array.isArray(v)) {
+    if (v.length > 0 && Array.isArray(v[0])) return 'matrix';
+    return 'array';
+  }
   if (typeof v === 'object') {
+    if (v.__type === 'tree' || v.__type === 'tree_node') return 'tree';
     if ('value' in v && ('left' in v || 'right' in v)) return 'tree_node';
     return 'object';
   }
   return '?';
 }
+function isMatrix(v) {
+  return Array.isArray(v) && v.length > 0 && Array.isArray(v[0]);
+}
 function looksLikeTree(v) {
   if (!v || typeof v !== 'object') return false;
   if (v.__type === 'tree') return true;
   if (v.__type === 'tree_node') return true;
-  // ObjectValue-подобный: {value, left, right}
   return 'value' in v && ('left' in v || 'right' in v);
+}
+function detectShape(v) {
+  if (isScalar(v)) return 'scalar';
+  if (isMatrix(v)) return 'matrix';
+  if (Array.isArray(v)) return 'array';
+  if (looksLikeTree(v)) return 'tree';
+  if (v && typeof v === 'object' && v.__type === 'set') return 'set';
+  if (v && typeof v === 'object' && v.__type && v.__type.startsWith('array')) return 'array';
+  if (v && typeof v === 'object') return 'dict';
+  return 'scalar';
+}
+
+// Парсит highlight вида "A[3]", "M[1][2]", "A"
+function parseHighlight(h) {
+  let m = h.match(/^([A-Za-z_]\w*)\[(\d+)\]\[(\d+)\]$/);
+  if (m) return {name: m[1], i: +m[2], j: +m[3]};
+  m = h.match(/^([A-Za-z_]\w*)\[(\d+)\]$/);
+  if (m) return {name: m[1], i: +m[2], j: null};
+  m = h.match(/^([A-Za-z_]\w*)$/);
+  if (m) return {name: m[1], i: null, j: null};
+  return null;
+}
+
+function buildHighlightSets(rawHighlights) {
+  const cells = new Set();   // "M[1][2]"
+  const rows  = new Map();   // name → Set of i
+  const vars  = new Set();
+  for (const h of (rawHighlights || [])) {
+    const p = parseHighlight(h);
+    if (!p) continue;
+    if (p.i !== null && p.j !== null) cells.add(`${p.name}[${p.i}][${p.j}]`);
+    else if (p.i !== null) {
+      if (!rows.has(p.name)) rows.set(p.name, new Set());
+      rows.get(p.name).add(p.i);
+    } else vars.add(p.name);
+  }
+  return {cells, rows, vars};
 }
 
 // ─── Tabs ───────────────────────────────────────────────
@@ -575,6 +713,7 @@ function loadSession(data) {
   session = data;
   currentStep = 0;
   lastVars = {};
+  selectedVar = null;
   snapshots = session.steps.map((s, i) => s.snapshot ? i : -1).filter(i => i >= 0);
 
   $('header-meta').innerHTML =
@@ -608,7 +747,9 @@ function renderStepsList() {
   const box = $('steps');
   box.innerHTML = session.steps.map((s, i) => {
     let d = '';
-    if (s.diff && s.diff.length) {
+    if (s.kind === 'return' && s.annotation) {
+      d = '<span class="ann">' + esc(s.annotation) + '</span>';
+    } else if (s.diff && s.diff.length) {
       d = s.diff.filter(x => !String(x.target).startsWith('compare.'))
                   .map(x => esc(x.target) + '<span class="arrow">=</span><span class="val">' +
                             esc(fmt(x.new)) + '</span>').join(' ');
@@ -616,6 +757,7 @@ function renderStepsList() {
     if (!d && s.annotation) d = '<span class="ann">' + esc(s.annotation) + '</span>';
     if (!d && s.snapshot) d = '<span style="color:var(--text-muted);">snapshot</span>';
     if (!d) d = '&nbsp;';
+
     return '<div class="step" data-idx="' + i + '" data-kind="' + s.kind + '">' +
              '<span class="n">#' + s.n + '</span>' +
              '<span class="k">' + s.kind + '</span>' +
@@ -638,16 +780,64 @@ function stateAt(stepIdx) {
     for (const d of st.diff) {
       const t = String(d.target);
       if (t.startsWith('compare.') || t.startsWith('__')) continue;
-      let m = t.match(/^([A-Za-z_]\w*)\[(\d+)\]$/);
-      if (m) { const arr = state[m[1]]; if (Array.isArray(arr)) arr[+m[2]] = d.new; continue; }
+
+      // M[i][j]
+      let m = t.match(/^([A-Za-z_]\w*)\[(\d+)\]\[(\d+)\]$/);
+      if (m) {
+        const arr = state[m[1]];
+        if (Array.isArray(arr) && Array.isArray(arr[+m[2]]))
+          arr[+m[2]][+m[3]] = d.new;
+        continue;
+      }
+
+      // A[i]
+      m = t.match(/^([A-Za-z_]\w*)\[(\d+)\]$/);
+      if (m) {
+        const arr = state[m[1]];
+        if (Array.isArray(arr)) arr[+m[2]] = d.new;
+        continue;
+      }
+
+      // obj.field
       m = t.match(/^([A-Za-z_]\w*)\.(\w+)$/);
-      if (m && m[1] !== 'object') { const obj = state[m[1]]; if (obj && typeof obj === 'object') obj[m[2]] = d.new; continue; }
+      if (m && m[1] !== 'object') {
+        const obj = state[m[1]];
+        if (obj && typeof obj === 'object') obj[m[2]] = d.new;
+        continue;
+      }
+
+      // Просто переменная
       if (/^[A-Za-z_]\w*$/.test(t)) state[t] = d.new;
     }
   }
   return state;
 }
 
+// ─── Список визуализируемых переменных ──────────────────
+function listVisualizable(state) {
+  const result = [];
+  for (const [name, v] of Object.entries(state)) {
+    if (name.startsWith('__')) continue;
+    const shape = detectShape(v);
+    if (shape === 'scalar') continue;
+    result.push({ name, shape, value: v });
+  }
+  return result;
+}
+
+function pickDefaultVar(list, prevSelected) {
+  if (!list.length) return null;
+  if (prevSelected && list.some(x => x.name === prevSelected)) return prevSelected;
+  // Приоритет: A, arr, matrix (2D), tree
+  const prefOrder = ['A', 'arr', 'matrix', 'M', 'grid'];
+  for (const p of prefOrder) {
+    const f = list.find(x => x.name === p);
+    if (f) return f.name;
+  }
+  return list[0].name;
+}
+
+// ─── Рендер основного шага ──────────────────────────────
 function renderStep(idx) {
   if (!session) return;
   idx = Math.max(0, Math.min(session.steps.length - 1, idx));
@@ -662,10 +852,19 @@ function renderStep(idx) {
   $('pos').innerHTML = '<b>' + idx + '</b> / ' + (session.steps.length - 1);
   $('timeline-fill').style.width = (100 * idx / Math.max(1, session.steps.length - 1)) + '%';
 
-  const ann = st.annotation || '';
-  $('annotation').innerHTML = ann
-    ? '<span class="badge">' + esc(st.kind) + '</span><span>' + esc(ann) + '</span>'
-    : (st.kind ? '<span class="badge">' + esc(st.kind) + '</span><span style="color:var(--text-muted);font-style:italic;">…</span>' : '');
+  // Аннотация
+  let annHtml = '';
+  if (st.kind) {
+    annHtml = '<span class="badge">' + esc(st.kind) + '</span>';
+    if (st.kind === 'return' && st.annotation) {
+      annHtml += '<span class="ret">' + esc(st.annotation) + '</span>';
+    } else if (st.annotation) {
+      annHtml += '<span>' + esc(st.annotation) + '</span>';
+    } else {
+      annHtml += '<span style="color:var(--text-muted);font-style:italic;">…</span>';
+    }
+  }
+  $('annotation').innerHTML = annHtml;
 
   const state = stateAt(idx);
   const changed = new Set();
@@ -674,52 +873,43 @@ function renderStep(idx) {
     const m = t.match(/^([A-Za-z_]\w*)(\[|\.|$)/);
     if (m) changed.add(m[1]);
   }
+  const hl = buildHighlightSets(st.highlight);
 
-  // Ищем что показать в главной панели: приоритет — массив A, потом дерево, потом любой массив, потом любое дерево
-  let displayName = null;
-  let displayValue = null;
-  let displayType = null;
+  // Список для визуализации
+  const list = listVisualizable(state);
 
-  if (Array.isArray(state.A)) { displayName = 'A'; displayValue = state.A; displayType = 'array'; }
-  else {
-    for (const [k, v] of Object.entries(state)) {
-      if (Array.isArray(v)) { displayName = k; displayValue = v; displayType = 'array'; break; }
-    }
-  }
-  if (!displayName) {
-    for (const [k, v] of Object.entries(state)) {
-      if (looksLikeTree(v)) { displayName = k; displayValue = v; displayType = 'tree'; break; }
-    }
-  }
+  // Если selectedVar пуст или пропал — выбираем разумный дефолт
+  const wantDefault = !selectedVar || !list.some(x => x.name === selectedVar);
+  if (wantDefault) selectedVar = pickDefaultVar(list, selectedVar);
 
-  const vizBox = $('viz-content');
-  const vizWrap = $('viz-wrap');
+  renderVarChips(list);
+  renderVisualization(list, hl, st);
 
-  if (displayType === 'array') {
-    $('viz-title').textContent = 'Массив ' + displayName;
-    const hl = new Set(st.highlight || []);
-    const cls = hlClass(st.kind);
-    vizBox.innerHTML = '<div class="array">' + displayValue.map((v, i) => {
-      const key = displayName + '[' + i + ']';
-      const isHl = hl.has(key);
-      return '<div class="cell ' + (isHl ? cls : '') + '">' +
-                '<span class="idx">' + i + '</span>' + esc(fmt(v)) + '</div>';
-    }).join('') + '</div>';
-  } else if (displayType === 'tree') {
-    $('viz-title').textContent = 'Дерево ' + displayName;
-    const hl = new Set(st.highlight || []);
-    vizBox.innerHTML = renderTreeSvg(displayValue, hl);
-  } else {
-    $('viz-title').textContent = 'Структура данных';
-    vizBox.innerHTML = '<div class="empty-array">нет массива или дерева на этом шаге</div>';
-  }
-
-  // Переменные
+  // Переменные справа
   const varsFromStep = st.vars || {};
   renderVars(varsFromStep, changed);
   lastVars = Object.fromEntries(
     Object.entries(varsFromStep).filter(([, v]) => isScalar(v))
   );
+}
+
+function renderVarChips(list) {
+  const box = $('viz-selector');
+  if (!list.length) { box.innerHTML = ''; return; }
+  box.innerHTML = list.map(item => {
+    const kind = item.shape;
+    const active = item.name === selectedVar;
+    return '<div class="viz-chip' + (active ? ' active' : '') + '" data-name="' + esc(item.name) + '">' +
+             esc(item.name) +
+             '<span class="kind-badge">' + esc(kind) + '</span>' +
+           '</div>';
+  }).join('');
+  box.querySelectorAll('.viz-chip').forEach(el => {
+    el.onclick = () => {
+      selectedVar = el.dataset.name;
+      renderStep(currentStep);
+    };
+  });
 }
 
 function hlClass(kind) {
@@ -732,83 +922,167 @@ function hlClass(kind) {
   }
 }
 
-// ─── Tree SVG rendering ─────────────────────────────────
-function renderTreeSvg(tree, hlSet) {
-  // Нормализуем вход: может быть {__type:"tree",root:...} или {value,left,right}
+function renderVisualization(list, hl, st) {
+  const vizBox = $('viz-content');
+  const titleEl = $('viz-title');
+  const badgeEl = $('viz-kind-badge');
+
+  if (!list.length) {
+    titleEl.textContent = 'Структура данных';
+    badgeEl.style.display = 'none';
+    vizBox.innerHTML = '<div style="color:var(--text-muted);font-style:italic;font-size:13px;">' +
+                       'нет структур на этом шаге</div>';
+    return;
+  }
+
+  const item = list.find(x => x.name === selectedVar) || list[0];
+  const cls = hlClass(st.kind);
+
+  badgeEl.style.display = '';
+  badgeEl.textContent = item.shape;
+
+  switch (item.shape) {
+    case 'array':
+      titleEl.textContent = 'Массив ' + item.name;
+      vizBox.innerHTML = renderArray(item.name, item.value, hl, cls);
+      break;
+    case 'matrix':
+      titleEl.textContent = 'Матрица ' + item.name;
+      vizBox.innerHTML = renderMatrix(item.name, item.value, hl, cls);
+      break;
+    case 'tree':
+      titleEl.textContent = 'Дерево ' + item.name;
+      vizBox.innerHTML = renderTreeSvg(item.value, hl);
+      break;
+    case 'set':
+      titleEl.textContent = 'Множество ' + item.name;
+      vizBox.innerHTML = renderSet(item.value, hl);
+      break;
+    case 'dict':
+      titleEl.textContent = 'Словарь ' + item.name;
+      vizBox.innerHTML = renderDict(item.value);
+      break;
+    default:
+      titleEl.textContent = item.name;
+      vizBox.innerHTML = '<div style="font-family:var(--mono);">' + esc(fmt(item.value)) + '</div>';
+  }
+}
+
+function renderArray(name, arr, hl, cls) {
+  if (!arr.length) return '<div class="empty-array">пустой массив</div>';
+  const rows = hl.rows.get(name) || new Set();
+  return '<div class="array">' + arr.map((v, i) => {
+    const isHl = rows.has(i);
+    return '<div class="cell ' + (isHl ? cls : '') + '">' +
+             '<span class="idx">' + i + '</span>' + esc(fmt(v)) +
+           '</div>';
+  }).join('') + '</div>';
+}
+
+function renderMatrix(name, m, hl, cls) {
+  if (!m.length) return '<div class="empty-array">пустая матрица</div>';
+  const rows = hl.rows.get(name) || new Set();
+  const cells = hl.cells;
+  const cols = Math.max(...m.map(r => Array.isArray(r) ? r.length : 0));
+
+  let header = '<tr><th></th>';
+  for (let j = 0; j < cols; j++) header += '<th>' + j + '</th>';
+  header += '</tr>';
+
+  let body = '';
+  for (let i = 0; i < m.length; i++) {
+    body += '<tr><th>' + i + '</th>';
+    const row = Array.isArray(m[i]) ? m[i] : [];
+    for (let j = 0; j < cols; j++) {
+      const val = j < row.length ? row[j] : null;
+      const isHl = cells.has(`${name}[${i}][${j}]`) || rows.has(i);
+      body += '<td class="mcell ' + (isHl ? cls : '') + '">' +
+                (j < row.length ? esc(fmt(val)) : '<span style="color:var(--text-muted)">·</span>') +
+              '</td>';
+    }
+    body += '</tr>';
+  }
+
+  return '<div class="matrix-wrap"><table class="matrix">' +
+           '<thead>' + header + '</thead>' +
+           '<tbody>' + body + '</tbody>' +
+         '</table></div>';
+}
+
+function renderSet(s, hl) {
+  const items = s.items || s.__items || [];
+  if (!items.length) return '<div class="set-empty">пустое множество</div>';
+  const rows = hl.rows.get('') || new Set();
+  return '<div class="set-list">' + items.map(v =>
+    '<div class="set-chip">' + esc(fmt(v)) + '</div>').join('') + '</div>';
+}
+
+function renderDict(d) {
+  const entries = Object.entries(d).filter(([k]) => !k.startsWith('__'));
+  if (!entries.length) return '<div class="set-empty">пустой словарь</div>';
+  return '<div class="dict-list">' + entries.map(([k, v]) =>
+    '<div class="dict-row"><span class="k">' + esc(k) + '</span>' +
+    '<span class="v">' + esc(fmt(v)) + '</span></div>').join('') + '</div>';
+}
+
+// ─── Tree SVG ───────────────────────────────────────────
+function renderTreeSvg(tree, hl) {
   let root = tree;
   if (tree && tree.__type === 'tree') root = tree.root;
   if (!root) return '<div class="empty-array">дерево пустое</div>';
 
-  // Размеры
-  const NODE_R = 22;
-  const H_GAP = 50;
-  const V_GAP = 75;
-
-  // Собираем все узлы с их позициями через in-order traversal
+  const NODE_R = 22, H_GAP = 50, V_GAP = 75;
   const nodes = [];
   let inorderIdx = 0;
-
   function layout(node, depth) {
     if (!node) return;
     layout(node.left, depth + 1);
-    nodes.push({ node, x: inorderIdx * (2 * NODE_R + H_GAP), y: depth * V_GAP + NODE_R + 20, idx: inorderIdx, depth });
+    nodes.push({ node, x: inorderIdx * (2 * NODE_R + H_GAP), y: depth * V_GAP + NODE_R + 20 });
     inorderIdx++;
     layout(node.right, depth + 1);
   }
   layout(root, 0);
-
-  if (nodes.length === 0) return '<div class="empty-array">дерево пустое</div>';
+  if (!nodes.length) return '<div class="empty-array">дерево пустое</div>';
 
   const width  = Math.max(...nodes.map(n => n.x)) + 2 * NODE_R + 40;
   const height = Math.max(...nodes.map(n => n.y)) + 2 * NODE_R + 20;
 
-  // Edges
-  let edges = '';
-  let nodeCircles = '';
-
-  // Индекс по node для быстрого поиска позиций
   const posByNode = new Map();
   for (const n of nodes) posByNode.set(n.node, n);
 
+  let edges = '';
   for (const n of nodes) {
-    const nnode = n.node;
-    if (nnode.left) {
-      const c = posByNode.get(nnode.left);
-      if (c) {
-        const mx = (n.x + c.x) / 2;
-        const my = (n.y + c.y) / 2;
-        edges += '<path class="tree-edge" d="M ' + n.x + ' ' + n.y + ' Q ' + mx + ' ' + my + ' ' + c.x + ' ' + c.y + '"/>';
-      }
-    }
-    if (nnode.right) {
-      const c = posByNode.get(nnode.right);
-      if (c) {
-        const mx = (n.x + c.x) / 2;
-        const my = (n.y + c.y) / 2;
-        edges += '<path class="tree-edge" d="M ' + n.x + ' ' + n.y + ' Q ' + mx + ' ' + my + ' ' + c.x + ' ' + c.y + '"/>';
+    for (const side of ['left', 'right']) {
+      if (n.node[side]) {
+        const c = posByNode.get(n.node[side]);
+        if (c) {
+          const mx = (n.x + c.x) / 2, my = (n.y + c.y) / 2;
+          edges += '<path class="tree-edge" d="M ' + n.x + ' ' + n.y + ' Q ' + mx + ' ' + my + ' ' + c.x + ' ' + c.y + '"/>';
+        }
       }
     }
   }
 
-  // Определяем какой узел подсвечен: сначала по highlight (например "root"), потом по diff
-  const hlNode = null;
+  // Какой узел подсвечен: ищем по значению highlight (напр. "root" → root)
+  let hlNodes = new Set();
+  if (hl.vars.has('root')) hlNodes.add(nodes[0]);
 
+  let nodeCircles = '';
   for (const n of nodes) {
-    const val = fmt(n.node.value);
-    const isRoot = (n.node === root);
+    const isHl = hlNodes.has(n);
     nodeCircles +=
       '<g>' +
-        '<circle class="tree-node-circle" cx="' + n.x + '" cy="' + n.y + '" r="' + NODE_R + '"/>' +
-        '<text class="tree-node-text" x="' + n.x + '" y="' + n.y + '">' + esc(val) + '</text>' +
+        '<circle class="tree-node-circle' + (isHl ? ' hl' : '') + '" cx="' + n.x + '" cy="' + n.y + '" r="' + NODE_R + '"/>' +
+        '<text class="tree-node-text" x="' + n.x + '" y="' + n.y + '">' + esc(fmt(n.node.value)) + '</text>' +
       '</g>';
   }
 
   return '<svg class="tree-svg" viewBox="0 0 ' + width + ' ' + height + '" ' +
          'width="' + Math.min(width, 900) + '" height="' + height + '">' +
-         edges + nodeCircles +
-         '</svg>';
+         edges + nodeCircles + '</svg>';
 }
 
+// ─── Панель переменных ─────────────────────────────────
 function renderVars(vars, changed) {
   const entries = Object.entries(vars)
     .filter(([k]) => !k.startsWith('__'))
@@ -839,8 +1113,8 @@ function renderVars(vars, changed) {
         if (value.items) displayValue = '[' + value.items.map(x => fmt(x)).join(', ') + ']';
         else displayValue = 'array[' + (value.length ?? '?') + ']';
       } else if (value.__type === 'set') {
-          if (value.items) displayValue = '{' + value.items.map(x => fmt(x)).join(', ') + '}';
-          else displayValue = 'set[' + (value.length ?? '?') + ']';
+        if (value.items) displayValue = '{' + value.items.map(x => fmt(x)).join(', ') + '}';
+        else displayValue = 'set[' + (value.length ?? '?') + ']';
       } else if (value.__type === 'graph') {
         displayValue = 'graph(' + value.nodes + 'N, ' + value.edges + 'E)';
       } else if (value.fields !== undefined) {
@@ -857,7 +1131,10 @@ function renderVars(vars, changed) {
     const reallyChanged = changed.has(name) && lastVars[name] !== undefined &&
                           JSON.stringify(lastVars[name]) !== JSON.stringify(value);
 
-    return '<div class="var-row ' + cls + (reallyChanged ? ' changed' : '') + '">' +
+    const isSelected = name === selectedVar;
+
+    return '<div class="var-row ' + cls + (reallyChanged ? ' changed' : '') +
+             (isSelected ? ' selected' : '') + '" data-name="' + esc(name) + '">' +
              '<span class="name">' + esc(name) +
                '<span class="type">' + esc(t) + '</span>' +
              '</span>' +
@@ -866,6 +1143,19 @@ function renderVars(vars, changed) {
              '</span>' +
            '</div>';
   }).join('');
+
+  // Клик по переменной → выбрать её для визуализации
+  box.querySelectorAll('.var-row').forEach(el => {
+    el.onclick = () => {
+      const n = el.dataset.name;
+      if (!n) return;
+      const state = stateAt(currentStep);
+      const v = state[n];
+      if (v === undefined || isScalar(v)) return;
+      selectedVar = n;
+      renderStep(currentStep);
+    };
+  });
 }
 
 function countTreeNodes(v) {
@@ -877,6 +1167,7 @@ function countTreeNodes(v) {
   return 0;
 }
 
+// ─── Controls ───────────────────────────────────────────
 function setupControls() {
   $('btn-first').onclick = () => renderStep(0);
   $('btn-last').onclick  = () => renderStep(session.steps.length - 1);

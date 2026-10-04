@@ -906,6 +906,9 @@ public sealed class PythonToYawa
             case "tuple":
                 return ConvertTuple(node);
 
+            case "list_comprehension":
+                return ConvertListComp(node);
+
             case "list":
                 return ConvertListLiteral(node);
 
@@ -1019,6 +1022,65 @@ public sealed class PythonToYawa
             .Select(ConvertExpr)
             .ToList();
         return new TupleExpr { Items = items };
+    }
+
+    private YawaExpression ConvertListComp(TsNode node)
+    {
+        var children = node.NamedChildren().ToList();
+        if (children.Count < 2)
+            throw Err("Некорректный list comprehension", node);
+
+        var body = children[0];
+        var forClause = children.FirstOrDefault(c => c.Type == "for_in_clause");
+        if (!forClause.IsValid)
+            throw Err("В list comprehension отсутствует 'for'", node);
+
+        var forChildren = forClause.NamedChildren().ToList();
+        if (forChildren.Count < 2)
+            throw Err("Некорректный 'for' в list comprehension", forClause);
+
+        var varNode = forChildren[0];
+        var iterableNode = forChildren[1];
+
+        if (varNode.Type != "identifier")
+            throw Err("Переменная цикла должна быть identifier " +
+                      "(деструктуризация в comprehension не поддерживается)", varNode);
+
+        // Фильтр: либо отдельный if_clause после for_in_clause,
+        // либо внутри for_in_clause (зависит от версии грамматики).
+        TsNode filterClause = default;
+        for (int i = 1; i < children.Count; i++)
+        {
+            if (children[i].Type == "if_clause") { filterClause = children[i]; break; }
+        }
+        if (!filterClause.IsValid)
+        {
+            var innerIf = forChildren.FirstOrDefault(c => c.Type == "if_clause");
+            if (innerIf.IsValid) filterClause = innerIf;
+        }
+
+        YawaExpression? filter = null;
+        if (filterClause.IsValid)
+        {
+            var condNode = filterClause.NamedChildren().FirstOrDefault();
+            if (condNode.IsValid)
+                filter = ConvertExpr(condNode);
+        }
+
+        // Вложенные for_in_clause (двойной comprehension [x+y for x in A for y in B])
+        // пока не поддерживаем — предупреждаем.
+        var extraFors = children.Where(c => c.Type == "for_in_clause").Skip(1).ToList();
+        if (extraFors.Count > 0)
+            throw Err("Вложенные for в одном comprehension пока не поддерживаются. " +
+                      "Разбейте на два выражения или используйте два обычных цикла.", node);
+
+        return new ListCompExpr
+        {
+            Body = ConvertExpr(body),
+            Var = Text(varNode),
+            Source = ConvertExpr(iterableNode),
+            Filter = filter
+        };
     }
 
     private YawaExpression ConvertAttribute(TsNode node)

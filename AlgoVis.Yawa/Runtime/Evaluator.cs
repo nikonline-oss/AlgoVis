@@ -53,6 +53,8 @@ public sealed class Evaluator
                 }
             case TupleExpr tup:
                 return new TupleValue(tup.Items.Select(x => Eval(x, frame)));
+            case ListCompExpr lc:
+                return EvalListComp(lc, frame);
             default:
                 throw new YawaRuntimeException($"Unknown expression type: {expr.GetType().Name}");
         }
@@ -147,7 +149,7 @@ public sealed class Evaluator
         {
             "+" => ArithmeticAdd(left, right),
             "-" => Arith(left, right, (x, y) => x - y, (x, y) => x - y),
-            "*" => Arith(left, right, (x, y) => x * y, (x, y) => x * y),
+            "*" => Multiply(left, right),
             "//" => IntDiv(left, right),
             "/" => Div(left, right),
             "%" => Mod(left, right),
@@ -204,6 +206,39 @@ public sealed class Evaluator
             _ => throw new YawaRuntimeException($"len() on unsupported type {v.TypeName}")
         };
     }
+    private RuntimeValue EvalListComp(ListCompExpr lc, Frame frame)
+    {
+        var source = Eval(lc.Source, frame);
+        IEnumerable<RuntimeValue> items = source switch
+        {
+            ArrayValue a => a.Items,
+            SetValue s => s.Items,
+            TupleValue t => t.Items,
+            StringValue str => str.Value.Select(c => (RuntimeValue)new StringValue(c.ToString())),
+            ObjectValue o => o.Fields
+                .Where(kv => !kv.Key.StartsWith("__"))
+                .Select(kv => (RuntimeValue)new StringValue(kv.Key)),
+            _ => throw new YawaRuntimeException($"Cannot iterate {source.TypeName}")
+        };
+
+        var result = new List<RuntimeValue>();
+        var innerFrame = new Frame("<comp>", frame);
+
+        foreach (var item in items)
+        {
+            innerFrame.Declare(lc.Var, item);
+
+            if (lc.Filter is not null)
+            {
+                var cond = Eval(lc.Filter, innerFrame);
+                if (!AsBool(cond)) continue;
+            }
+
+            result.Add(Eval(lc.Body, innerFrame));
+        }
+
+        return new ArrayValue(result);
+    }
 
     private RuntimeValue EvalTernary(TernaryExpr te, Frame frame)
     {
@@ -253,6 +288,32 @@ public sealed class Evaluator
         if (a is StringValue sa && b is StringValue sb) return new StringValue(sa.Value + sb.Value);
         if (a is ArrayValue aa && b is ArrayValue ab) return new ArrayValue(aa.Items.Concat(ab.Items));
         return Arith(a, b, (x, y) => x + y, (x, y) => x + y);
+    }
+
+    private static RuntimeValue Multiply(RuntimeValue a, RuntimeValue b)
+    {
+        // list * int  /  int * list  → повторение списка
+        if (a is ArrayValue arr && b is IntValue n)
+            return RepeatArray(arr, n.Value);
+        if (a is IntValue n2 && b is ArrayValue arr2)
+            return RepeatArray(arr2, n2.Value);
+
+        // string * int  /  int * string
+        if (a is StringValue s && b is IntValue ni)
+            return new StringValue(string.Concat(Enumerable.Repeat(s.Value, (int)Math.Max(0, ni.Value))));
+        if (a is IntValue ni2 && b is StringValue s2)
+            return new StringValue(string.Concat(Enumerable.Repeat(s2.Value, (int)Math.Max(0, ni2.Value))));
+
+        return Arith(a, b, (x, y) => x * y, (x, y) => x * y);
+    }
+
+    private static ArrayValue RepeatArray(ArrayValue arr, long times)
+    {
+        if (times < 0) times = 0;
+        var items = new List<RuntimeValue>(arr.Count * (int)times);
+        for (long k = 0; k < times; k++)
+            items.AddRange(arr.Items);
+        return new ArrayValue(items, arr.ElementType);
     }
 
     private static RuntimeValue Arith(RuntimeValue a, RuntimeValue b,

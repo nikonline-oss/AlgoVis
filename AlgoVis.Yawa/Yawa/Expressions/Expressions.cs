@@ -126,3 +126,19 @@ public sealed class TupleExpr : YawaExpression
     [JsonPropertyName("tuple")]
     public List<YawaExpression> Items { get; set; } = new();
 }
+
+public sealed class ListCompExpr : YawaExpression
+{
+    /// <summary>Что вычисляется для каждого элемента: [ Body for Var in Source if Filter ]</summary>
+    [JsonPropertyName("comp_body")]
+    public YawaExpression Body { get; set; } = null!;
+
+    [JsonPropertyName("comp_var")]
+    public string Var { get; set; } = "";
+
+    [JsonPropertyName("comp_source")]
+    public YawaExpression Source { get; set; } = null!;
+
+    [JsonPropertyName("comp_filter")]
+    public YawaExpression? Filter { get; set; }
+}

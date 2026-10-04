@@ -166,6 +166,19 @@ public sealed class YawaExpressionConverter : JsonConverter<YawaExpression>
                 writer.WriteEndArray();
                 break;
 
+            case ListCompExpr lc:
+                writer.WritePropertyName("comp_body");
+                WriteExpr(writer, lc.Body, options);
+                writer.WriteString("comp_var", lc.Var);
+                writer.WritePropertyName("comp_source");
+                WriteExpr(writer, lc.Source, options);
+                if (lc.Filter is not null)
+                {
+                    writer.WritePropertyName("comp_filter");
+                    WriteExpr(writer, lc.Filter, options);
+                }
+                break;
+
             default:
                 throw new NotSupportedException($"Write not implemented for {value.GetType().Name}");
         }
@@ -279,6 +292,26 @@ public sealed class YawaExpressionConverter : JsonConverter<YawaExpression>
                 Args = ParseArgs(el, "args"),
                 NodeId = ReadId(el)
             };
+        }
+
+        if (el.TryGetProperty("comp_body", out var cbProp))
+        {
+            var bodyEl = cbProp.Clone();
+            var varEl = el.GetProperty("comp_var");
+            var sourceEl = el.GetProperty("comp_source");
+
+            var result = new ListCompExpr
+            {
+                Body = ParseElement(bodyEl),
+                Var = varEl.GetString() ?? "",
+                Source = ParseElement(sourceEl.Clone()),
+                NodeId = ReadId(el)
+            };
+
+            if (el.TryGetProperty("comp_filter", out var fEl) && fEl.ValueKind != JsonValueKind.Null)
+                result.Filter = ParseElement(fEl.Clone());
+
+            return result;
         }
 
         if (el.TryGetProperty("tuple", out var tupleProp))

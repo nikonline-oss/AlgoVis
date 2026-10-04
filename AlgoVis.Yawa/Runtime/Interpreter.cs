@@ -212,22 +212,29 @@ public sealed class Interpreter
             }
         }
 
-        // 2. Builtin-метод для коллекций (append → push, pop → pop, ...)
-        var builtinName = name switch
+        // Специальные методы коллекций — мапим в builtin.
+        string? builtinName = name switch
         {
             "append" => "push",
             "pop" => "pop",
             "insert" => "insert",
             "remove" => "remove",
-            _ => name
+            "add" => "add",
+            "discard" => "discard",
+            _ => null
         };
 
-        if (Builtins.Names.Contains(builtinName))
+        // Метод remove у set тоже есть — но у нас remove только для array.
+        // Если receiver — set, а метод remove — вызываем discard.
+        if (receiver is SetValue && name == "remove")
+            builtinName = "discard";
+
+        if (builtinName is not null && Builtins.Names.Contains(builtinName))
         {
-            var args = new List<RuntimeValue> { receiver };
+            var args2 = new List<RuntimeValue> { receiver };
             foreach (var expr in argExprs)
-                args.Add(Eval.Eval(expr, frame));
-            return Builtins.Call(builtinName, args, Recorder);
+                args2.Add(Eval.Eval(expr, frame));
+            return Builtins.Call(builtinName, args2, Recorder);
         }
 
         // 3. Fallback — глобальная функция с receiver первым аргументом.
@@ -297,16 +304,41 @@ public sealed class Interpreter
 
     private void ExecuteTupleAssign(TupleAssignStatement s, Frame frame)
     {
-        if (s.Targets.Count != s.Values.Count)
-            throw new YawaRuntimeException(
-                $"tuple assign: {s.Targets.Count} targets vs {s.Values.Count} values");
-
-        // Сначала вычисляем ВСЕ значения (Python-семантика: правая часть вычисляется до присваивания)
+        // Вычисляем ВСЕ значения правой части (Python-семантика).
         var evaluated = s.Values.Select(v => Eval.Eval(v, frame)).ToList();
 
-        // Потом присваиваем по порядку
-        for (int i = 0; i < s.Targets.Count; i++)
-            AssignTo(s.Targets[i], evaluated[i], frame, s.NodeId);
+        // Случай 1: a, b = 1, 2  — количество совпадает
+        if (evaluated.Count == s.Targets.Count)
+        {
+            for (int i = 0; i < s.Targets.Count; i++)
+                AssignTo(s.Targets[i], evaluated[i], frame, s.NodeId);
+            return;
+        }
+
+        // Случай 2: a, b = f()  — правая часть одно значение, но это tuple
+        if (evaluated.Count == 1 && evaluated[0] is TupleValue tup)
+        {
+            if (tup.Count != s.Targets.Count)
+                throw new YawaRuntimeException(
+                    $"tuple unpack: expected {s.Targets.Count}, got {tup.Count}");
+            for (int i = 0; i < s.Targets.Count; i++)
+                AssignTo(s.Targets[i], tup[i], frame, s.NodeId);
+            return;
+        }
+
+        // Случай 3: a, b = some_array  — если массив, тоже распаковываем
+        if (evaluated.Count == 1 && evaluated[0] is ArrayValue arr)
+        {
+            if (arr.Count != s.Targets.Count)
+                throw new YawaRuntimeException(
+                    $"array unpack: expected {s.Targets.Count}, got {arr.Count}");
+            for (int i = 0; i < s.Targets.Count; i++)
+                AssignTo(s.Targets[i], arr[i], frame, s.NodeId);
+            return;
+        }
+
+        throw new YawaRuntimeException(
+            $"tuple assign: {s.Targets.Count} targets, {evaluated.Count} values");
     }
 
     private void ExecuteAssign(AssignStatement a, Frame frame)
@@ -339,6 +371,9 @@ public sealed class Interpreter
                     if (targetVal is ArrayValue arr)
                     {
                         var idx = (int)Evaluator.AsInt(idxVal, "array index");
+                        if (idx < 0) idx += arr.Count;
+                        if (idx < 0 || idx >= arr.Count)
+                            throw new YawaRuntimeException($"Array index out of range: {idx} (size {arr.Count})");
                         var old = arr[idx];
                         arr[idx] = value;
                         var targetName = RenderTargetPath(ix.Target, frame);
@@ -569,6 +604,7 @@ public sealed class Interpreter
             ObjectValue obj => obj.Fields
                 .Where(kv => !kv.Key.StartsWith("__"))
                 .Select(kv => (RuntimeValue)new StringValue(kv.Key)),
+            SetValue s1 => s1.Items,
             _ => throw new YawaRuntimeException($"foreach on {collection.TypeName}")
         };
         foreach (var item in items.ToList())

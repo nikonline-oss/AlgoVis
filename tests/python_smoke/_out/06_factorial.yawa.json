@@ -40,7 +40,7 @@
         {
           "op": "return",
           "value": {
-            "bin": "-",
+            "bin": "*",
             "a": {
               "ref": "n"
             },

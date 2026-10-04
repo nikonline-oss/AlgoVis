@@ -8,7 +8,8 @@ public static class Builtins
     public static readonly HashSet<string> Names = new()
     {
         "length", "len", "min", "max", "abs", "print", "range",
-        "push", "pop", "insert", "remove", "contains", "find"
+        "push", "pop", "insert", "remove", "contains", "find",
+        "set", "add", "discard", "remove_from_set"
     };
 
     public static RuntimeValue Call(string name, List<RuntimeValue> args, TraceRecorder rec)
@@ -19,8 +20,10 @@ public static class Builtins
             case "len":
                 return args[0] switch
                 {
-                    ArrayValue a  => new IntValue(a.Count),
+                    ArrayValue a => new IntValue(a.Count),
                     StringValue s => new IntValue(s.Value.Length),
+                    SetValue st => new IntValue(st.Count),
+                    ObjectValue o => new IntValue(o.Fields.Count(kv => !kv.Key.StartsWith("__"))),
                     _ => throw new YawaRuntimeException($"length() on {args[0].TypeName}")
                 };
 
@@ -37,7 +40,7 @@ public static class Builtins
             case "abs":
                 return args[0] switch
                 {
-                    IntValue i   => new IntValue(Math.Abs(i.Value)),
+                    IntValue i => new IntValue(Math.Abs(i.Value)),
                     FloatValue f => new FloatValue(Math.Abs(f.Value)),
                     _ => throw new YawaRuntimeException($"abs() on {args[0].TypeName}")
                 };
@@ -56,13 +59,13 @@ public static class Builtins
                     else if (args.Count == 2)
                     {
                         start = Evaluator.AsInt(args[0], "range");
-                        stop  = Evaluator.AsInt(args[1], "range");
+                        stop = Evaluator.AsInt(args[1], "range");
                     }
                     else
                     {
                         start = Evaluator.AsInt(args[0], "range");
-                        stop  = Evaluator.AsInt(args[1], "range");
-                        step  = Evaluator.AsInt(args[2], "range");
+                        stop = Evaluator.AsInt(args[1], "range");
+                        step = Evaluator.AsInt(args[2], "range");
                     }
                     var items = new List<RuntimeValue>();
                     if (step > 0) for (var i = start; i < stop; i += step) items.Add(new IntValue(i));
@@ -115,6 +118,23 @@ public static class Builtins
                     for (int i = 0; i < arr.Count; i++)
                         if (arr.Items[i].ValueEquals(args[1])) return new IntValue(i);
                     return new IntValue(-1);
+                }
+
+            case "set":
+                return new SetValue();
+
+            case "add":
+                {
+                    if (args[0] is not SetValue s) throw new YawaRuntimeException("add() needs set");
+                    s.Add(args[1]);
+                    return NullValue.Instance;
+                }
+
+            case "discard":
+                {
+                    if (args[0] is not SetValue s) throw new YawaRuntimeException("discard() needs set");
+                    s.Remove(args[1]);
+                    return NullValue.Instance;
                 }
 
             default:

@@ -44,6 +44,15 @@ public sealed class Evaluator
                 }
             case InstantiateExpr inst:
                 return _interp.Instantiate(inst.ClassName, inst.Args, frame, inst.NodeId);
+            case SetLiteralExpr sl:
+                {
+                    var set = new SetValue();
+                    foreach (var expr1 in sl.Items)
+                        set.Add(Eval(expr1, frame));
+                    return set;
+                }
+            case TupleExpr tup:
+                return new TupleValue(tup.Items.Select(x => Eval(x, frame)));
             default:
                 throw new YawaRuntimeException($"Unknown expression type: {expr.GetType().Name}");
         }
@@ -57,6 +66,7 @@ public sealed class Evaluator
         if (target is ArrayValue arr)
         {
             var i = AsInt(index, "array index");
+            if (i < 0) i += arr.Count;
             if (i < 0 || i >= arr.Count)
                 throw new YawaRuntimeException($"Array index out of range: {i} (size {arr.Count})");
             _interp.Recorder.Stats.MemoryAccesses++;
@@ -66,6 +76,7 @@ public sealed class Evaluator
         if (target is StringValue s)
         {
             var i = AsInt(index, "string index");
+            if (i < 0) i += s.Value.Length;
             if (i < 0 || i >= s.Value.Length)
                 throw new YawaRuntimeException($"String index out of range: {i}");
             return new StringValue(s.Value[(int)i].ToString());
@@ -78,6 +89,15 @@ public sealed class Evaluator
             if (!obj.HasField(key))
                 throw new YawaRuntimeException($"Key '{key}' not found in dictionary");
             return obj.GetField(key);
+        }
+
+        if (target is TupleValue tup)
+        {
+            var i = AsInt(index, "tuple index");
+            if (i < 0) i += tup.Count;
+            if (i < 0 || i >= tup.Count)
+                throw new YawaRuntimeException($"Tuple index out of range: {i} (size {tup.Count})");
+            return tup[(int)i];
         }
 
         throw new YawaRuntimeException($"Cannot index value of type {target.TypeName}");
@@ -128,6 +148,7 @@ public sealed class Evaluator
             "+" => ArithmeticAdd(left, right),
             "-" => Arith(left, right, (x, y) => x - y, (x, y) => x - y),
             "*" => Arith(left, right, (x, y) => x * y, (x, y) => x * y),
+            "//" => IntDiv(left, right),
             "/" => Div(left, right),
             "%" => Mod(left, right),
             "**" => Power(left, right),
@@ -178,6 +199,8 @@ public sealed class Evaluator
         {
             ArrayValue a => new IntValue(a.Count),
             StringValue s => new IntValue(s.Value.Length),
+            SetValue st => new IntValue(st.Count),
+            ObjectValue o => new IntValue(o.Fields.Count(kv => !kv.Key.StartsWith("__"))),
             _ => throw new YawaRuntimeException($"len() on unsupported type {v.TypeName}")
         };
     }
@@ -244,6 +267,23 @@ public sealed class Evaluator
         }
         throw new YawaRuntimeException($"Arithmetic on {a.TypeName} and {b.TypeName}");
     }
+    private static RuntimeValue IntDiv(RuntimeValue a, RuntimeValue b)
+    {
+        // Целочисленное деление с округлением вниз (как Python)
+        if (a is IntValue ai && b is IntValue bi)
+        {
+            if (bi.Value == 0) throw new YawaRuntimeException("Division by zero");
+            long q = ai.Value / bi.Value;
+            long r = ai.Value % bi.Value;
+            // Python: -17 // 5 = -4 (округление вниз, не к нулю)
+            if ((r != 0) && ((r < 0) != (bi.Value < 0))) q--;
+            return new IntValue(q);
+        }
+        var x = a is IntValue ii ? ii.Value : a is FloatValue ff ? ff.Value : throw new YawaRuntimeException("// on non-number");
+        var y = b is IntValue jj ? jj.Value : b is FloatValue gg ? gg.Value : throw new YawaRuntimeException("// on non-number");
+        if (y == 0) throw new YawaRuntimeException("Division by zero");
+        return new FloatValue(Math.Floor(x / y));
+    }
 
     private static RuntimeValue Div(RuntimeValue a, RuntimeValue b)
     {
@@ -257,11 +297,15 @@ public sealed class Evaluator
 
     private static RuntimeValue Mod(RuntimeValue a, RuntimeValue b)
     {
-        var x = AsInt(a, "mod lhs"); var y = AsInt(b, "mod rhs");
+        var x = AsInt(a, "mod lhs");
+        var y = AsInt(b, "mod rhs");
         if (y == 0) throw new YawaRuntimeException("Modulo by zero");
-        return new IntValue(x % y);
-    }
 
+        // Python-семантика: результат имеет знак делителя.
+        long r = x % y;
+        if (r != 0 && ((r < 0) != (y < 0))) r += y;
+        return new IntValue(r);
+    }
     private static RuntimeValue Power(RuntimeValue a, RuntimeValue b)
     {
         var x = a is IntValue ii ? ii.Value : ((FloatValue)a).Value;
@@ -284,6 +328,8 @@ public sealed class Evaluator
             return Bool(s.Value.Contains(ns.Value));
         if (haystack is ObjectValue obj && needle is StringValue key)
             return Bool(obj.HasField(key.Value));
+        if (haystack is SetValue set)
+            return Bool(set.Contains(needle));
         throw new YawaRuntimeException($"'in' not supported for {haystack.TypeName}");
     }
 

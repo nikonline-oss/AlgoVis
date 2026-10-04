@@ -114,3 +114,15 @@ public sealed class InstantiateExpr : YawaExpression
     [JsonPropertyName("args")]
     public List<YawaExpression> Args { get; set; } = new();
 }
+
+public sealed class SetLiteralExpr : YawaExpression
+{
+    [JsonPropertyName("set")]
+    public List<YawaExpression> Items { get; set; } = new();
+}
+
+public sealed class TupleExpr : YawaExpression
+{
+    [JsonPropertyName("tuple")]
+    public List<YawaExpression> Items { get; set; } = new();
+}

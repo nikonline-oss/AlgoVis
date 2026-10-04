@@ -150,6 +150,26 @@ public sealed class TraceRecorder
                     ["length"] = a.Count
                 };
 
+            case TupleValue tup:
+                return new Dictionary<string, object?>
+                {
+                    ["__type"] = "tuple",
+                    ["items"] = tup.Items.Select(x => x.ToJson()).ToList()
+                };
+
+            case SetValue s:
+                if (s.Count <= 16)
+                    return new Dictionary<string, object?>
+                    {
+                        ["__type"] = "set",
+                        ["items"] = s.Items.Select(x => x.ToJson()).ToList()
+                    };
+                return new Dictionary<string, object?>
+                {
+                    ["__type"] = "set",
+                    ["length"] = s.Count
+                };
+
             case ObjectValue o:
                 // Если объект похож на узел бинарного дерева — отдаём рекурсивно.
                 if (o.HasField("value") && (o.HasField("left") || o.HasField("right")))
@@ -235,6 +255,7 @@ public sealed class TraceRecorder
             if (v is ArrayValue arr) sizes[k] = arr.Count;
             else if (v is TreeValue tree) sizes[k] = CountTreeNodes(tree.Root);
             else if (v is GraphValue g) sizes[k] = g.Nodes.Count;
+            else if (v is SetValue set) sizes[k] = set.Count;
         }
         return sizes;
     }

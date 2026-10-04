@@ -150,6 +150,22 @@ public sealed class YawaExpressionConverter : JsonConverter<YawaExpression>
                 writer.WriteEndArray();
                 break;
 
+            case SetLiteralExpr sl:
+                writer.WritePropertyName("set");
+                writer.WriteStartArray();
+                foreach (var x in sl.Items)
+                    WriteExpr(writer, x, options);
+                writer.WriteEndArray();
+                break;
+
+            case TupleExpr tup:
+                writer.WritePropertyName("tuple");
+                writer.WriteStartArray();
+                foreach (var x in tup.Items)
+                    WriteExpr(writer, x, options);
+                writer.WriteEndArray();
+                break;
+
             default:
                 throw new NotSupportedException($"Write not implemented for {value.GetType().Name}");
         }
@@ -261,6 +277,32 @@ public sealed class YawaExpressionConverter : JsonConverter<YawaExpression>
             {
                 ClassName = instProp.GetString() ?? "",
                 Args = ParseArgs(el, "args"),
+                NodeId = ReadId(el)
+            };
+        }
+
+        if (el.TryGetProperty("tuple", out var tupleProp))
+        {
+            if (tupleProp.ValueKind != JsonValueKind.Array)
+                throw new JsonException("'tuple' must be array");
+            return new TupleExpr
+            {
+                Items = tupleProp.EnumerateArray()
+                    .Select(x => ParseElement(x.Clone()))
+                    .ToList(),
+                NodeId = ReadId(el)
+            };
+        }
+
+        if (el.TryGetProperty("set", out var setProp))
+        {
+            if (setProp.ValueKind != JsonValueKind.Array)
+                throw new JsonException("'set' must be array");
+            return new SetLiteralExpr
+            {
+                Items = setProp.EnumerateArray()
+                    .Select(x => ParseElement(x.Clone()))
+                    .ToList(),
                 NodeId = ReadId(el)
             };
         }

@@ -443,10 +443,20 @@ public sealed class PythonToYawa
             case "return_statement":
                 {
                     var val = node.NamedChildren().FirstOrDefault();
-                    return new ReturnStatement
+                    if (!val.IsValid)
+                        return new ReturnStatement { Value = null };
+
+                    // return a, b  →  return tuple(a, b)
+                    if (val.Type == "expression_list")
                     {
-                        Value = val.IsValid ? ConvertExpr(val) : null
-                    };
+                        var items = val.NamedChildren().Select(ConvertExpr).ToList();
+                        return new ReturnStatement
+                        {
+                            Value = new TupleExpr { Items = items }
+                        };
+                    }
+
+                    return new ReturnStatement { Value = ConvertExpr(val) };
                 }
 
             case "if_statement":
@@ -515,7 +525,7 @@ public sealed class PythonToYawa
 
         if (isTupleAssign)
         {
-            // Случай 1: a, b = 1, 2 — просто два списка одинаковой длины
+            // Случай 1: a, b = 1, 2 — два списка одинаковой длины
             if (targetItems.Count == valueItems.Count)
             {
                 return new TupleAssignStatement
@@ -525,12 +535,22 @@ public sealed class PythonToYawa
                 };
             }
 
-            // Случай 2: a, b = функция(), возвращающая tuple — интерпретатор не умеет.
-            // Это редко, кидаем ошибку с подсказкой.
+            // Случай 2: a, b = func()  — распаковка tuple-результата функции.
+            // Слева больше одного, справа ровно одно значение.
+            if (valueItems.Count == 1)
+            {
+                return new TupleAssignStatement
+                {
+                    Targets = targetItems.Select(ConvertLValue).ToList(),
+                    Values = new List<YawaExpression> { ConvertExpr(valueItems[0]) }
+                };
+            }
+
+            // Случай 3: a, b, c = x, y — количество слева и справа не совпало и не 1:1
             throw Err(
-                $"Кортежное присваивание: {targetItems.Count} слева, {valueItems.Count} справа. " +
-                $"Распаковка tuple-результата функции пока не поддерживается — " +
-                $"присвойте результат переменной, затем разберите её вручную.",
+                $"Несовпадение количества при распаковке: {targetItems.Count} слева, " +
+                $"{valueItems.Count} справа. Количество должно совпадать " +
+                $"или справа должен быть один кортеж.",
                 assign);
         }
 
@@ -880,6 +900,12 @@ public sealed class PythonToYawa
             case "dictionary":
                 return ConvertDict(node);
 
+            case "set":
+                return ConvertSet(node);
+
+            case "tuple":
+                return ConvertTuple(node);
+
             case "list":
                 return ConvertListLiteral(node);
 
@@ -986,6 +1012,15 @@ public sealed class PythonToYawa
         };
     }
 
+    private YawaExpression ConvertTuple(TsNode node)
+    {
+        var items = node.NamedChildren()
+            .Where(c => c.Type != "comment")
+            .Select(ConvertExpr)
+            .ToList();
+        return new TupleExpr { Items = items };
+    }
+
     private YawaExpression ConvertAttribute(TsNode node)
     {
         var children = node.NamedChildren().ToList();
@@ -1004,23 +1039,8 @@ public sealed class PythonToYawa
             FieldName = Text(nameNode)
         };
     }
-
     private YawaExpression ConvertBinary(TsNode node)
     {
-        var text = Text(node);
-        string? op = null;
-        int opIdx = -1;
-
-        // Определяем оператор по тексту
-        foreach (var candidate in new[] { "**", "//", "+", "-", "*", "/", "%" })
-        {
-            opIdx = text.IndexOf(candidate, StringComparison.Ordinal);
-            if (opIdx >= 0) { op = candidate; break; }
-        }
-
-        if (op is null)
-            throw Err($"Не удалось определить бинарный оператор в '{text}'", node);
-
         var children = node.NamedChildren().ToList();
         if (children.Count < 2)
             throw Err("Некорректная бинарная операция", node);
@@ -1028,9 +1048,15 @@ public sealed class PythonToYawa
         var a = children[0];
         var b = children[children.Count - 1];
 
-        // // (целочисленное деление) в YAWA нет — эмулируем через floor
-        // Пока просто делаем вид что это "/"
-        if (op == "//") op = "/";
+        // Оператор — текст МЕЖДУ первым и последним named-child.
+        // Это надёжнее, чем IndexOf по всему выражению (который может
+        // поймать унарный минус или минус во вложенном выражении).
+        var opStart = (int)a.EndByte;
+        var opEnd = (int)b.StartByte;
+        var op = System.Text.Encoding.UTF8.GetString(_bytes, opStart, opEnd - opStart).Trim();
+
+        if (string.IsNullOrEmpty(op))
+            throw Err($"Не удалось определить оператор в '{Text(node)}'", node);
 
         return new BinaryExpr
         {
@@ -1039,7 +1065,6 @@ public sealed class PythonToYawa
             B = ConvertExpr(b)
         };
     }
-
     private YawaExpression ConvertUnary(TsNode node)
     {
         var text = Text(node);
@@ -1059,48 +1084,54 @@ public sealed class PythonToYawa
         if (children.Count < 2)
             throw Err("Некорректное сравнение", node);
 
-        var text = Text(node);
-
-        string? op = null;
-        foreach (var candidate in new[] { "==", "!=", "<=", ">=", "<", ">", "not in", "in" })
+        // Одиночное сравнение — как раньше.
+        if (children.Count == 2)
         {
-            if (text.Contains(candidate))
-            {
-                op = candidate;
-                break;
-            }
-        }
+            var a = children[0];
+            var b = children[1];
 
-        // Python: `x is None` / `x is not None` / `x is y`
-        // tree-sitter даёт это как comparison_operator, но оператор "is" / "is not"
-        if (text.Contains(" is not "))
-        {
-            var a1 = children[0];
-            var b1 = children[^1];
+            var opStart = (int)a.EndByte;
+            var opEnd = (int)b.StartByte;
+            var rawOp = System.Text.Encoding.UTF8.GetString(_bytes, opStart, opEnd - opStart).Trim();
+
             return new BinaryExpr
             {
-                Op = "!=",
-                A = ConvertExpr(a1),
-                B = ConvertExpr(b1)
-            };
-        }
-        if (text.Contains(" is "))
-        {
-            var a1 = children[0];
-            var b1 = children[^1];
-            return new BinaryExpr
-            {
-                Op = "==",
-                A = ConvertExpr(a1),
-                B = ConvertExpr(b1)
+                Op = MapComparisonOp(rawOp, node),
+                A = ConvertExpr(a),
+                B = ConvertExpr(b)
             };
         }
 
-        if (op is null)
-            throw Err($"Неизвестный оператор сравнения: {text}", node);
+        // Chained: a < b < c → (a < b) and (b < c).
+        // Tree-sitter даёт [a, b, c, ...] и операторы между ними.
+        var result = new List<YawaExpression>();
+        for (int i = 0; i < children.Count - 1; i++)
+        {
+            var a = children[i];
+            var b = children[i + 1];
 
-        // Приведение Python-стиля к YAWA
-        var yawaOp = op switch
+            var opStart = (int)a.EndByte;
+            var opEnd = (int)b.StartByte;
+            var rawOp = System.Text.Encoding.UTF8.GetString(_bytes, opStart, opEnd - opStart).Trim();
+
+            result.Add(new BinaryExpr
+            {
+                Op = MapComparisonOp(rawOp, node),
+                A = ConvertExpr(a),
+                B = ConvertExpr(b)
+            });
+        }
+
+        // Складываем все пары через AND.
+        var combined = result[0];
+        for (int i = 1; i < result.Count; i++)
+            combined = new BinaryExpr { Op = "and", A = combined, B = result[i] };
+        return combined;
+    }
+
+    private string MapComparisonOp(string rawOp, TsNode node)
+    {
+        return rawOp switch
         {
             "==" => "==",
             "!=" => "!=",
@@ -1110,19 +1141,9 @@ public sealed class PythonToYawa
             ">=" => ">=",
             "in" => "in",
             "not in" => "not_in",
-            _ => op
-        };
-
-        // Цепочки сравнений типа a < b < c пока поддерживаем только попарно —
-        // берём первые два и последний
-        var a = children[0];
-        var b = children.Count == 2 ? children[1] : children[1];
-
-        return new BinaryExpr
-        {
-            Op = yawaOp,
-            A = ConvertExpr(a),
-            B = ConvertExpr(b)
+            "is" => "==",
+            "is not" => "!=",
+            _ => throw Err($"Неизвестный оператор сравнения: '{rawOp}'", node)
         };
     }
 
@@ -1186,6 +1207,7 @@ public sealed class PythonToYawa
                 "max" => "max",
                 "abs" => "abs",
                 "print" => "print",
+                "set" => "set",
                 _ => name
             };
             return new CallExpr { Name = mapped, Args = args };
@@ -1355,6 +1377,16 @@ public sealed class PythonToYawa
             default:
                 return null;
         }
+    }
+    private YawaExpression ConvertSet(TsNode node)
+    {
+        var result = new SetLiteralExpr();
+        foreach (var child in node.NamedChildren())
+        {
+            if (child.Type == "comment") continue;
+            result.Items.Add(ConvertExpr(child));
+        }
+        return result;
     }
 
     // ─────────── Helpers ───────────

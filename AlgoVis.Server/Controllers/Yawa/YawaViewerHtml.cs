@@ -5,7 +5,7 @@ namespace AlgoVis.Server.Controllers.Yawa;
 /// </summary>
 internal static class YawaViewerHtml
 {
-    public static readonly string Value = """
+  public static readonly string Value = """
 <!doctype html>
 <html lang="ru">
 <head>
@@ -838,6 +838,9 @@ function renderVars(vars, changed) {
       if (value.__type.startsWith('array')) {
         if (value.items) displayValue = '[' + value.items.map(x => fmt(x)).join(', ') + ']';
         else displayValue = 'array[' + (value.length ?? '?') + ']';
+      } else if (value.__type === 'set') {
+          if (value.items) displayValue = '{' + value.items.map(x => fmt(x)).join(', ') + '}';
+          else displayValue = 'set[' + (value.length ?? '?') + ']';
       } else if (value.__type === 'graph') {
         displayValue = 'graph(' + value.nodes + 'N, ' + value.edges + 'E)';
       } else if (value.fields !== undefined) {

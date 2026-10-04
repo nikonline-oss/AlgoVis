@@ -17,6 +17,7 @@ return cmd switch
     "load" => RunLoad(args),
     "run" => RunExec(args),
     "inspect" => RunInspect(args),
+    "from-python" => RunFromPython(args),
     "-h" or "--help" or "help" => PrintHelpAndOk(),
     _ => Unknown(cmd)
 };
@@ -45,6 +46,63 @@ static void PrintHelp()
            [--head=N]             Сколько шагов печатать (по умолчанию 20)
            [--steps=lo-hi]        Печатать диапазон шагов
     """);
+}
+
+static int RunFromPython(string[] args)
+{
+    if (args.Length < 2) { Console.Error.WriteLine("Usage: from-python <file.py> [--out=<file.yawa.json>] [--entry=name]"); return 1; }
+    var path = args[1];
+    if (!File.Exists(path)) { Console.Error.WriteLine($"File not found: {path}"); return 1; }
+
+    string? outPath = null;
+    string? entry = null;
+    for (int i = 2; i < args.Length; i++)
+    {
+        var a = args[i];
+        if (a.StartsWith("--out=")) outPath = a[6..];
+        else if (a.StartsWith("--entry=")) entry = a[8..];
+    }
+
+    try
+    {
+        var source = File.ReadAllText(path);
+        var transpiler = new AlgoVis.Transpiler.PythonToYawa(source);
+        var program = transpiler.Transpile(entry);
+
+        var json = System.Text.Json.JsonSerializer.Serialize(program,
+            new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+
+        if (outPath is not null)
+        {
+            var dir = Path.GetDirectoryName(outPath);
+            if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
+                Directory.CreateDirectory(dir);
+            File.WriteAllText(outPath, json, System.Text.Encoding.UTF8);
+            Console.WriteLine($"💾 YAWA written to {outPath} ({json.Length} bytes)");
+        }
+        else
+        {
+            Console.WriteLine(json);
+        }
+
+        if (transpiler.Warnings.Count > 0)
+        {
+            Console.Error.WriteLine("⚠ Предупреждения:");
+            foreach (var w in transpiler.Warnings)
+                Console.Error.WriteLine("   " + w);
+        }
+        return 0;
+    }
+    catch (AlgoVis.Transpiler.UnsupportedFeatureException ex)
+    {
+        Console.Error.WriteLine($"❌ {ex.Message}");
+        return 2;
+    }
+    catch (Exception ex)
+    {
+        Console.Error.WriteLine($"❌ {ex.GetType().Name}: {ex.Message}");
+        return 2;
+    }
 }
 
 static int RunLoad(string[] args)
@@ -139,7 +197,8 @@ static int RunExec(string[] args)
             var hl = s.Highlight.Count > 0 ? $" HL=[{string.Join(",", s.Highlight)}]" : "";
             var an = s.Annotation is not null ? $" // {s.Annotation}" : "";
             var df = s.Diff.Count > 0
-                ? " " + string.Join(" ", s.Diff.Select(d => $"{d.Target}:{d.Old}→{d.New}"))
+                ? " " + string.Join(" ", s.Diff.Select(d =>
+                    $"{d.Target}:{JsonShort(d.Old)}→{JsonShort(d.New)}"))
                 : "";
             Console.WriteLine($"   #{s.N,-4} {s.Kind,-10}{hl}{an}{df}");
         }
@@ -298,3 +357,17 @@ static int GetInt(JsonElement el, string key)
     => el.TryGetProperty(key, out var v) && v.ValueKind == JsonValueKind.Number
         ? v.GetInt32()
         : 0;
+
+static string JsonShort(object? v)
+{
+    if (v is null) return "null";
+    try
+    {
+        var s = JsonSerializer.Serialize(v);
+        return s.Length > 60 ? s[..57] + "..." : s;
+    }
+    catch
+    {
+        return v.ToString() ?? "?";
+    }
+}

@@ -200,6 +200,7 @@ public sealed class Interpreter
             case CountStatement c: Recorder.Stats.Count(c.Name, c.Delta); Recorder.Record("count", c.NodeId); break;
             case SnapshotStatement s: Recorder.RecordSnapshot(frame, s.Label); break;
             case MakeNodeStatement mn: ExecuteMakeNode(mn, frame); break;
+            case TupleAssignStatement ta: ExecuteTupleAssign(ta, frame); break;
             default:
                 throw new YawaRuntimeException($"Unknown statement: {stmt.GetType().Name}");
         }
@@ -213,6 +214,20 @@ public sealed class Interpreter
         {
             new Trace.StateChange { Target = d.Name, Old = null, New = value.ToJson() }
         });
+    }
+
+    private void ExecuteTupleAssign(TupleAssignStatement s, Frame frame)
+    {
+        if (s.Targets.Count != s.Values.Count)
+            throw new YawaRuntimeException(
+                $"tuple assign: {s.Targets.Count} targets vs {s.Values.Count} values");
+
+        // Сначала вычисляем ВСЕ значения (Python-семантика: правая часть вычисляется до присваивания)
+        var evaluated = s.Values.Select(v => Eval.Eval(v, frame)).ToList();
+
+        // Потом присваиваем по порядку
+        for (int i = 0; i < s.Targets.Count; i++)
+            AssignTo(s.Targets[i], evaluated[i], frame, s.NodeId);
     }
 
     private void ExecuteAssign(AssignStatement a, Frame frame)
@@ -238,17 +253,37 @@ public sealed class Interpreter
             case IndexExpr ix:
                 {
                     var targetVal = Eval.Eval(ix.Target, frame);
-                    var idx = (int)Evaluator.AsInt(Eval.Eval(ix.Index, frame), "index");
-                    if (targetVal is not ArrayValue arr)
-                        throw new YawaRuntimeException("assign to non-array index");
-                    var old = arr[idx];
-                    arr[idx] = value;
-                    var targetName = RenderTargetPath(ix.Target, frame);
-                    Recorder.Record("assign", nodeId, new[]
+                    var idxVal = Eval.Eval(ix.Index, frame);
+
+                    // Массив
+                    if (targetVal is ArrayValue arr)
                     {
-                    new Trace.StateChange { Target = $"{targetName}[{idx}]", Old = old.ToJson(), New = value.ToJson() }
-                });
-                    break;
+                        var idx = (int)Evaluator.AsInt(idxVal, "index");
+                        var old = arr[idx];
+                        arr[idx] = value;
+                        var targetName = RenderTargetPath(ix.Target, frame);
+                        Recorder.Record("assign", nodeId, new[]
+                        {
+                            new Trace.StateChange { Target = $"{targetName}[{idx}]", Old = old.ToJson(), New = value.ToJson() }
+                        });
+                        break;
+                    }
+
+                    // Словарь
+                    if (targetVal is ObjectValue obj)
+                    {
+                        var key = idxVal is StringValue sv ? sv.Value : idxVal.ToString();
+                        var old = obj.HasField(key) ? obj.GetField(key) : null;
+                        obj.SetField(key, value);
+                        var targetName = RenderTargetPath(ix.Target, frame);
+                        Recorder.Record("assign", nodeId, new[]
+                        {
+                            new Trace.StateChange { Target = $"{targetName}[\"{key}\"]", Old = old?.ToJson(), New = value.ToJson() }
+                        });
+                        break;
+                    }
+
+                    throw new YawaRuntimeException($"assign to non-array/non-dict index");
                 }
             case FieldExpr fl:
                 {
@@ -294,15 +329,99 @@ public sealed class Interpreter
 
     private void ExecuteIf(IfStatement s, Frame frame)
     {
+        RecordComparisonIfApplicable(s.Cond, frame);
         var cond = Evaluator.AsBool(Eval.Eval(s.Cond, frame));
         var branch = cond ? s.Then : (s.Else ?? new List<YawaStatement>());
         ExecuteBlock(branch, frame);
     }
+    /// <summary>
+    /// Рекурсивно обходит условие, регистрируя compare-шаги.
+    /// Учитывает short-circuit: для `A and B` — если A ложно, B не регистрируется.
+    /// Возвращает логический результат (для рекурсии).
+    /// </summary>
+    private bool RecordComparisonIfApplicable(YawaExpression cond, Frame frame)
+    {
+        switch (cond)
+        {
+            case BinaryExpr bin when bin.Op is "==" or "!=" or "<" or "<=" or ">" or ">=":
+                {
+                    RuntimeValue? a = null, b = null;
+                    bool result = false;
+
+                    try
+                    {
+                        a = Eval.Eval(bin.A, frame);
+                        b = Eval.Eval(bin.B, frame);
+                        result = EvaluateComparison(bin.Op, a, b);
+                    }
+                    catch { /* если не удалось — просто false */ }
+
+                    Recorder.Stats.Comparisons++;
+
+                    if (bin.A is IndexExpr ai) Recorder.AddHighlight(RenderIndexPath(ai, frame));
+                    if (bin.B is IndexExpr bi) Recorder.AddHighlight(RenderIndexPath(bi, frame));
+
+                    var diff = new List<Trace.StateChange>();
+                    if (a is not null)
+                        diff.Add(new Trace.StateChange { Target = "compare.a", Old = null, New = a.ToJson() });
+                    if (b is not null)
+                        diff.Add(new Trace.StateChange { Target = "compare.b", Old = null, New = b.ToJson() });
+
+                    Recorder.Record("compare", bin.NodeId, diff);
+                    return result;
+                }
+
+            case BinaryExpr bin when bin.Op == "and":
+                {
+                    var leftTrue = RecordComparisonIfApplicable(bin.A, frame);
+                    if (leftTrue)
+                        return RecordComparisonIfApplicable(bin.B, frame);
+                    return false;
+                }
+
+            case BinaryExpr bin when bin.Op == "or":
+                {
+                    var leftTrue = RecordComparisonIfApplicable(bin.A, frame);
+                    if (leftTrue) return true;
+                    return RecordComparisonIfApplicable(bin.B, frame);
+                }
+
+            case UnaryExpr un when un.Op == "not":
+                return !RecordComparisonIfApplicable(un.A, frame);
+
+            default:
+                return true;  // не сравнение — считаем ветку "пройденной"
+        }
+    }
+
+    private static bool EvaluateComparison(string op, RuntimeValue? a, RuntimeValue? b)
+    {
+        if (a is null || b is null) return false;
+        return op switch
+        {
+            "==" => a.ValueEquals(b),
+            "!=" => !a.ValueEquals(b),
+            "<" => CompareNumeric(a, b, (x, y) => x < y),
+            "<=" => CompareNumeric(a, b, (x, y) => x <= y),
+            ">" => CompareNumeric(a, b, (x, y) => x > y),
+            ">=" => CompareNumeric(a, b, (x, y) => x >= y),
+            _ => false
+        };
+    }
+
+    private static bool CompareNumeric(RuntimeValue a, RuntimeValue b, Func<double, double, bool> cmp)
+    {
+        var x = a is IntValue ii ? ii.Value : a is FloatValue ff ? ff.Value : 0;
+        var y = b is IntValue jj ? jj.Value : b is FloatValue gg ? gg.Value : 0;
+        return cmp(x, y);
+    }
 
     private void ExecuteWhile(WhileStatement s, Frame frame)
     {
-        while (Evaluator.AsBool(Eval.Eval(s.Cond, frame)))
+        while (true)
         {
+            RecordComparisonIfApplicable(s.Cond, frame);
+            if (!Evaluator.AsBool(Eval.Eval(s.Cond, frame))) break;
             CheckLimits();
             try { ExecuteBlock(s.Body, frame); }
             catch (BreakException) { break; }

@@ -16,7 +16,7 @@ public sealed class ObjectValue : RuntimeValue
     public override string TypeName =>
         ClassName is null ? "object" : $"object<{ClassName}>";
 
-    public override object ToJson()
+    public override object? ToJson()
     {
         var dict = new Dictionary<string, object?>();
         foreach (var (k, v) in Fields)

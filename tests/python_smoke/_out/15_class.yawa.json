@@ -1,0 +1,60 @@
+﻿{
+  "yawa_version": "1.0",
+  "metadata": {
+    "name": "Python \u2192 YAWA",
+    "description": null,
+    "generator": "algovis-transpiler@0.1"
+  },
+  "globals": {},
+  "functions": [
+    {
+      "name": "main",
+      "params": [],
+      "returns": null,
+      "body": [
+        {
+          "op": "assign",
+          "target": {
+            "ref": "c"
+          },
+          "value": {
+            "call": "Counter",
+            "args": []
+          }
+        },
+        {
+          "op": "expr",
+          "value": {
+            "call": "inc",
+            "args": [
+              {
+                "ref": "c"
+              }
+            ]
+          }
+        },
+        {
+          "op": "expr",
+          "value": {
+            "call": "inc",
+            "args": [
+              {
+                "ref": "c"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "entry": {
+    "function": "main",
+    "args": []
+  },
+  "limits": {
+    "max_steps": 1000000,
+    "max_depth": 500,
+    "max_seconds": 10,
+    "snapshot_every": 0
+  }
+}

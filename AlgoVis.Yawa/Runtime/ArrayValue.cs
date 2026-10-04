@@ -24,8 +24,13 @@ public sealed class ArrayValue : RuntimeValue
     public override string TypeName =>
         ElementType is null ? "array" : $"array<{ElementType}>";
 
-    public override object ToJson() =>
-        Items.Select(v => v.ToJson()).ToList();
+    public override object? ToJson()
+    {
+        var arr = new object?[Items.Count];
+        for (int i = 0; i < Items.Count; i++)
+            arr[i] = Items[i].ToJson();
+        return arr;
+    }
 
     public override string ToString() =>
         "[" + string.Join(", ", Items.Select(v => v.ToString())) + "]";

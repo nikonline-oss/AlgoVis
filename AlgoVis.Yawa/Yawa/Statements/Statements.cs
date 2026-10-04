@@ -103,7 +103,16 @@ public sealed class SnapshotStatement : YawaStatement
 public sealed class MakeNodeStatement : YawaStatement
 {
     [JsonPropertyName("target")] public YawaExpression Target { get; set; } = null!;
-    [JsonPropertyName("value")]  public YawaExpression Value  { get; set; } = null!;
-    [JsonPropertyName("left")]   public YawaExpression? Left  { get; set; }
-    [JsonPropertyName("right")]  public YawaExpression? Right { get; set; }
+    [JsonPropertyName("value")] public YawaExpression Value { get; set; } = null!;
+    [JsonPropertyName("left")] public YawaExpression? Left { get; set; }
+    [JsonPropertyName("right")] public YawaExpression? Right { get; set; }
+}
+
+public sealed class TupleAssignStatement : YawaStatement
+{
+    /// <summary>Список targets — переменных, элементов массива, полей.</summary>
+    public List<YawaExpression> Targets { get; set; } = new();
+
+    /// <summary>Список значений — правых частей. Количество должно совпадать с Targets.</summary>
+    public List<YawaExpression> Values { get; set; } = new();
 }

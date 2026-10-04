@@ -12,17 +12,27 @@ public sealed class GraphValue : RuntimeValue
 
     public override string TypeName => Directed ? "digraph" : "graph";
 
-    public override object ToJson() => new Dictionary<string, object?>
+    public override object ToJson()
     {
-        ["directed"] = Directed,
-        ["nodes"] = Nodes.ToDictionary(kv => kv.Key, kv => kv.Value.ToJson()),
-        ["edges"] = Edges.Select(e => new Dictionary<string, object?>
+        var nodes = new Dictionary<string, object?>();
+        foreach (var (k, v) in Nodes) nodes[k] = v.ToJson();
+
+        var edges = new List<object?>();
+        foreach (var e in Edges)
+            edges.Add(new Dictionary<string, object?>
+            {
+                ["from"] = e.From,
+                ["to"] = e.To,
+                ["weight"] = e.Weight
+            });
+
+        return new Dictionary<string, object?>
         {
-            ["from"] = e.From,
-            ["to"]   = e.To,
-            ["weight"] = e.Weight
-        }).ToList()
-    };
+            ["directed"] = Directed,
+            ["nodes"] = nodes,
+            ["edges"] = edges
+        };
+    }
 
     public override string ToString() =>
         $"graph({Nodes.Count} nodes, {Edges.Count} edges)";
@@ -33,6 +43,6 @@ public sealed class GraphValue : RuntimeValue
 public sealed class GraphEdge
 {
     public string From { get; set; } = "";
-    public string To   { get; set; } = "";
+    public string To { get; set; } = "";
     public double? Weight { get; set; }
 }

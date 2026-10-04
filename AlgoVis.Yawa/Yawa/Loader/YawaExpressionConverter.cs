@@ -14,7 +14,145 @@ public sealed class YawaExpressionConverter : JsonConverter<YawaExpression>
 
     public override void Write(Utf8JsonWriter writer, YawaExpression value, JsonSerializerOptions options)
     {
-        throw new NotSupportedException("Serialization of YawaExpression is not supported.");
+        writer.WriteStartObject();
+
+        if (!string.IsNullOrEmpty(value.NodeId))
+            writer.WriteString("id", value.NodeId);
+
+        switch (value)
+        {
+            case LiteralExpr lit:
+                writer.WritePropertyName("lit");
+                lit.Value.WriteTo(writer);
+                break;
+
+            case RefExpr r:
+                writer.WriteString("ref", r.Name);
+                break;
+
+            case IndexExpr ix:
+                writer.WritePropertyName("index");
+                writer.WriteStartArray();
+                WriteExpr(writer, ix.Target, options);
+                WriteExpr(writer, ix.Index, options);
+                writer.WriteEndArray();
+                break;
+
+            case FieldExpr fl:
+                writer.WritePropertyName("field");
+                writer.WriteStartArray();
+                WriteExpr(writer, fl.Target, options);
+                writer.WriteStringValue(fl.FieldName);
+                writer.WriteEndArray();
+                break;
+
+            case BinaryExpr bin:
+                writer.WriteString("bin", bin.Op);
+                writer.WritePropertyName("a");
+                WriteExpr(writer, bin.A, options);
+                writer.WritePropertyName("b");
+                WriteExpr(writer, bin.B, options);
+                break;
+
+            case UnaryExpr un:
+                writer.WriteString("un", un.Op);
+                writer.WritePropertyName("a");
+                WriteExpr(writer, un.A, options);
+                break;
+
+            case CallExpr c:
+                writer.WriteString("call", c.Name);
+                writer.WritePropertyName("args");
+                writer.WriteStartArray();
+                foreach (var a in c.Args) WriteExpr(writer, a, options);
+                writer.WriteEndArray();
+                break;
+
+            case CallMethodExpr cm:
+                writer.WritePropertyName("call_method");
+                WriteExpr(writer, cm.Receiver, options);
+                writer.WriteString("name", cm.Name);
+                writer.WritePropertyName("args");
+                writer.WriteStartArray();
+                foreach (var a in cm.Args) WriteExpr(writer, a, options);
+                writer.WriteEndArray();
+                break;
+
+            case NewObjectExpr no:
+                writer.WritePropertyName("new_object");
+                writer.WriteStartObject();
+                foreach (var (k, v) in no.Fields)
+                {
+                    writer.WritePropertyName(k);
+                    WriteExpr(writer, v, options);
+                }
+                writer.WriteEndObject();
+                break;
+
+            case LenExpr le:
+                writer.WritePropertyName("len");
+                WriteExpr(writer, le.Target, options);
+                break;
+
+            case TernaryExpr te:
+                writer.WritePropertyName("ternary");
+                writer.WriteStartObject();
+                writer.WritePropertyName("cond");
+                WriteExpr(writer, te.Parts.Cond, options);
+                writer.WritePropertyName("then");
+                WriteExpr(writer, te.Parts.Then, options);
+                writer.WritePropertyName("else");
+                WriteExpr(writer, te.Parts.Else, options);
+                writer.WriteEndObject();
+                break;
+
+            case ArrayExpr arr:
+                writer.WritePropertyName("array");
+                writer.WriteStartArray();
+                foreach (var x in arr.Items)
+                    WriteExpr(writer, x, options);
+                writer.WriteEndArray();
+                break;
+
+            case SliceExpr sl:
+                writer.WritePropertyName("slice");
+                writer.WriteStartArray();
+                WriteExpr(writer, sl.Target, options);
+                if (sl.Start is null) writer.WriteNullValue();
+                else WriteExpr(writer, sl.Start, options);
+                if (sl.Stop is null) writer.WriteNullValue();
+                else WriteExpr(writer, sl.Stop, options);
+                if (sl.Step is null) writer.WriteNullValue();
+                else WriteExpr(writer, sl.Step, options);
+                writer.WriteEndArray();
+                break;
+
+            case DictExpr d:
+                writer.WritePropertyName("dict");
+                writer.WriteStartArray();
+                foreach (var item in d.Items)
+                {
+                    writer.WriteStartObject();
+                    writer.WritePropertyName("k");
+                    WriteExpr(writer, item.Key, options);
+                    writer.WritePropertyName("v");
+                    WriteExpr(writer, item.Value, options);
+                    writer.WriteEndObject();
+                }
+                writer.WriteEndArray();
+                break;
+
+            default:
+                throw new NotSupportedException($"Write not implemented for {value.GetType().Name}");
+        }
+
+        writer.WriteEndObject();
+    }
+
+    private static void WriteExpr(Utf8JsonWriter writer, YawaExpression expr, JsonSerializerOptions options)
+    {
+        var converter = new YawaExpressionConverter();
+        converter.Write(writer, expr, options);
     }
 
     internal static YawaExpression ParseElement(JsonElement el)
@@ -107,6 +245,55 @@ public sealed class YawaExpressionConverter : JsonConverter<YawaExpression>
         if (el.TryGetProperty("len", out var lenProp))
             return new LenExpr { Target = ParseElement(lenProp.Clone()), NodeId = ReadId(el) };
 
+        if (el.TryGetProperty("dict", out var dictProp))
+        {
+            if (dictProp.ValueKind != JsonValueKind.Array)
+                throw new JsonException("'dict' must be array");
+
+            var result = new DictExpr { NodeId = ReadId(el) };
+            foreach (var entry in dictProp.EnumerateArray())
+            {
+                if (!entry.TryGetProperty("k", out var k) || !entry.TryGetProperty("v", out var v))
+                    throw new JsonException("dict entry must have 'k' and 'v'");
+                result.Items.Add(new DictEntry
+                {
+                    Key = ParseElement(k.Clone()),
+                    Value = ParseElement(v.Clone())
+                });
+            }
+            return result;
+        }
+
+        if (el.TryGetProperty("slice", out var sliceProp))
+        {
+            if (sliceProp.ValueKind != JsonValueKind.Array)
+                throw new JsonException("'slice' must be array of 3 elements [target, start, stop, step]");
+            var arr = sliceProp.EnumerateArray().ToArray();
+            if (arr.Length != 4)
+                throw new JsonException("'slice' must have 4 elements [target, start, stop, step]");
+
+            return new SliceExpr
+            {
+                Target = ParsePart(arr[0]),
+                Start = arr[1].ValueKind == JsonValueKind.Null ? null : ParsePart(arr[1]),
+                Stop = arr[2].ValueKind == JsonValueKind.Null ? null : ParsePart(arr[2]),
+                Step = arr[3].ValueKind == JsonValueKind.Null ? null : ParsePart(arr[3]),
+                NodeId = ReadId(el)
+            };
+        }
+
+        if (el.TryGetProperty("array", out var arrProp))
+        {
+            if (arrProp.ValueKind != JsonValueKind.Array)
+                throw new JsonException("'array' must be array");
+            return new ArrayExpr
+            {
+                Items = arrProp.EnumerateArray()
+                    .Select(x => ParseElement(x.Clone()))
+                    .ToList(),
+                NodeId = ReadId(el)
+            };
+        }
         if (el.TryGetProperty("ternary", out var ternProp))
             return new TernaryExpr
             {

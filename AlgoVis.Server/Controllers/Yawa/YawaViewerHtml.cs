@@ -23,18 +23,16 @@ internal static class YawaViewerHtml
     --text: #e8ecf4;
     --text-dim: #8b95ad;
     --text-muted: #5a6478;
-
     --accent: #6366f1;
     --accent-hi: #818cf8;
     --accent-glow: rgba(99, 102, 241, 0.35);
     --pink: #ec4899;
-
     --cmp: #f59e0b;
     --swap: #10b981;
     --assign: #3b82f6;
     --mark: #ec4899;
     --call: #a855f7;
-
+    --danger: #ef4444;
     --mono: ui-monospace, 'SF Mono', Menlo, 'JetBrains Mono', monospace;
     --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   }
@@ -49,7 +47,7 @@ internal static class YawaViewerHtml
     min-height: 100vh;
     font-size: 14px; line-height: 1.5;
   }
-  .app { max-width: 1440px; margin: 0 auto; padding: 24px 28px 60px; }
+  .app { max-width: 1500px; margin: 0 auto; padding: 24px 28px 60px; }
 
   header {
     display: flex; align-items: center; justify-content: space-between;
@@ -73,8 +71,8 @@ internal static class YawaViewerHtml
     font-family: var(--mono); font-size: 12px; color: var(--text-dim);
   }
 
-  .layout { display: grid; grid-template-columns: 260px 1fr; gap: 20px; align-items: start; }
-  @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } }
+  .layout { display: grid; grid-template-columns: 320px 1fr; gap: 20px; align-items: start; }
+  @media (max-width: 1100px) { .layout { grid-template-columns: 1fr; } }
 
   .card {
     background: linear-gradient(180deg, var(--bg-2) 0%, var(--bg-1) 100%);
@@ -82,11 +80,36 @@ internal static class YawaViewerHtml
     border-radius: 10px;
     padding: 16px;
     box-shadow: 0 4px 16px -8px rgba(0,0,0,0.5);
+    margin-bottom: 16px;
   }
+  .card:last-child { margin-bottom: 0; }
   .card-title {
     font-size: 11px; font-weight: 600; letter-spacing: 0.08em;
     text-transform: uppercase; color: var(--text-muted);
     margin: 0 0 12px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .card-title .badge {
+    font-size: 10px; padding: 1px 6px; border-radius: 3px;
+    background: var(--bg-3); color: var(--text-dim); font-weight: 500;
+    text-transform: none; letter-spacing: 0;
+  }
+
+  /* ─── Tabs ─── */
+  .tabs {
+    display: flex; gap: 4px; margin-bottom: 12px;
+    background: var(--bg-1); padding: 3px; border-radius: 6px;
+  }
+  .tab {
+    flex: 1; padding: 6px 10px; border-radius: 4px;
+    background: transparent; border: none;
+    color: var(--text-dim); font-family: inherit; font-size: 12px;
+    cursor: pointer; transition: all 0.15s ease;
+  }
+  .tab:hover { color: var(--text); }
+  .tab.active {
+    background: var(--bg-3); color: var(--text);
+    box-shadow: 0 2px 6px -2px rgba(0,0,0,0.4);
   }
 
   /* ─── Samples ─── */
@@ -112,6 +135,69 @@ internal static class YawaViewerHtml
     box-shadow: 0 0 0 1px rgba(99,102,241,0.3), 0 4px 20px -8px var(--accent-glow);
   }
   .sample-btn.active .icon { background: linear-gradient(135deg, var(--accent), var(--pink)); }
+
+  /* ─── Code editor ─── */
+  .code-area {
+    width: 100%; min-height: 320px;
+    padding: 12px;
+    background: var(--bg-0);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: var(--mono); font-size: 12.5px; line-height: 1.55;
+    resize: vertical;
+    tab-size: 4;
+    outline: none;
+    transition: border 0.15s ease;
+  }
+  .code-area:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+
+  .code-actions {
+    display: flex; gap: 8px; margin-top: 10px; align-items: center;
+  }
+
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    height: 36px; padding: 0 16px;
+    background: var(--bg-2); border: 1px solid var(--border);
+    border-radius: 6px; color: var(--text);
+    font-family: inherit; font-size: 13px; font-weight: 500;
+    cursor: pointer; transition: all 0.15s ease;
+    user-select: none;
+  }
+  .btn:hover:not(:disabled) {
+    background: var(--bg-3); border-color: var(--border-hi);
+    transform: translateY(-1px);
+  }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn.primary {
+    background: linear-gradient(135deg, var(--accent), #4f46e5);
+    border-color: var(--accent);
+    box-shadow: 0 4px 14px -4px var(--accent-glow);
+  }
+  .btn.primary:hover:not(:disabled) {
+    background: linear-gradient(135deg, var(--accent-hi), #6366f1);
+  }
+  .btn .icon { font-size: 15px; line-height: 1; }
+
+  /* ─── Error banner ─── */
+  .error-banner {
+    display: none;
+    margin-top: 10px;
+    padding: 10px 14px;
+    background: linear-gradient(90deg, rgba(239,68,68,0.18), rgba(239,68,68,0.05));
+    border-left: 3px solid var(--danger);
+    border-radius: 6px;
+    font-family: var(--mono); font-size: 12.5px;
+    color: #fecaca;
+    white-space: pre-wrap; word-break: break-word;
+  }
+  .error-banner.show { display: block; }
+  .error-banner .head {
+    font-family: var(--sans); font-weight: 600;
+    color: var(--danger); margin-bottom: 4px;
+    font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em;
+  }
 
   /* ─── Stats ─── */
   .stats-grid {
@@ -139,14 +225,13 @@ internal static class YawaViewerHtml
     background-clip: text;
   }
 
-  /* ─── Main two-column ─── */
+  /* ─── Workspace ─── */
   .workspace {
-    display: grid; grid-template-columns: minmax(0, 1fr) 300px;
+    display: grid; grid-template-columns: minmax(0, 1fr) 280px;
     gap: 16px; margin-bottom: 16px;
   }
   @media (max-width: 1100px) { .workspace { grid-template-columns: 1fr; } }
 
-  /* ─── Array ─── */
   .array-wrap {
     padding: 24px 16px;
     background:
@@ -197,7 +282,7 @@ internal static class YawaViewerHtml
   }
   .empty-array { color: var(--text-muted); font-style: italic; font-size: 13px; }
 
-  /* ─── Variables panel ─── */
+  /* ─── Variables ─── */
   .vars-card { padding: 14px; min-height: 140px; }
   .vars {
     display: flex; flex-direction: column; gap: 4px;
@@ -208,14 +293,12 @@ internal static class YawaViewerHtml
   .var-row {
     display: grid;
     grid-template-columns: 1fr auto;
-    align-items: center;
-    gap: 10px;
+    align-items: center; gap: 10px;
     padding: 6px 10px;
     background: var(--bg-1);
     border: 1px solid transparent;
     border-radius: 6px;
-    font-family: var(--mono);
-    font-size: 13px;
+    font-family: var(--mono); font-size: 13px;
     transition: all 0.2s ease;
   }
   .var-row .name {
@@ -224,33 +307,22 @@ internal static class YawaViewerHtml
   }
   .var-row .name .type {
     color: var(--text-muted);
-    font-size: 10px;
-    margin-left: 6px;
-    padding: 1px 5px;
-    background: var(--bg-3);
-    border-radius: 3px;
+    font-size: 10px; margin-left: 6px; padding: 1px 5px;
+    background: var(--bg-3); border-radius: 3px;
   }
   .var-row .value {
-    color: var(--text);
-    font-weight: 600;
-    text-align: right;
-    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-    max-width: 140px;
+    color: var(--text); font-weight: 600;
+    text-align: right; overflow: hidden; text-overflow: ellipsis;
+    white-space: nowrap; max-width: 140px;
   }
   .var-row.changed {
     background: linear-gradient(90deg, rgba(99,102,241,0.14), transparent);
     border-color: rgba(99,102,241,0.4);
     animation: pulse-var 0.7s ease;
   }
-  .var-row.array-var .value {
-    color: #60a5fa;
-  }
-  .var-row.tree-var .value {
-    color: #a855f7;
-  }
-  .var-row.object-var .value {
-    color: #fbbf24;
-  }
+  .var-row.array-var .value { color: #60a5fa; }
+  .var-row.tree-var .value { color: #a855f7; }
+  .var-row.object-var .value { color: #fbbf24; }
   @keyframes pulse-var {
     0%   { box-shadow: 0 0 0 0 rgba(99,102,241,0.5); }
     70%  { box-shadow: 0 0 0 8px rgba(99,102,241,0); }
@@ -276,12 +348,10 @@ internal static class YawaViewerHtml
 
   /* ─── Annotation ─── */
   .annotation {
-    min-height: 32px;
-    padding: 6px 14px;
+    min-height: 32px; padding: 6px 14px;
     background: linear-gradient(90deg, rgba(99,102,241,0.12), transparent);
     border-left: 3px solid var(--accent);
-    border-radius: 6px;
-    margin-bottom: 14px;
+    border-radius: 6px; margin-bottom: 14px;
     font-size: 13px;
     display: flex; align-items: center; gap: 8px;
   }
@@ -337,7 +407,7 @@ internal static class YawaViewerHtml
   }
   .steps-head .title { font-size: 13px; font-weight: 600; }
   .steps-head .count { font-size: 11px; color: var(--text-muted); font-family: var(--mono); }
-  .steps { max-height: 480px; overflow-y: auto; padding: 6px; }
+  .steps { max-height: 420px; overflow-y: auto; padding: 6px; }
   .steps::-webkit-scrollbar { width: 10px; }
   .steps::-webkit-scrollbar-thumb { background: var(--bg-3); border-radius: 5px; }
   .steps::-webkit-scrollbar-thumb:hover { background: var(--border-hi); }
@@ -420,10 +490,45 @@ internal static class YawaViewerHtml
   <div class="layout">
     <aside>
       <div class="card">
-        <h3 class="card-title">Примеры</h3>
-        <div class="samples" id="samples">
-          <div style="color: var(--text-muted); font-size: 12px; padding: 4px;">
-            <span class="loading"></span> загрузка...
+        <div class="tabs">
+          <button class="tab active" data-tab="samples">Примеры</button>
+          <button class="tab" data-tab="python">Python</button>
+        </div>
+
+        <div id="tab-samples">
+          <div class="samples" id="samples">
+            <div style="color: var(--text-muted); font-size: 12px; padding: 4px;">
+              <span class="loading"></span> загрузка...
+            </div>
+          </div>
+        </div>
+
+        <div id="tab-python" style="display: none;">
+          <textarea id="code-input" class="code-area" spellcheck="false">def bubble_sort(A):
+    n = len(A)
+    for i in range(n):
+        for j in range(n - i - 1):
+            if A[j] > A[j + 1]:
+                A[j], A[j + 1] = A[j + 1], A[j]
+                annotate("поменяли местами")
+    return A
+
+def main():
+    A = [5, 2, 8, 1, 9, 3, 7, 4]
+    bubble_sort(A)</textarea>
+
+          <div class="error-banner" id="error-banner">
+            <div class="head">Ошибка транспайлера</div>
+            <div class="body"></div>
+          </div>
+
+          <div class="code-actions">
+            <button class="btn primary" id="btn-run-python">
+              <span class="icon">▶</span> Запустить
+            </button>
+            <button class="btn" id="btn-clear-code" title="Очистить">
+              <span class="icon">✕</span>
+            </button>
           </div>
         </div>
       </div>
@@ -432,22 +537,22 @@ internal static class YawaViewerHtml
     <main id="main">
       <div class="empty" id="empty-state">
         <div class="icon">▶</div>
-        <div class="title">Выберите пример слева</div>
-        <div style="font-size: 12px;">или откройте <code>samples/</code> в проекте</div>
+        <div class="title">Выберите пример или запустите Python</div>
+        <div style="font-size: 12px;">загрузите готовый sample или напишите код слева</div>
       </div>
 
       <div id="content" style="display: none;">
         <div class="stats-grid" id="stats"></div>
 
         <div class="workspace">
-          <div class="card" style="padding: 16px;">
+          <div class="card" style="padding: 16px; margin-bottom: 0;">
             <h3 class="card-title" id="array-title">Структура данных</h3>
             <div class="array-wrap">
               <div class="array" id="arr"></div>
             </div>
           </div>
 
-          <div class="card vars-card">
+          <div class="card vars-card" style="margin-bottom: 0;">
             <h3 class="card-title">Переменные</h3>
             <div class="vars" id="vars"></div>
           </div>
@@ -494,13 +599,12 @@ internal static class YawaViewerHtml
 </div>
 
 <script>
-// ─── State ──────────────────────────────────────────────
 let session = null;
 let snapshots = [];
 let currentStep = 0;
 let isPlaying = false;
 let playTimer = null;
-let lastVars = {};       // name → value для анимации "changed"
+let lastVars = {};
 let lastArray = null;
 
 const $ = (id) => document.getElementById(id);
@@ -531,11 +635,18 @@ function typeOf(v) {
   }
   return '?';
 }
-function shortValue(v) {
-  if (isScalar(v)) return fmt(v);
-  if (v && typeof v === 'object' && v.__type) return v.__type;
-  return fmt(v);
-}
+
+// ─── Tabs ───────────────────────────────────────────────
+document.querySelectorAll('.tab').forEach(t => {
+  t.onclick = () => {
+    document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+    const which = t.dataset.tab;
+    $('tab-samples').style.display = which === 'samples' ? 'block' : 'none';
+    $('tab-python').style.display  = which === 'python'  ? 'block' : 'none';
+    $('error-banner').classList.remove('show');
+  };
+});
 
 // ─── Load samples ───────────────────────────────────────
 async function loadSamples() {
@@ -552,7 +663,7 @@ async function loadSamples() {
       const b = document.createElement('button');
       b.className = 'sample-btn';
       b.dataset.name = s.name;
-      b.innerHTML = '<span class="icon">🐍</span><span class="name">' +
+      b.innerHTML = '<span class="icon">📄</span><span class="name">' +
                     esc(s.name.replace('.yawa.json','')) + '</span>';
       b.onclick = () => runSample(s.name, b);
       box.appendChild(b);
@@ -562,48 +673,96 @@ async function loadSamples() {
   }
 }
 
-// ─── Run ────────────────────────────────────────────────
+// ─── Run sample ─────────────────────────────────────────
 async function runSample(name, btn) {
   document.querySelectorAll('.sample-btn').forEach(b => b.classList.remove('active'));
   if (btn) btn.classList.add('active');
 
-  $('empty-state').innerHTML = '<div class="loading"></div>';
-  $('empty-state').style.display = 'block';
-  $('content').style.display = 'none';
+  showLoading();
 
   try {
     const r = await fetch('/api/yawa/run-sample?name=' + encodeURIComponent(name), { method: 'POST' });
     const data = await r.json();
     if (data.error) { alert('Ошибка: ' + data.error); return; }
-
-    session = data;
-    currentStep = 0;
-    lastVars = {};
-    lastArray = null;
-    snapshots = session.steps
-      .map((s, i) => s.snapshot ? i : -1)
-      .filter(i => i >= 0);
-
-    $('header-meta').innerHTML =
-      '<span class="pill">yawa 1.0</span>' +
-      '<span class="pill">' + esc(session.metadata?.name || '—') + '</span>';
-
-    $('empty-state').style.display = 'none';
-    $('content').style.display = 'block';
-
-    renderStats();
-    renderStepsList();
-    $('steps-count').textContent = session.steps.length + ' шт.';
-
-    // Стартуем с первого шага, где есть snapshot (там начальное состояние),
-    // иначе с 0.
-    const firstSnap = session.steps.findIndex(s => s.snapshot);
-    renderStep(firstSnap >= 0 ? firstSnap : 0);
+    loadSession(data);
   } catch (e) {
-    $('empty-state').innerHTML =
-      '<div class="icon">⚠</div><div class="title">Ошибка</div><div style="font-size:12px;">' +
-      esc(e.message) + '</div>';
+    showError('Ошибка: ' + e.message);
   }
+}
+
+// ─── Run Python ─────────────────────────────────────────
+async function runPython() {
+  const code = $('code-input').value;
+  if (!code.trim()) return;
+
+  showLoading();
+  $('error-banner').classList.remove('show');
+  document.querySelectorAll('.sample-btn').forEach(b => b.classList.remove('active'));
+
+  try {
+    const r = await fetch('/api/yawa/run-python', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code })
+    });
+    const data = await r.json();
+
+    if (data.error) {
+      const parts = [];
+      if (data.line !== undefined && data.line > 0) parts.push('Строка ' + (data.line + 1) + ':' + data.column);
+      if (data.kind === 'transpiler') parts.push('транспайлер');
+      else if (data.kind === 'runtime') parts.push('исполнение');
+      const head = parts.length ? parts.join(' · ') : 'Ошибка';
+      $('error-banner').querySelector('.head').textContent = head;
+      $('error-banner').querySelector('.body').textContent = data.error;
+      $('error-banner').classList.add('show');
+      $('empty-state').style.display = 'block';
+      $('empty-state').innerHTML = '<div class="icon">⚠</div><div class="title">Не удалось выполнить</div>' +
+                                   '<div style="font-size:12px;">исправьте код и попробуйте снова</div>';
+      $('content').style.display = 'none';
+      return;
+    }
+
+    loadSession(data);
+  } catch (e) {
+    showError('Сеть: ' + e.message);
+  }
+}
+
+// ─── Common ─────────────────────────────────────────────
+function showLoading() {
+  $('empty-state').innerHTML = '<div class="loading"></div>';
+  $('empty-state').style.display = 'block';
+  $('content').style.display = 'none';
+}
+function showError(msg) {
+  $('empty-state').innerHTML = '<div class="icon">⚠</div><div class="title">Ошибка</div>' +
+                               '<div style="font-size:12px;">' + esc(msg) + '</div>';
+  $('empty-state').style.display = 'block';
+  $('content').style.display = 'none';
+}
+function loadSession(data) {
+  session = data;
+  currentStep = 0;
+  lastVars = {};
+  lastArray = null;
+  snapshots = session.steps
+    .map((s, i) => s.snapshot ? i : -1)
+    .filter(i => i >= 0);
+
+  $('header-meta').innerHTML =
+    '<span class="pill">yawa 1.0</span>' +
+    '<span class="pill">' + esc(session.metadata?.name || '—') + '</span>';
+
+  $('empty-state').style.display = 'none';
+  $('content').style.display = 'block';
+
+  renderStats();
+  renderStepsList();
+  $('steps-count').textContent = session.steps.length + ' шт.';
+
+  const firstSnap = session.steps.findIndex(s => s.snapshot);
+  renderStep(firstSnap >= 0 ? firstSnap : 0);
 }
 
 // ─── Stats ──────────────────────────────────────────────
@@ -634,12 +793,8 @@ function renderStepsList() {
         esc(x.target) + '<span class="arrow">=</span><span class="val">' +
         esc(fmt(x.new)) + '</span>').join(' ');
     }
-    if (!d && s.annotation) {
-      d = '<span class="ann">' + esc(s.annotation) + '</span>';
-    }
-    if (!d && s.snapshot) {
-      d = '<span style="color:var(--text-muted);">snapshot</span>';
-    }
+    if (!d && s.annotation) d = '<span class="ann">' + esc(s.annotation) + '</span>';
+    if (!d && s.snapshot)   d = '<span style="color:var(--text-muted);">snapshot</span>';
     if (!d) d = '&nbsp;';
 
     return '<div class="step" data-idx="' + i + '" data-kind="' + s.kind + '">' +
@@ -654,7 +809,7 @@ function renderStepsList() {
   });
 }
 
-// ─── Reconstruct state at step ──────────────────────────
+// ─── State reconstruction ───────────────────────────────
 function stateAt(stepIdx) {
   let snapIdx = -1;
   for (const i of snapshots) if (i <= stepIdx) snapIdx = i;
@@ -667,14 +822,8 @@ function stateAt(stepIdx) {
     if (!st.diff) continue;
     for (const d of st.diff) {
       const t = String(d.target);
+      if (t.startsWith('compare.') || t.startsWith('__')) continue;
 
-      // compare.a / compare.b — служебные маркеры, пропускаем
-      if (t.startsWith('compare.')) continue;
-
-      // Служебные переменные
-      if (t.startsWith('__')) continue;
-
-      // A[3] — элемент массива
       let m = t.match(/^([A-Za-z_]\w*)\[(\d+)\]$/);
       if (m) {
         const arr = state[m[1]];
@@ -682,7 +831,6 @@ function stateAt(stepIdx) {
         continue;
       }
 
-      // obj.field — поле объекта
       m = t.match(/^([A-Za-z_]\w*)\.(\w+)$/);
       if (m && m[1] !== 'object') {
         const obj = state[m[1]];
@@ -690,16 +838,13 @@ function stateAt(stepIdx) {
         continue;
       }
 
-      // Простое имя переменной — присвоение
-      if (/^[A-Za-z_]\w*$/.test(t)) {
-        state[t] = d.new;
-      }
+      if (/^[A-Za-z_]\w*$/.test(t)) state[t] = d.new;
     }
   }
   return state;
 }
 
-// ─── Render a single step ───────────────────────────────
+// ─── Render step ────────────────────────────────────────
 function renderStep(idx) {
   if (!session) return;
   idx = Math.max(0, Math.min(session.steps.length - 1, idx));
@@ -715,16 +860,12 @@ function renderStep(idx) {
   $('pos').innerHTML = '<b>' + idx + '</b> / ' + (session.steps.length - 1);
   $('timeline-fill').style.width = (100 * idx / Math.max(1, session.steps.length - 1)) + '%';
 
-  // Аннотация
   const ann = st.annotation || '';
   $('annotation').innerHTML = ann
     ? '<span class="badge">' + esc(st.kind) + '</span><span>' + esc(ann) + '</span>'
     : (st.kind ? '<span class="badge">' + esc(st.kind) + '</span><span style="color:var(--text-muted);font-style:italic;">…</span>' : '');
 
-  // Состояние
   const state = stateAt(idx);
-
-  // Изменённые на этом шаге имена
   const changed = new Set();
   if (st.diff) for (const d of st.diff) {
     const t = String(d.target);
@@ -732,8 +873,7 @@ function renderStep(idx) {
     if (m) changed.add(m[1]);
   }
 
-  // ── Массив ──
-  // Ищем первый массив в state (приоритет имени "A")
+  // Массив
   let arrName = null;
   if (Array.isArray(state.A)) arrName = 'A';
   else {
@@ -763,7 +903,7 @@ function renderStep(idx) {
     lastArray = null;
   }
 
-    // ── Переменные — берём напрямую из step.vars ──
+  // Переменные — берём из step.vars
   const varsFromStep = st.vars || {};
   renderVars(varsFromStep, changed);
   lastVars = Object.fromEntries(
@@ -798,20 +938,15 @@ function renderVars(vars, changed) {
   }
 
   box.innerHTML = entries.map(([name, value]) => {
-    // Обновлённый typeOf, работает с нашими сжатыми объектами из vars
     let t, displayValue;
     if (isScalar(value)) {
       t = typeOf(value);
       displayValue = fmt(value);
     } else if (value && typeof value === 'object' && value.__type) {
-      // Наша сжатая форма
       t = value.__type;
       if (value.__type.startsWith('array')) {
-        if (value.items) {
-          displayValue = '[' + value.items.map(x => fmt(x)).join(', ') + ']';
-        } else {
-          displayValue = 'array[' + (value.length ?? '?') + ']';
-        }
+        if (value.items) displayValue = '[' + value.items.map(x => fmt(x)).join(', ') + ']';
+        else displayValue = 'array[' + (value.length ?? '?') + ']';
       } else if (value.__type === 'tree') {
         displayValue = 'tree(root=' + fmt(value.root) + ', size=' + value.size + ')';
       } else if (value.__type === 'tree_node') {
@@ -864,7 +999,11 @@ function setupControls() {
     renderStep(Math.round(p * (session.steps.length - 1)));
   };
 
+  $('btn-run-python').onclick = runPython;
+  $('btn-clear-code').onclick = () => { $('code-input').value = ''; $('code-input').focus(); };
+
   document.addEventListener('keydown', (e) => {
+    if (e.target && e.target.tagName === 'TEXTAREA') return;
     if (!session) return;
     const step = e.shiftKey ? 10 : 1;
     if (e.key === 'ArrowLeft')  { renderStep(currentStep - step); e.preventDefault(); }

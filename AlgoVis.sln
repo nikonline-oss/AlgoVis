@@ -17,6 +17,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AlgoVis.Yawa", "AlgoVis.Yaw
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AlgoVis.Yawa.Cli", "AlgoVis.Yawa.Cli\AlgoVis.Yawa.Cli.csproj", "{8DA78868-E662-49F9-AC0E-E01FC09F1117}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AlgoVis.Transpiler", "AlgoVis.Transpiler\AlgoVis.Transpiler.csproj", "{6AB887C2-F1C5-4738-9DA5-93335B89964A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -51,6 +53,10 @@ Global
 		{8DA78868-E662-49F9-AC0E-E01FC09F1117}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8DA78868-E662-49F9-AC0E-E01FC09F1117}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8DA78868-E662-49F9-AC0E-E01FC09F1117}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6AB887C2-F1C5-4738-9DA5-93335B89964A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6AB887C2-F1C5-4738-9DA5-93335B89964A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6AB887C2-F1C5-4738-9DA5-93335B89964A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6AB887C2-F1C5-4738-9DA5-93335B89964A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -79,3 +79,30 @@ public sealed class TernaryParts
     [JsonPropertyName("then")] public YawaExpression Then { get; set; } = null!;
     [JsonPropertyName("else")] public YawaExpression Else { get; set; } = null!;
 }
+public sealed class ArrayExpr : YawaExpression
+{
+    /// <summary>Список элементов массива. Каждый — подвыражение.</summary>
+    [JsonPropertyName("array")]
+    public List<YawaExpression> Items { get; set; } = new();
+}
+
+public sealed class SliceExpr : YawaExpression
+{
+    /// <summary>A[start:stop:step] — любой из компонентов опционален.</summary>
+    public YawaExpression Target { get; set; } = null!;
+    public YawaExpression? Start { get; set; }
+    public YawaExpression? Stop { get; set; }
+    public YawaExpression? Step { get; set; }
+}
+
+public sealed class DictEntry
+{
+    public YawaExpression Key { get; set; } = null!;
+    public YawaExpression Value { get; set; } = null!;
+}
+
+public sealed class DictExpr : YawaExpression
+{
+    /// <summary>Список пар ключ-значение.</summary>
+    public List<DictEntry> Items { get; set; } = new();
+}

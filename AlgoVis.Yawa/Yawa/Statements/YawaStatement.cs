@@ -20,10 +20,12 @@ namespace AlgoVis.Yawa.Yawa.Statements;
 [JsonDerivedType(typeof(AnnotateStatement), "annotate")]
 [JsonDerivedType(typeof(CountStatement),    "count")]
 [JsonDerivedType(typeof(SnapshotStatement), "snapshot")]
-[JsonDerivedType(typeof(MakeNodeStatement),  "make_node")]
+[JsonDerivedType(typeof(MakeNodeStatement), "make_node")]
+[JsonDerivedType(typeof(TupleAssignStatement), "tuple_assign")]
 public abstract class YawaStatement
 {
     /// <summary>Необязательный ID узла — для отладки и трассировки.</summary>
     [JsonPropertyName("id")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? NodeId { get; set; }
 }

@@ -24,6 +24,7 @@
 		  <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
 	  </ProjectReference>
 	  <ProjectReference Include="..\AlgoVis.Yawa\AlgoVis.Yawa.csproj" />
+	  <ProjectReference Include="..\AlgoVis.Transpiler\AlgoVis.Transpiler.csproj" />
   </ItemGroup>
 
 </Project>

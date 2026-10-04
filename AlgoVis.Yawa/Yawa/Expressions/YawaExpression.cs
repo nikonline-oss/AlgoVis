@@ -7,5 +7,6 @@ namespace AlgoVis.Yawa.Yawa.Expressions;
 public abstract class YawaExpression
 {
     [JsonPropertyName("id")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? NodeId { get; set; }
 }

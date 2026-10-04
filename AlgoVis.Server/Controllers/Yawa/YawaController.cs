@@ -224,6 +224,108 @@ public sealed class YawaController : ControllerBase
         return Ok(files);
     }
 
+    /// <summary>
+    /// Принимает Python-код в теле (text/plain или application/json с полем "code"),
+    /// транспайлит в YAWA, исполняет и возвращает trace.
+    /// </summary>
+    [HttpPost("run-python")]
+    [RequestSizeLimit(2 * 1024 * 1024)]
+    public async Task<IActionResult> RunPython(CancellationToken ct)
+    {
+        // Читаем тело как текст
+        string body;
+        try
+        {
+            using var reader = new StreamReader(Request.Body);
+            body = await reader.ReadToEndAsync(ct);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ApiError.Validation("Не удалось прочитать тело", ex.Message));
+        }
+
+        if (string.IsNullOrWhiteSpace(body))
+            return BadRequest(ApiError.Validation("Пустое тело запроса"));
+
+        // Если Content-Type: application/json — ожидаем { "code": "...", "entry": "..." }
+        string pythonCode;
+        string? entry = null;
+        var ctHeader = Request.ContentType ?? "";
+        if (ctHeader.Contains("application/json", StringComparison.OrdinalIgnoreCase))
+        {
+            try
+            {
+                using var doc = JsonDocument.Parse(body);
+                if (!doc.RootElement.TryGetProperty("code", out var codeEl) ||
+                    codeEl.ValueKind != JsonValueKind.String)
+                    return BadRequest(ApiError.Validation("JSON должен содержать поле 'code'"));
+                pythonCode = codeEl.GetString() ?? "";
+                if (doc.RootElement.TryGetProperty("entry", out var entryEl) &&
+                    entryEl.ValueKind == JsonValueKind.String)
+                    entry = entryEl.GetString();
+            }
+            catch (JsonException jx)
+            {
+                return BadRequest(ApiError.Validation("Некорректный JSON", jx.Message));
+            }
+        }
+        else
+        {
+            pythonCode = body;
+        }
+
+        // Транспайлим
+        YawaProgram program;
+        try
+        {
+            var transpiler = new Transpiler.PythonToYawa(pythonCode);
+            program = transpiler.Transpile(entry);
+        }
+        catch (Transpiler.UnsupportedFeatureException ex)
+        {
+            return Ok(new
+            {
+                error = ex.Message,
+                kind = "transpiler",
+                line = ex.Line,
+                column = ex.Column
+            });
+        }
+        catch (Exception ex)
+        {
+            _log.LogError(ex, "Transpiler unexpected error");
+            return Ok(new { error = ex.Message, kind = "transpiler", detail = ex.GetType().Name });
+        }
+
+        // Исполняем
+        var opts = new InterpreterOptions
+        {
+            MaxSteps = Math.Min(program.Limits.MaxSteps, HardMaxSteps),
+            MaxDepth = Math.Min(program.Limits.MaxDepth, HardMaxDepth),
+            MaxSeconds = Math.Min(program.Limits.MaxSeconds, HardMaxSeconds),
+            SnapshotEvery = program.Limits.SnapshotEvery
+        };
+
+        TraceSession session;
+        try
+        {
+            session = new Interpreter(program, opts).Run();
+        }
+        catch (Exception ex)
+        {
+            _log.LogError(ex, "Interpreter error");
+            return Ok(new { error = ex.Message, kind = "runtime" });
+        }
+
+        _log.LogInformation(
+            "YAWA run-python: name={Name}, steps={Steps}, cmp={Cmp}, swaps={Swaps}",
+            program.Metadata.Name, session.Statistics.TotalSteps,
+            session.Statistics.Comparisons, session.Statistics.Swaps);
+
+        return Ok(session);
+    }
+
+
     [HttpGet("viewer")]
     [Produces("text/html")]
     public IActionResult Viewer() => Content(YawaViewerHtml.Value, "text/html", System.Text.Encoding.UTF8);

@@ -25,6 +25,10 @@ public sealed class User
     public bool IsActive { get; set; } = true;
 
     // Навигация
+    public UserRating? Rating { get; set; }
+    public List<Assignment> CreatedAssignments { get; set; } = new();
+    public List<Submission> Submissions { get; set; } = new();
+    public List<Comment> Comments { get; set; } = new();
     public List<RefreshToken> RefreshTokens { get; set; } = new();
     public List<Project> Projects { get; set; } = new();
 }

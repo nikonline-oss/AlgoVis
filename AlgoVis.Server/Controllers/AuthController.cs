@@ -72,6 +72,43 @@ public sealed class AuthController : ControllerBase
             user.CreatedAt, user.LastLoginAt));
     }
 
+    [HttpGet("profile/{username}")]
+    [AllowAnonymous]
+    public async Task<IActionResult> PublicProfile(string username, CancellationToken ct)
+    {
+        var user = await _db.Users
+            .FirstOrDefaultAsync(u => u.Username == username, ct);
+        if (user is null) return NotFound(new { error = "Пользователь не найден" });
+
+        var rating = await _db.UserRatings
+            .FirstOrDefaultAsync(r => r.UserId == user.Id, ct);
+
+        var publicProjects = await _db.Projects
+            .CountAsync(p => p.UserId == user.Id && p.IsPublic, ct);
+        var publishedAssignments = await _db.Assignments
+            .CountAsync(a => a.AuthorId == user.Id && a.IsPublished, ct);
+
+        return Ok(new
+        {
+            user.Id,
+            user.Username,
+            user.Role,
+            user.CreatedAt,
+            rating = new
+            {
+                playerXp = rating?.PlayerXp ?? 0,
+                playerLevel = rating?.PlayerLevel ?? 1,
+                completedCount = rating?.CompletedCount ?? 0,
+                teacherRating = rating?.TeacherRating ?? 0,
+                teacherLevel = rating?.TeacherLevel ?? 1,
+                createdCount = rating?.CreatedCount ?? 0,
+                totalAssignmentsCompleted = rating?.TotalAssignmentsCompleted ?? 0
+            },
+            publicProjectsCount = publicProjects,
+            publishedAssignmentsCount = publishedAssignments
+        });
+    }
+
     private string? UserAgent() => Request.Headers.UserAgent.ToString() is { Length: > 0 } ua ? ua : null;
     private string? ClientIp() => HttpContext.Connection.RemoteIpAddress?.ToString();
 }

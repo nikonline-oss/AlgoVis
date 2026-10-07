@@ -20,6 +20,10 @@ builder.Services.AddSingleton<AlgoVis.Server.Auth.Services.PasswordHasher>();
 builder.Services.AddSingleton<AlgoVis.Server.Auth.Services.JwtService>();
 builder.Services.AddScoped<AlgoVis.Server.Auth.Services.AuthService>();
 builder.Services.AddScoped<AlgoVis.Server.Projects.Services.ProjectsService>();
+builder.Services.AddScoped<AlgoVis.Server.Assignments.Services.AssignmentsService>();
+builder.Services.AddScoped<AlgoVis.Server.Submissions.Services.SubmissionsService>();
+builder.Services.AddScoped<AlgoVis.Server.Comments.Services.CommentsService>();
+builder.Services.AddScoped<AlgoVis.Server.Leaderboard.Services.LeaderboardService>();
 
 // ─────── JWT Authentication ───────
 {

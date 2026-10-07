@@ -24,6 +24,7 @@ builder.Services.AddScoped<AlgoVis.Server.Assignments.Services.AssignmentsServic
 builder.Services.AddScoped<AlgoVis.Server.Submissions.Services.SubmissionsService>();
 builder.Services.AddScoped<AlgoVis.Server.Comments.Services.CommentsService>();
 builder.Services.AddScoped<AlgoVis.Server.Leaderboard.Services.LeaderboardService>();
+builder.Services.AddScoped<AlgoVis.Server.Admin.Services.AdminService>();
 
 // ─────── JWT Authentication ───────
 {
@@ -102,11 +103,14 @@ builder.Services.AddCors(options =>
 builder.Services.Configure<RateLimitOptions>(
     builder.Configuration.GetSection(RateLimitOptions.SectionName));
 
+// В тестовом окружении rate-limit отключается (иначе все тесты с одного IP).
+var isTestingEnv = builder.Environment.IsEnvironment("Testing");
+
 var rateLimitSection = builder.Configuration.GetSection(RateLimitOptions.SectionName);
-var authRunLimit = rateLimitSection.GetValue<int?>("AuthenticatedRunPerMinute") ?? 30;
-var anonRunLimit = rateLimitSection.GetValue<int?>("AnonymousRunPerMinute") ?? 10;
-var registerLimit = rateLimitSection.GetValue<int?>("RegisterPerHour") ?? 5;
-var loginLimit = rateLimitSection.GetValue<int?>("LoginPerMinute") ?? 10;
+var authRunLimit = isTestingEnv ? 1_000_000 : (rateLimitSection.GetValue<int?>("AuthenticatedRunPerMinute") ?? 30);
+var anonRunLimit = isTestingEnv ? 1_000_000 : (rateLimitSection.GetValue<int?>("AnonymousRunPerMinute") ?? 10);
+var registerLimit = isTestingEnv ? 1_000_000 : (rateLimitSection.GetValue<int?>("RegisterPerHour") ?? 5);
+var loginLimit   = isTestingEnv ? 1_000_000 : (rateLimitSection.GetValue<int?>("LoginPerMinute") ?? 10);
 
 builder.Services.AddRateLimiter(opts =>
 {
@@ -186,3 +190,6 @@ app.UseRateLimiter();
 app.MapControllers();
 app.Run();
 //ASPNETCORE_HOSTINGSTARTUPASSEMBLIES="" dotnet watch run --project AlgoVis.Server
+
+// Нужно для интеграционных тестов через WebApplicationFactory<Program>
+public partial class Program { }

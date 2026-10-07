@@ -121,7 +121,7 @@ public sealed class TraceRecorder
         var d = new Dictionary<string, object?>();
         foreach (var (k, v) in frame.AllVisible())
         {
-            if (k.StartsWith("__")) continue;
+            if (k.StartsWith("__") && k != "__return__") continue;
             d[k] = ToCompact(v);
         }
         return d;
@@ -213,7 +213,8 @@ public sealed class TraceRecorder
         var result = new Dictionary<string, object?>();
         foreach (var (k, v) in frame.AllVisible())
         {
-            if (k.StartsWith("__")) continue;
+            // Оставляем __return__, скрываем остальные __*
+            if (k.StartsWith("__") && k != "__return__") continue;
             result[k] = v.ToJson();
         }
         return result;
@@ -251,15 +252,14 @@ public sealed class TraceRecorder
         var sizes = new Dictionary<string, int>();
         foreach (var (k, v) in root.AllVisible())
         {
-            if (k.StartsWith("__")) continue;
+            if (k.StartsWith("__") && k != "__return__") continue;
             if (v is ArrayValue arr) sizes[k] = arr.Count;
             else if (v is TreeValue tree) sizes[k] = CountTreeNodes(tree.Root);
             else if (v is GraphValue g) sizes[k] = g.Nodes.Count;
-            else if (v is SetValue set) sizes[k] = set.Count;
+            else if (v is SetValue st) sizes[k] = st.Count;
         }
         return sizes;
     }
-
     private static int CountTreeNodes(TreeNodeValue? node)
     {
         if (node is null) return 0;

@@ -331,4 +331,16 @@ public sealed class YawaController : ControllerBase
     [HttpGet("viewer")]
     [Produces("text/html")]
     public IActionResult Viewer() => Content(YawaViewerHtml.Value, "text/html", System.Text.Encoding.UTF8);
+
+    /// <summary>HTML-страница среды заданий.</summary>
+    [HttpGet("assignments-viewer")]
+    [Produces("text/html")]
+    public IActionResult AssignmentsViewer()
+        => Content(Yawa.AssignmentsViewerHtml.Value, "text/html", System.Text.Encoding.UTF8);
+
+    /// <summary>HTML-страница админ-панели.</summary>
+    [HttpGet("admin-viewer")]
+    [Produces("text/html")]
+    public IActionResult AdminViewer()
+        => Content(Yawa.AdminViewerHtml.Value, "text/html", System.Text.Encoding.UTF8);
 }

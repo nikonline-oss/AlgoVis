@@ -1247,8 +1247,11 @@ function renderTreeSvg(tree, hl) {
 
 function renderVars(vars, changed) {
   const entries = Object.entries(vars)
-    .filter(([k]) => !k.startsWith('__'))
+    .filter(([k]) => k === '__return__' || !k.startsWith('__'))
     .sort((a, b) => {
+      // __return__ всегда в самом низу
+      if (a[0] === '__return__') return 1;
+      if (b[0] === '__return__') return -1;
       const aS = isScalar(a[1]) ? 0 : 1;
       const bS = isScalar(b[1]) ? 0 : 1;
       if (aS !== bS) return aS - bS;
@@ -1260,7 +1263,10 @@ function renderVars(vars, changed) {
     box.innerHTML = '<div style="color:var(--text-muted);font-size:12px;font-style:italic;padding:6px;">нет переменных</div>';
     return;
   }
-  box.innerHTML = entries.map(([name, value]) => {
+    box.innerHTML = entries.map(([name, value]) => {
+    // Переименовываем __return__ для отображения
+    const isReturn = name === '__return__';
+    const displayName = isReturn ? '↩ результат' : name;
     let t, display;
     if (isScalar(value)) { t = typeof value === 'number' ? (Number.isInteger(value) ? 'int' : 'float') : typeof value; display = fmt(value); }
     else if (looksLikeTree(value)) { t = 'tree'; display = 'tree'; }

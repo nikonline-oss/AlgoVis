@@ -34,13 +34,6 @@ public sealed class Frame
 
     public void Set(string name, RuntimeValue value)
     {
-        // Если переменная есть в родительском frame — изменяем там.
-        // Иначе создаём в текущем (как Python).
-        if (!Locals.ContainsKey(name) && Parent is not null && Parent.Has(name))
-        {
-            Parent.Set(name, value);
-            return;
-        }
         Locals[name] = value;
     }
 

@@ -1,7 +1,4 @@
-﻿using AlgoVis.Core.Core;
-using AlgoVis.Evaluator.Evaluator.Types;
-using AlgoVis.Server.Services;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -20,12 +17,6 @@ if (!Directory.Exists(wwwrootPath))
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-
-
-
-builder.Services.AddScoped<RandomStructureFactory>();
-builder.Services.AddScoped<AlgorithmManager>();
-builder.Services.AddScoped<AlgoVis.Core.Core.Interfaces.ICustomAlgorithmInterpreter, AlgoVis.Core.Core.AlgorithmInterpreter>();
 
 builder.Services.AddControllers()
     .AddJsonOptions(options =>

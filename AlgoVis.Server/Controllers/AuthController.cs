@@ -5,6 +5,7 @@ using AlgoVis.Server.Auth.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace AlgoVis.Server.Controllers;
 
@@ -22,6 +23,7 @@ public sealed class AuthController : ControllerBase
     }
 
     [HttpPost("register")]
+    [EnableRateLimiting("register")]
     public async Task<IActionResult> Register([FromBody] RegisterRequest req, CancellationToken ct)
     {
         var (result, error) = await _auth.RegisterAsync(req, UserAgent(), ClientIp(), ct);
@@ -30,6 +32,7 @@ public sealed class AuthController : ControllerBase
     }
 
     [HttpPost("login")]
+    [EnableRateLimiting("login")]
     public async Task<IActionResult> Login([FromBody] LoginRequest req, CancellationToken ct)
     {
         var (result, error) = await _auth.LoginAsync(req, UserAgent(), ClientIp(), ct);

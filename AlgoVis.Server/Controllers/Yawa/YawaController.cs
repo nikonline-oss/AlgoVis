@@ -4,6 +4,7 @@ using AlgoVis.Yawa.Trace;
 using AlgoVis.Yawa.Yawa;
 using AlgoVis.Yawa.Yawa.Loader;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace AlgoVis.Server.Controllers.Yawa;
 
@@ -230,6 +231,7 @@ public sealed class YawaController : ControllerBase
     /// </summary>
     [HttpPost("run-python")]
     [RequestSizeLimit(2 * 1024 * 1024)]
+    [EnableRateLimiting("run")]
     public async Task<IActionResult> RunPython(CancellationToken ct)
     {
         // Читаем тело как текст

@@ -2,6 +2,8 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using AlgoVis.Data;
+using System.Threading.RateLimiting;
+using AlgoVis.Server.RateLimiting;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -92,6 +94,68 @@ builder.Services.AddCors(options =>
     });
 });
 
+// ─────── Rate limiting ───────
+builder.Services.Configure<RateLimitOptions>(
+    builder.Configuration.GetSection(RateLimitOptions.SectionName));
+
+var rateLimitSection = builder.Configuration.GetSection(RateLimitOptions.SectionName);
+var authRunLimit = rateLimitSection.GetValue<int?>("AuthenticatedRunPerMinute") ?? 30;
+var anonRunLimit = rateLimitSection.GetValue<int?>("AnonymousRunPerMinute") ?? 10;
+var registerLimit = rateLimitSection.GetValue<int?>("RegisterPerHour") ?? 5;
+var loginLimit = rateLimitSection.GetValue<int?>("LoginPerMinute") ?? 10;
+
+builder.Services.AddRateLimiter(opts =>
+{
+    opts.RejectionStatusCode = 429;
+
+    // Для запуска кода: разные лимиты для авторизованных и анонимов
+    opts.AddPolicy("run", ctx =>
+    {
+        var isAuth = ctx.User.Identity?.IsAuthenticated == true;
+        var key = isAuth
+            ? "u:" + (ctx.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+                   ?? ctx.User.FindFirst("sub")?.Value
+                   ?? "unknown")
+            : "ip:" + (ctx.Connection.RemoteIpAddress?.ToString() ?? "unknown");
+
+        var limit = isAuth ? authRunLimit : anonRunLimit;
+
+        return RateLimitPartition.GetFixedWindowLimiter(key, _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = limit,
+            Window = TimeSpan.FromMinutes(1),
+            QueueLimit = 0,
+            AutoReplenishment = true
+        });
+    });
+
+    // Регистрация: жёстко по IP
+    opts.AddPolicy("register", ctx =>
+    {
+        var key = "ip:" + (ctx.Connection.RemoteIpAddress?.ToString() ?? "unknown");
+        return RateLimitPartition.GetFixedWindowLimiter(key, _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = registerLimit,
+            Window = TimeSpan.FromHours(1),
+            QueueLimit = 0,
+            AutoReplenishment = true
+        });
+    });
+
+    // Логин: по IP
+    opts.AddPolicy("login", ctx =>
+    {
+        var key = "ip:" + (ctx.Connection.RemoteIpAddress?.ToString() ?? "unknown");
+        return RateLimitPartition.GetFixedWindowLimiter(key, _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = loginLimit,
+            Window = TimeSpan.FromMinutes(1),
+            QueueLimit = 0,
+            AutoReplenishment = true
+        });
+    });
+});
+
 var app = builder.Build();
 
 // Автоматически создаём/обновляем схему БД при запуске.
@@ -114,6 +178,7 @@ if (app.Environment.IsDevelopment())
 app.UseCors("AllowAll");
 // app.UseHttpsRedirection();    
 app.UseAuthorization();
+app.UseRateLimiter();
 app.MapControllers();
 app.Run();
 //ASPNETCORE_HOSTINGSTARTUPASSEMBLIES="" dotnet watch run --project AlgoVis.Server

@@ -1,0 +1,109 @@
+﻿{
+  "yawa_version": "1.0",
+  "metadata": {
+    "name": "Python \u2192 YAWA",
+    "description": null,
+    "generator": "algovis-transpiler@0.1"
+  },
+  "globals": {},
+  "functions": [
+    {
+      "name": "gcd",
+      "params": [
+        {
+          "name": "a"
+        },
+        {
+          "name": "b"
+        }
+      ],
+      "returns": null,
+      "body": [
+        {
+          "op": "while",
+          "cond": {
+            "bin": "!=",
+            "a": {
+              "ref": "b"
+            },
+            "b": {
+              "lit": 0
+            }
+          },
+          "body": [
+            {
+              "op": "assign",
+              "target": {
+                "ref": "t"
+              },
+              "value": {
+                "ref": "b"
+              }
+            },
+            {
+              "op": "assign",
+              "target": {
+                "ref": "b"
+              },
+              "value": {
+                "bin": "%",
+                "a": {
+                  "ref": "a"
+                },
+                "b": {
+                  "ref": "b"
+                }
+              }
+            },
+            {
+              "op": "assign",
+              "target": {
+                "ref": "a"
+              },
+              "value": {
+                "ref": "t"
+              }
+            }
+          ]
+        },
+        {
+          "op": "return",
+          "value": {
+            "ref": "a"
+          }
+        }
+      ]
+    },
+    {
+      "name": "main",
+      "params": [],
+      "returns": null,
+      "body": [
+        {
+          "op": "expr",
+          "value": {
+            "call": "gcd",
+            "args": [
+              {
+                "lit": 48
+              },
+              {
+                "lit": 18
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "entry": {
+    "function": "main",
+    "args": []
+  },
+  "limits": {
+    "max_steps": 1000000,
+    "max_depth": 500,
+    "max_seconds": 10,
+    "snapshot_every": 0
+  }
+}

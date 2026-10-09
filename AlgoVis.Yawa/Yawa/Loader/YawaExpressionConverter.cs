@@ -169,14 +169,28 @@ public sealed class YawaExpressionConverter : JsonConverter<YawaExpression>
             case ListCompExpr lc:
                 writer.WritePropertyName("comp_body");
                 WriteExpr(writer, lc.Body, options);
-                writer.WriteString("comp_var", lc.Var);
-                writer.WritePropertyName("comp_source");
-                WriteExpr(writer, lc.Source, options);
-                if (lc.Filter is not null)
-                {
-                    writer.WritePropertyName("comp_filter");
-                    WriteExpr(writer, lc.Filter, options);
-                }
+                writer.WritePropertyName("comp_clauses");
+                WriteClauses(writer, lc.Clauses, options);
+                break;
+
+            case SetCompExpr sc:
+                writer.WritePropertyName("setc_body");
+                WriteExpr(writer, sc.Body, options);
+                writer.WritePropertyName("setc_clauses");
+                WriteClauses(writer, sc.Clauses, options);
+                break;
+
+            case DictCompExpr dc:
+                writer.WritePropertyName("dictk_key");
+                WriteExpr(writer, dc.BodyKey, options);
+                writer.WritePropertyName("dictk_value");
+                WriteExpr(writer, dc.BodyValue, options);
+                writer.WritePropertyName("dictk_clauses");
+                WriteClauses(writer, dc.Clauses, options);
+                break;
+
+            case FunctionRefExpr fr:
+                writer.WriteString("funcref", fr.Name);
                 break;
 
             default:
@@ -294,24 +308,46 @@ public sealed class YawaExpressionConverter : JsonConverter<YawaExpression>
             };
         }
 
-        if (el.TryGetProperty("comp_body", out var cbProp))
+        if (el.TryGetProperty("funcref", out var frProp))
         {
-            var bodyEl = cbProp.Clone();
-            var varEl = el.GetProperty("comp_var");
-            var sourceEl = el.GetProperty("comp_source");
-
-            var result = new ListCompExpr
+            if (frProp.ValueKind != JsonValueKind.String)
+                throw new JsonException("funcref must be string");
+            return new FunctionRefExpr
             {
-                Body = ParseElement(bodyEl),
-                Var = varEl.GetString() ?? "",
-                Source = ParseElement(sourceEl.Clone()),
+                Name = frProp.GetString() ?? "",
                 NodeId = ReadId(el)
             };
+        }
 
-            if (el.TryGetProperty("comp_filter", out var fEl) && fEl.ValueKind != JsonValueKind.Null)
-                result.Filter = ParseElement(fEl.Clone());
+        if (el.TryGetProperty("comp_body", out _) && el.TryGetProperty("comp_clauses", out var lcClauses))
+        {
+            return new ListCompExpr
+            {
+                Body = ParseElement(el.GetProperty("comp_body").Clone()),
+                Clauses = ParseClauses(lcClauses),
+                NodeId = ReadId(el)
+            };
+        }
 
-            return result;
+        if (el.TryGetProperty("setc_body", out _) && el.TryGetProperty("setc_clauses", out var scClauses))
+        {
+            return new SetCompExpr
+            {
+                Body = ParseElement(el.GetProperty("setc_body").Clone()),
+                Clauses = ParseClauses(scClauses),
+                NodeId = ReadId(el)
+            };
+        }
+
+        if (el.TryGetProperty("dictk_key", out _) && el.TryGetProperty("dictk_clauses", out var dcClauses))
+        {
+            return new DictCompExpr
+            {
+                BodyKey = ParseElement(el.GetProperty("dictk_key").Clone()),
+                BodyValue = ParseElement(el.GetProperty("dictk_value").Clone()),
+                Clauses = ParseClauses(dcClauses),
+                NodeId = ReadId(el)
+            };
         }
 
         if (el.TryGetProperty("tuple", out var tupleProp))
@@ -404,6 +440,28 @@ public sealed class YawaExpressionConverter : JsonConverter<YawaExpression>
         throw new JsonException($"Unknown expression shape: {el.GetRawText()}");
     }
 
+    private static List<CompClause> ParseClauses(JsonElement arr)
+    {
+        if (arr.ValueKind != JsonValueKind.Array)
+            throw new JsonException("comp_clauses must be array");
+
+        var result = new List<CompClause>();
+        foreach (var c in arr.EnumerateArray())
+        {
+            var clause = new CompClause
+            {
+                Var = c.TryGetProperty("var", out var v) ? v.GetString() ?? "" : "",
+                Source = ParseElement(c.GetProperty("source").Clone())
+            };
+
+            if (c.TryGetProperty("filter", out var f) && f.ValueKind != JsonValueKind.Null)
+                clause.Filter = ParseElement(f.Clone());
+
+            result.Add(clause);
+        }
+        return result;
+    }
+
     private static YawaExpression ParseRequired(JsonElement el, string key)
     {
         if (!el.TryGetProperty(key, out var prop))
@@ -458,4 +516,23 @@ public sealed class YawaExpressionConverter : JsonConverter<YawaExpression>
         => el.TryGetProperty("id", out var id) && id.ValueKind == JsonValueKind.String
             ? id.GetString()
             : null;
+
+    private static void WriteClauses(Utf8JsonWriter writer, List<CompClause> clauses, JsonSerializerOptions options)
+    {
+        writer.WriteStartArray();
+        foreach (var c in clauses)
+        {
+            writer.WriteStartObject();
+            writer.WriteString("var", c.Var);
+            writer.WritePropertyName("source");
+            WriteExpr(writer, c.Source, options);
+            if (c.Filter is not null)
+            {
+                writer.WritePropertyName("filter");
+                WriteExpr(writer, c.Filter, options);
+            }
+            writer.WriteEndObject();
+        }
+        writer.WriteEndArray();
+    }
 }

@@ -11,10 +11,14 @@
       "name": "swap_pair",
       "params": [
         {
-          "name": "a"
+          "name": "a",
+          "type": null,
+          "default": null
         },
         {
-          "name": "b"
+          "name": "b",
+          "type": null,
+          "default": null
         }
       ],
       "returns": null,
@@ -36,7 +40,8 @@
             {
               "ref": "a"
             }
-          ]
+          ],
+          "SplatIndex": -1
         },
         {
           "op": "return",
@@ -50,7 +55,9 @@
       "name": "min_max",
       "params": [
         {
-          "name": "A"
+          "name": "A",
+          "type": null,
+          "default": null
         }
       ],
       "returns": null,
@@ -86,7 +93,8 @@
                 }
               ]
             }
-          ]
+          ],
+          "SplatIndex": -1
         },
         {
           "op": "for",

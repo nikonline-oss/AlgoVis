@@ -11,7 +11,9 @@
       "name": "bubble_sort",
       "params": [
         {
-          "name": "A"
+          "name": "A",
+          "type": null,
+          "default": null
         }
       ],
       "returns": null,

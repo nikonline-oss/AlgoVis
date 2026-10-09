@@ -11,7 +11,9 @@
       "name": "count_words",
       "params": [
         {
-          "name": "text"
+          "name": "text",
+          "type": null,
+          "default": null
         }
       ],
       "returns": null,

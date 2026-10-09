@@ -11,7 +11,9 @@
       "name": "fib",
       "params": [
         {
-          "name": "n"
+          "name": "n",
+          "type": null,
+          "default": null
         }
       ],
       "returns": null,

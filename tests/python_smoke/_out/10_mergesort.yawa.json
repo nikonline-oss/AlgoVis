@@ -11,10 +11,14 @@
       "name": "merge",
       "params": [
         {
-          "name": "left"
+          "name": "left",
+          "type": null,
+          "default": null
         },
         {
-          "name": "right"
+          "name": "right",
+          "type": null,
+          "default": null
         }
       ],
       "returns": null,
@@ -306,7 +310,9 @@
       "name": "mergesort",
       "params": [
         {
-          "name": "A"
+          "name": "A",
+          "type": null,
+          "default": null
         }
       ],
       "returns": null,

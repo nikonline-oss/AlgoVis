@@ -11,10 +11,14 @@
       "name": "gcd",
       "params": [
         {
-          "name": "a"
+          "name": "a",
+          "type": null,
+          "default": null
         },
         {
-          "name": "b"
+          "name": "b",
+          "type": null,
+          "default": null
         }
       ],
       "returns": null,

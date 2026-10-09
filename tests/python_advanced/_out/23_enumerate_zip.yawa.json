@@ -1,0 +1,271 @@
+﻿{
+  "yawa_version": "1.0",
+  "metadata": {
+    "name": "Python \u2192 YAWA",
+    "description": null,
+    "generator": "algovis-transpiler@0.1"
+  },
+  "globals": {},
+  "functions": [
+    {
+      "name": "pairs",
+      "params": [
+        {
+          "name": "A",
+          "type": null,
+          "default": null
+        },
+        {
+          "name": "B",
+          "type": null,
+          "default": null
+        }
+      ],
+      "returns": null,
+      "body": [
+        {
+          "op": "assign",
+          "target": {
+            "ref": "result"
+          },
+          "value": {
+            "lit": []
+          }
+        },
+        {
+          "op": "foreach",
+          "var": "__tup_1",
+          "in": {
+            "call": "enumerate",
+            "args": [
+              {
+                "ref": "A"
+              }
+            ]
+          },
+          "body": [
+            {
+              "op": "assign",
+              "target": {
+                "ref": "i"
+              },
+              "value": {
+                "index": [
+                  {
+                    "ref": "__tup_1"
+                  },
+                  {
+                    "lit": 0
+                  }
+                ]
+              }
+            },
+            {
+              "op": "assign",
+              "target": {
+                "ref": "x"
+              },
+              "value": {
+                "index": [
+                  {
+                    "ref": "__tup_1"
+                  },
+                  {
+                    "lit": 1
+                  }
+                ]
+              }
+            },
+            {
+              "op": "expr",
+              "value": {
+                "call_method": {
+                  "ref": "result"
+                },
+                "name": "append",
+                "args": [
+                  {
+                    "ref": "x"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "op": "return",
+          "value": {
+            "ref": "result"
+          }
+        }
+      ]
+    },
+    {
+      "name": "zip_lists",
+      "params": [
+        {
+          "name": "A",
+          "type": null,
+          "default": null
+        },
+        {
+          "name": "B",
+          "type": null,
+          "default": null
+        }
+      ],
+      "returns": null,
+      "body": [
+        {
+          "op": "assign",
+          "target": {
+            "ref": "result"
+          },
+          "value": {
+            "lit": []
+          }
+        },
+        {
+          "op": "foreach",
+          "var": "__tup_2",
+          "in": {
+            "call": "zip",
+            "args": [
+              {
+                "ref": "A"
+              },
+              {
+                "ref": "B"
+              }
+            ]
+          },
+          "body": [
+            {
+              "op": "assign",
+              "target": {
+                "ref": "a"
+              },
+              "value": {
+                "index": [
+                  {
+                    "ref": "__tup_2"
+                  },
+                  {
+                    "lit": 0
+                  }
+                ]
+              }
+            },
+            {
+              "op": "assign",
+              "target": {
+                "ref": "b"
+              },
+              "value": {
+                "index": [
+                  {
+                    "ref": "__tup_2"
+                  },
+                  {
+                    "lit": 1
+                  }
+                ]
+              }
+            },
+            {
+              "op": "expr",
+              "value": {
+                "call_method": {
+                  "ref": "result"
+                },
+                "name": "append",
+                "args": [
+                  {
+                    "bin": "\u002B",
+                    "a": {
+                      "ref": "a"
+                    },
+                    "b": {
+                      "ref": "b"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "op": "return",
+          "value": {
+            "ref": "result"
+          }
+        }
+      ]
+    },
+    {
+      "name": "main",
+      "params": [],
+      "returns": null,
+      "body": [
+        {
+          "op": "assign",
+          "target": {
+            "ref": "p"
+          },
+          "value": {
+            "call": "pairs",
+            "args": [
+              {
+                "lit": [
+                  "a",
+                  "b"
+                ]
+              },
+              {
+                "lit": [
+                  1,
+                  2
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "op": "assign",
+          "target": {
+            "ref": "z"
+          },
+          "value": {
+            "call": "zip_lists",
+            "args": [
+              {
+                "lit": [
+                  1,
+                  2,
+                  3
+                ]
+              },
+              {
+                "lit": [
+                  10,
+                  20,
+                  30
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "entry": {
+    "function": "main",
+    "args": []
+  },
+  "limits": {
+    "max_steps": 1000000,
+    "max_depth": 500,
+    "max_seconds": 10,
+    "snapshot_every": 0
+  }
+}

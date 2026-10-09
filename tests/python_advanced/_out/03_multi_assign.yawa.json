@@ -1,0 +1,120 @@
+﻿{
+  "yawa_version": "1.0",
+  "metadata": {
+    "name": "Python \u2192 YAWA",
+    "description": null,
+    "generator": "algovis-transpiler@0.1"
+  },
+  "globals": {},
+  "functions": [
+    {
+      "name": "main",
+      "params": [],
+      "returns": null,
+      "body": [
+        {
+          "op": "tuple_assign",
+          "Targets": [
+            {
+              "ref": "a"
+            },
+            {
+              "ref": "b"
+            },
+            {
+              "ref": "c"
+            }
+          ],
+          "Values": [
+            {
+              "lit": 0
+            },
+            {
+              "lit": 0
+            },
+            {
+              "lit": 0
+            }
+          ],
+          "SplatIndex": -1
+        },
+        {
+          "op": "tuple_assign",
+          "Targets": [
+            {
+              "ref": "a"
+            },
+            {
+              "ref": "b"
+            }
+          ],
+          "Values": [
+            {
+              "lit": 5
+            },
+            {
+              "lit": 5
+            }
+          ],
+          "SplatIndex": -1
+        },
+        {
+          "op": "tuple_assign",
+          "Targets": [
+            {
+              "ref": "x"
+            },
+            {
+              "ref": "y"
+            },
+            {
+              "ref": "z"
+            }
+          ],
+          "Values": [
+            {
+              "lit": 1
+            },
+            {
+              "lit": 2
+            },
+            {
+              "lit": 3
+            }
+          ],
+          "SplatIndex": -1
+        },
+        {
+          "op": "tuple_assign",
+          "Targets": [
+            {
+              "ref": "x"
+            },
+            {
+              "ref": "y"
+            }
+          ],
+          "Values": [
+            {
+              "ref": "z"
+            },
+            {
+              "ref": "z"
+            }
+          ],
+          "SplatIndex": -1
+        }
+      ]
+    }
+  ],
+  "entry": {
+    "function": "main",
+    "args": []
+  },
+  "limits": {
+    "max_steps": 1000000,
+    "max_depth": 500,
+    "max_seconds": 10,
+    "snapshot_every": 0
+  }
+}

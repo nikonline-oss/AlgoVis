@@ -1,0 +1,530 @@
+﻿{
+  "yawa_version": "1.0",
+  "metadata": {
+    "name": "Python \u2192 YAWA",
+    "description": null,
+    "generator": "algovis-transpiler@0.1"
+  },
+  "globals": {},
+  "functions": [
+    {
+      "name": "LRUCache.__init__",
+      "params": [
+        {
+          "name": "self",
+          "type": null,
+          "default": null
+        },
+        {
+          "name": "capacity",
+          "type": null,
+          "default": null
+        }
+      ],
+      "returns": null,
+      "body": [
+        {
+          "op": "assign",
+          "target": {
+            "field": [
+              {
+                "ref": "self"
+              },
+              "capacity"
+            ]
+          },
+          "value": {
+            "ref": "capacity"
+          }
+        },
+        {
+          "op": "assign",
+          "target": {
+            "field": [
+              {
+                "ref": "self"
+              },
+              "cache"
+            ]
+          },
+          "value": {
+            "dict": []
+          }
+        },
+        {
+          "op": "assign",
+          "target": {
+            "field": [
+              {
+                "ref": "self"
+              },
+              "order"
+            ]
+          },
+          "value": {
+            "lit": []
+          }
+        }
+      ]
+    },
+    {
+      "name": "LRUCache.get",
+      "params": [
+        {
+          "name": "self",
+          "type": null,
+          "default": null
+        },
+        {
+          "name": "key",
+          "type": null,
+          "default": null
+        }
+      ],
+      "returns": null,
+      "body": [
+        {
+          "op": "if",
+          "cond": {
+            "bin": "not_in",
+            "a": {
+              "ref": "key"
+            },
+            "b": {
+              "field": [
+                {
+                  "ref": "self"
+                },
+                "cache"
+              ]
+            }
+          },
+          "then": [
+            {
+              "op": "return",
+              "value": {
+                "un": "-",
+                "a": {
+                  "lit": 1
+                }
+              }
+            }
+          ],
+          "else": null
+        },
+        {
+          "op": "expr",
+          "value": {
+            "call_method": {
+              "field": [
+                {
+                  "ref": "self"
+                },
+                "order"
+              ]
+            },
+            "name": "remove",
+            "args": [
+              {
+                "ref": "key"
+              }
+            ]
+          }
+        },
+        {
+          "op": "expr",
+          "value": {
+            "call_method": {
+              "field": [
+                {
+                  "ref": "self"
+                },
+                "order"
+              ]
+            },
+            "name": "append",
+            "args": [
+              {
+                "ref": "key"
+              }
+            ]
+          }
+        },
+        {
+          "op": "return",
+          "value": {
+            "index": [
+              {
+                "field": [
+                  {
+                    "ref": "self"
+                  },
+                  "cache"
+                ]
+              },
+              {
+                "ref": "key"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "LRUCache.put",
+      "params": [
+        {
+          "name": "self",
+          "type": null,
+          "default": null
+        },
+        {
+          "name": "key",
+          "type": null,
+          "default": null
+        },
+        {
+          "name": "value",
+          "type": null,
+          "default": null
+        }
+      ],
+      "returns": null,
+      "body": [
+        {
+          "op": "if",
+          "cond": {
+            "bin": "in",
+            "a": {
+              "ref": "key"
+            },
+            "b": {
+              "field": [
+                {
+                  "ref": "self"
+                },
+                "cache"
+              ]
+            }
+          },
+          "then": [
+            {
+              "op": "expr",
+              "value": {
+                "call_method": {
+                  "field": [
+                    {
+                      "ref": "self"
+                    },
+                    "order"
+                  ]
+                },
+                "name": "remove",
+                "args": [
+                  {
+                    "ref": "key"
+                  }
+                ]
+              }
+            }
+          ],
+          "else": [
+            {
+              "op": "if",
+              "cond": {
+                "bin": "\u003E=",
+                "a": {
+                  "call": "length",
+                  "args": [
+                    {
+                      "field": [
+                        {
+                          "ref": "self"
+                        },
+                        "cache"
+                      ]
+                    }
+                  ]
+                },
+                "b": {
+                  "field": [
+                    {
+                      "ref": "self"
+                    },
+                    "capacity"
+                  ]
+                }
+              },
+              "then": [
+                {
+                  "op": "assign",
+                  "target": {
+                    "ref": "oldest"
+                  },
+                  "value": {
+                    "index": [
+                      {
+                        "field": [
+                          {
+                            "ref": "self"
+                          },
+                          "order"
+                        ]
+                      },
+                      {
+                        "lit": 0
+                      }
+                    ]
+                  }
+                },
+                {
+                  "op": "assign",
+                  "target": {
+                    "field": [
+                      {
+                        "ref": "self"
+                      },
+                      "order"
+                    ]
+                  },
+                  "value": {
+                    "slice": [
+                      {
+                        "field": [
+                          {
+                            "ref": "self"
+                          },
+                          "order"
+                        ]
+                      },
+                      {
+                        "lit": 1
+                      },
+                      null,
+                      null
+                    ]
+                  }
+                },
+                {
+                  "op": "delete",
+                  "targets": [
+                    {
+                      "index": [
+                        {
+                          "field": [
+                            {
+                              "ref": "self"
+                            },
+                            "cache"
+                          ]
+                        },
+                        {
+                          "ref": "oldest"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "else": null
+            }
+          ]
+        },
+        {
+          "op": "assign",
+          "target": {
+            "index": [
+              {
+                "field": [
+                  {
+                    "ref": "self"
+                  },
+                  "cache"
+                ]
+              },
+              {
+                "ref": "key"
+              }
+            ]
+          },
+          "value": {
+            "ref": "value"
+          }
+        },
+        {
+          "op": "expr",
+          "value": {
+            "call_method": {
+              "field": [
+                {
+                  "ref": "self"
+                },
+                "order"
+              ]
+            },
+            "name": "append",
+            "args": [
+              {
+                "ref": "key"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "main",
+      "params": [],
+      "returns": null,
+      "body": [
+        {
+          "op": "assign",
+          "target": {
+            "ref": "cache"
+          },
+          "value": {
+            "instantiate": "LRUCache",
+            "args": [
+              {
+                "lit": 3
+              }
+            ]
+          }
+        },
+        {
+          "op": "expr",
+          "value": {
+            "call_method": {
+              "ref": "cache"
+            },
+            "name": "put",
+            "args": [
+              {
+                "lit": 1
+              },
+              {
+                "lit": 10
+              }
+            ]
+          }
+        },
+        {
+          "op": "expr",
+          "value": {
+            "call_method": {
+              "ref": "cache"
+            },
+            "name": "put",
+            "args": [
+              {
+                "lit": 2
+              },
+              {
+                "lit": 20
+              }
+            ]
+          }
+        },
+        {
+          "op": "expr",
+          "value": {
+            "call_method": {
+              "ref": "cache"
+            },
+            "name": "put",
+            "args": [
+              {
+                "lit": 3
+              },
+              {
+                "lit": 30
+              }
+            ]
+          }
+        },
+        {
+          "op": "assign",
+          "target": {
+            "ref": "v1"
+          },
+          "value": {
+            "call_method": {
+              "ref": "cache"
+            },
+            "name": "get",
+            "args": [
+              {
+                "lit": 1
+              }
+            ]
+          }
+        },
+        {
+          "op": "expr",
+          "value": {
+            "call_method": {
+              "ref": "cache"
+            },
+            "name": "put",
+            "args": [
+              {
+                "lit": 4
+              },
+              {
+                "lit": 40
+              }
+            ]
+          }
+        },
+        {
+          "op": "assign",
+          "target": {
+            "ref": "v2"
+          },
+          "value": {
+            "call_method": {
+              "ref": "cache"
+            },
+            "name": "get",
+            "args": [
+              {
+                "lit": 2
+              }
+            ]
+          }
+        },
+        {
+          "op": "assign",
+          "target": {
+            "ref": "v3"
+          },
+          "value": {
+            "call_method": {
+              "ref": "cache"
+            },
+            "name": "get",
+            "args": [
+              {
+                "lit": 1
+              }
+            ]
+          }
+        },
+        {
+          "op": "annotate",
+          "text": "\u0022get(1) = {v1}, get(2) \u043F\u043E\u0441\u043B\u0435 \u0432\u044B\u0442\u0435\u0441\u043D\u0435\u043D\u0438\u044F = {v2}, get(1) \u0441\u043D\u043E\u0432\u0430 = {v3}"
+        }
+      ]
+    }
+  ],
+  "entry": {
+    "function": "main",
+    "args": []
+  },
+  "limits": {
+    "max_steps": 1000000,
+    "max_depth": 500,
+    "max_seconds": 10,
+    "snapshot_every": 0
+  }
+}

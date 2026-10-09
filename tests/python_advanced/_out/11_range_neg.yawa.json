@@ -1,0 +1,102 @@
+﻿{
+  "yawa_version": "1.0",
+  "metadata": {
+    "name": "Python \u2192 YAWA",
+    "description": null,
+    "generator": "algovis-transpiler@0.1"
+  },
+  "globals": {},
+  "functions": [
+    {
+      "name": "countdown",
+      "params": [
+        {
+          "name": "n",
+          "type": null,
+          "default": null
+        }
+      ],
+      "returns": null,
+      "body": [
+        {
+          "op": "assign",
+          "target": {
+            "ref": "result"
+          },
+          "value": {
+            "lit": []
+          }
+        },
+        {
+          "op": "for",
+          "var": "i",
+          "from": {
+            "ref": "n"
+          },
+          "to": {
+            "lit": 0
+          },
+          "step": {
+            "un": "-",
+            "a": {
+              "lit": 1
+            }
+          },
+          "body": [
+            {
+              "op": "expr",
+              "value": {
+                "call_method": {
+                  "ref": "result"
+                },
+                "name": "append",
+                "args": [
+                  {
+                    "ref": "i"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "op": "return",
+          "value": {
+            "ref": "result"
+          }
+        }
+      ]
+    },
+    {
+      "name": "main",
+      "params": [],
+      "returns": null,
+      "body": [
+        {
+          "op": "assign",
+          "target": {
+            "ref": "r"
+          },
+          "value": {
+            "call": "countdown",
+            "args": [
+              {
+                "lit": 5
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "entry": {
+    "function": "main",
+    "args": []
+  },
+  "limits": {
+    "max_steps": 1000000,
+    "max_depth": 500,
+    "max_seconds": 10,
+    "snapshot_every": 0
+  }
+}

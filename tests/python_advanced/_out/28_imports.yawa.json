@@ -1,0 +1,73 @@
+﻿{
+  "yawa_version": "1.0",
+  "metadata": {
+    "name": "Python \u2192 YAWA",
+    "description": null,
+    "generator": "algovis-transpiler@0.1"
+  },
+  "globals": {},
+  "functions": [
+    {
+      "name": "circle_area",
+      "params": [
+        {
+          "name": "r",
+          "type": null,
+          "default": null
+        }
+      ],
+      "returns": null,
+      "body": [
+        {
+          "op": "return",
+          "value": {
+            "bin": "*",
+            "a": {
+              "bin": "*",
+              "a": {
+                "lit": 3.141592653589793
+              },
+              "b": {
+                "ref": "r"
+              }
+            },
+            "b": {
+              "ref": "r"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "main",
+      "params": [],
+      "returns": null,
+      "body": [
+        {
+          "op": "assign",
+          "target": {
+            "ref": "a"
+          },
+          "value": {
+            "call": "circle_area",
+            "args": [
+              {
+                "lit": 5
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "entry": {
+    "function": "main",
+    "args": []
+  },
+  "limits": {
+    "max_steps": 1000000,
+    "max_depth": 500,
+    "max_seconds": 10,
+    "snapshot_every": 0
+  }
+}

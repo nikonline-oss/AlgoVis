@@ -11,10 +11,14 @@
       "name": "insert",
       "params": [
         {
-          "name": "node"
+          "name": "node",
+          "type": null,
+          "default": null
         },
         {
-          "name": "value"
+          "name": "value",
+          "type": null,
+          "default": null
         }
       ],
       "returns": null,

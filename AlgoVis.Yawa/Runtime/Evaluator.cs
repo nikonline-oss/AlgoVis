@@ -54,7 +54,32 @@ public sealed class Evaluator
             case TupleExpr tup:
                 return new TupleValue(tup.Items.Select(x => Eval(x, frame)));
             case ListCompExpr lc:
-                return EvalListComp(lc, frame);
+                return EvalListComp(lc.Body, lc.Clauses, frame);
+
+            case SetCompExpr sc:
+                {
+                    var set = new SetValue();
+                    foreach (var item in IterComprehension(sc.Clauses, frame))
+                        set.Add(Eval(sc.Body, item));
+                    return set;
+                }
+
+            case DictCompExpr dc:
+                {
+                    var obj = new ObjectValue();
+                    foreach (var item in IterComprehension(dc.Clauses, frame))
+                    {
+                        var key = Eval(dc.BodyKey, item);
+                        var val = Eval(dc.BodyValue, item);
+                        var keyStr = key is StringValue sv ? sv.Value : key.ToString() ?? "";
+                        obj.SetField(keyStr, val);
+                    }
+                    return obj;
+                }
+
+            case FunctionRefExpr fr:
+                return new FunctionRefValue(fr.Name, frame);
+
             default:
                 throw new YawaRuntimeException($"Unknown expression type: {expr.GetType().Name}");
         }
@@ -206,9 +231,30 @@ public sealed class Evaluator
             _ => throw new YawaRuntimeException($"len() on unsupported type {v.TypeName}")
         };
     }
-    private RuntimeValue EvalListComp(ListCompExpr lc, Frame frame)
+    private RuntimeValue EvalListComp(YawaExpression body, List<CompClause> clauses, Frame frame)
     {
-        var source = Eval(lc.Source, frame);
+        var result = new List<RuntimeValue>();
+        foreach (var itemFrame in IterComprehension(clauses, frame))
+            result.Add(Eval(body, itemFrame));
+        return new ArrayValue(result);
+    }
+
+    /// <summary>
+    /// Разворачивает вложенные clauses comprehension в плоский поток фреймов.
+    /// </summary>
+    private IEnumerable<Frame> IterComprehension(List<CompClause> clauses, Frame outer)
+    {
+        if (clauses.Count == 0)
+            yield break;
+
+        foreach (var f in IterClause(clauses, 0, outer))
+            yield return f;
+    }
+
+    private IEnumerable<Frame> IterClause(List<CompClause> clauses, int idx, Frame parent)
+    {
+        var clause = clauses[idx];
+        var source = Eval(clause.Source, parent);
         IEnumerable<RuntimeValue> items = source switch
         {
             ArrayValue a => a.Items,
@@ -221,23 +267,25 @@ public sealed class Evaluator
             _ => throw new YawaRuntimeException($"Cannot iterate {source.TypeName}")
         };
 
-        var result = new List<RuntimeValue>();
-        var innerFrame = new Frame("<comp>", frame);
+        var isLast = idx == clauses.Count - 1;
 
         foreach (var item in items)
         {
-            innerFrame.Declare(lc.Var, item);
+            var inner = new Frame($"<comp_{idx}>", parent);
+            inner.Declare(clause.Var, item);
 
-            if (lc.Filter is not null)
+            if (clause.Filter is not null)
             {
-                var cond = Eval(lc.Filter, innerFrame);
+                var cond = Eval(clause.Filter, inner);
                 if (!AsBool(cond)) continue;
             }
 
-            result.Add(Eval(lc.Body, innerFrame));
+            if (isLast)
+                yield return inner;
+            else
+                foreach (var deeper in IterClause(clauses, idx + 1, inner))
+                    yield return deeper;
         }
-
-        return new ArrayValue(result);
     }
 
     private RuntimeValue EvalTernary(TernaryExpr te, Frame frame)
@@ -387,10 +435,15 @@ public sealed class Evaluator
             return Bool(arr.Items.Any(v => v.ValueEquals(needle)));
         if (haystack is StringValue s && needle is StringValue ns)
             return Bool(s.Value.Contains(ns.Value));
-        if (haystack is ObjectValue obj && needle is StringValue key)
-            return Bool(obj.HasField(key.Value));
+        // if (haystack is ObjectValue obj && needle is StringValue key)
+        //     return Bool(obj.HasField(key.Value));
         if (haystack is SetValue set)
             return Bool(set.Contains(needle));
+        if (haystack is ObjectValue obj)
+        {
+            var key = needle is StringValue ss ? ss.Value : needle.ToString() ?? "";
+            return Bool(obj.HasField(key));
+        }
         throw new YawaRuntimeException($"'in' not supported for {haystack.TypeName}");
     }
 

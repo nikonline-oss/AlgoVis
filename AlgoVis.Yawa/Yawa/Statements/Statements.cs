@@ -6,13 +6,13 @@ namespace AlgoVis.Yawa.Yawa.Statements;
 public sealed class AssignStatement : YawaStatement
 {
     [JsonPropertyName("target")] public YawaExpression Target { get; set; } = null!;
-    [JsonPropertyName("value")]  public YawaExpression Value  { get; set; } = null!;
+    [JsonPropertyName("value")] public YawaExpression Value { get; set; } = null!;
 }
 
 public sealed class DeclareStatement : YawaStatement
 {
-    [JsonPropertyName("name")]  public string Name { get; set; } = "";
-    [JsonPropertyName("type")]  public string? Type { get; set; }
+    [JsonPropertyName("name")] public string Name { get; set; } = "";
+    [JsonPropertyName("type")] public string? Type { get; set; }
     [JsonPropertyName("value")] public YawaExpression? Value { get; set; }
 }
 
@@ -31,17 +31,17 @@ public sealed class WhileStatement : YawaStatement
 
 public sealed class ForStatement : YawaStatement
 {
-    [JsonPropertyName("var")]  public string Var { get; set; } = "";
+    [JsonPropertyName("var")] public string Var { get; set; } = "";
     [JsonPropertyName("from")] public YawaExpression From { get; set; } = null!;
-    [JsonPropertyName("to")]   public YawaExpression To { get; set; } = null!;
+    [JsonPropertyName("to")] public YawaExpression To { get; set; } = null!;
     [JsonPropertyName("step")] public YawaExpression? Step { get; set; }
     [JsonPropertyName("body")] public List<YawaStatement> Body { get; set; } = new();
 }
 
 public sealed class ForeachStatement : YawaStatement
 {
-    [JsonPropertyName("var")]  public string Var { get; set; } = "";
-    [JsonPropertyName("in")]   public YawaExpression In { get; set; } = null!;
+    [JsonPropertyName("var")] public string Var { get; set; } = "";
+    [JsonPropertyName("in")] public YawaExpression In { get; set; } = null!;
     [JsonPropertyName("body")] public List<YawaStatement> Body { get; set; } = new();
 }
 
@@ -66,17 +66,17 @@ public sealed class SwapStatement : YawaStatement
 
 public sealed class CompareStatement : YawaStatement
 {
-    [JsonPropertyName("a")]      public YawaExpression A { get; set; } = null!;
-    [JsonPropertyName("b")]      public YawaExpression B { get; set; } = null!;
+    [JsonPropertyName("a")] public YawaExpression A { get; set; } = null!;
+    [JsonPropertyName("b")] public YawaExpression B { get; set; } = null!;
     [JsonPropertyName("result")] public string Result { get; set; } = "";
-    [JsonPropertyName("label")]  public string? Label { get; set; }
+    [JsonPropertyName("label")] public string? Label { get; set; }
 }
 
 public sealed class MarkStatement : YawaStatement
 {
     [JsonPropertyName("target")] public YawaExpression Target { get; set; } = null!;
-    [JsonPropertyName("color")]  public string Color { get; set; } = "yellow";
-    [JsonPropertyName("label")]  public string? Label { get; set; }
+    [JsonPropertyName("color")] public string Color { get; set; } = "yellow";
+    [JsonPropertyName("label")] public string? Label { get; set; }
 }
 
 public sealed class UnmarkStatement : YawaStatement
@@ -91,7 +91,7 @@ public sealed class AnnotateStatement : YawaStatement
 
 public sealed class CountStatement : YawaStatement
 {
-    [JsonPropertyName("name")]  public string Name { get; set; } = "";
+    [JsonPropertyName("name")] public string Name { get; set; } = "";
     [JsonPropertyName("delta")] public int Delta { get; set; } = 1;
 }
 
@@ -110,9 +110,35 @@ public sealed class MakeNodeStatement : YawaStatement
 
 public sealed class TupleAssignStatement : YawaStatement
 {
-    /// <summary>Список targets — переменных, элементов массива, полей.</summary>
     public List<YawaExpression> Targets { get; set; } = new();
-
-    /// <summary>Список значений — правых частей. Количество должно совпадать с Targets.</summary>
     public List<YawaExpression> Values { get; set; } = new();
+
+    /// <summary>Индекс target, в который собираются "лишние" элементы (для *rest). -1 = нет splat.</summary>
+    public int SplatIndex { get; set; } = -1;
+}
+
+public sealed class AssertStatement : YawaStatement
+{
+    [JsonPropertyName("cond")] public YawaExpression Cond { get; set; } = null!;
+    [JsonPropertyName("message")] public YawaExpression? Message { get; set; }
+}
+
+public sealed class TryStatement : YawaStatement
+{
+    [JsonPropertyName("body")] public List<YawaStatement> Body { get; set; } = new();
+    [JsonPropertyName("handlers")] public List<ExceptHandler> Handlers { get; set; } = new();
+    [JsonPropertyName("finally")] public List<YawaStatement>? Finally { get; set; }
+}
+
+public sealed class ExceptHandler
+{
+    /// <summary>Имя переменной для исключения (в Python `except X as e:`).</summary>
+    [JsonPropertyName("var")] public string? VarName { get; set; }
+    [JsonPropertyName("body")] public List<YawaStatement> Body { get; set; } = new();
+}
+
+public sealed class DeleteStatement : YawaStatement
+{
+    [JsonPropertyName("targets")]
+    public List<YawaExpression> Targets { get; set; } = new();
 }

@@ -24,8 +24,11 @@ public sealed class PythonToYawa
     /// <summary>Карта переименования: имя внутри функции → полное имя top-level.</summary>
     private readonly Stack<Dictionary<string, string>> _renameStack = new();
 
-    private Dictionary<string, string>? _currentRenameMap;
+    private int _tmpCounter;
     private readonly HashSet<string> _classNames = new(StringComparer.Ordinal);
+    // Для каждого класса — методы по короткому имени (без ClassName.).
+    private readonly Dictionary<string, Dictionary<string, YawaFunction>> _classMethodMap
+        = new(StringComparer.Ordinal);
 
 
     public PythonToYawa(string source)
@@ -222,7 +225,6 @@ public sealed class PythonToYawa
         var paramsNode = children.FirstOrDefault(c => c.Type == "parameters");
         var returnType = children.FirstOrDefault(c => c.Type == "type");
         var block = children.FirstOrDefault(c => c.Type == "block");
-        var savedRenameMap = _currentRenameMap;
 
         if (!nameNode.IsValid)
             throw Err("Функция без имени", node);
@@ -239,8 +241,6 @@ public sealed class PythonToYawa
             : savedPrefix + "__" + fn.Name;
         _currentFunctionPrefix = newPrefix;
 
-        // Собираем имена вложенных функций ДО обработки body,
-        // чтобы успеть переименовать их вызовы внутри тела.
         var renameMap = new Dictionary<string, string>(StringComparer.Ordinal);
         if (block.IsValid)
         {
@@ -258,70 +258,104 @@ public sealed class PythonToYawa
                 }
             }
         }
-        _currentRenameMap = renameMap;
 
-        if (paramsNode.IsValid)
+        _renameStack.Push(renameMap);
+        try
         {
-            foreach (var p in paramsNode.NamedChildren())
+
+            if (paramsNode.IsValid)
             {
-                switch (p.Type)
+                foreach (var p in paramsNode.NamedChildren())
                 {
-                    case "identifier":
-                        fn.Params.Add(new YawaParam { Name = Text(p) });
-                        break;
-
-                    case "typed_parameter":
-                        {
-                            var pname = p.NamedChildren().FirstOrDefault(c => c.Type == "identifier");
-                            var ptype = p.NamedChildren().FirstOrDefault(c => c.Type == "type");
-                            fn.Params.Add(new YawaParam
-                            {
-                                Name = pname.IsValid ? Text(pname) : "",
-                                Type = ptype.IsValid ? Text(ptype) : null
-                            });
+                    switch (p.Type)
+                    {
+                        case "identifier":
+                            fn.Params.Add(new YawaParam { Name = Text(p) });
                             break;
-                        }
 
-                    case "default_parameter":
-                        {
-                            var pname = p.NamedChildren().FirstOrDefault(c => c.Type == "identifier");
-                            var pval = p.NamedChildren().LastOrDefault();
-                            fn.Params.Add(new YawaParam
+                        case "typed_parameter":
                             {
-                                Name = pname.IsValid ? Text(pname) : "",
-                                DefaultValue = pval.IsValid ? ConvertExpr(pval) : null
-                            });
-                            break;
-                        }
+                                if (p.Type == "typed_parameter")
+                                {
+                                    var pname = p.NamedChildren().FirstOrDefault(c => c.Type == "identifier");
+                                    var ptype = p.NamedChildren().FirstOrDefault(c => c.Type == "type");
+                                    fn.Params.Add(new YawaParam
+                                    {
+                                        Name = pname.IsValid ? Text(pname) : "",
+                                        Type = ptype.IsValid ? Text(ptype) : null
+                                    });
+                                    break;
+                                }
+                                // *args
+                                var inner = p.NamedChildren().FirstOrDefault();
+                                if (inner.IsValid && inner.Type == "identifier")
+                                {
+                                    fn.Params.Add(new YawaParam
+                                    {
+                                        Name = Text(inner),
+                                        IsVariadic = true
+                                    });
+                                }
+                                break;
+                            }
 
-                    case "typed_default_parameter":
-                        {
-                            var pname = p.NamedChildren().FirstOrDefault(c => c.Type == "identifier");
-                            var ptype = p.NamedChildren().FirstOrDefault(c => c.Type == "type");
-                            var pval = p.NamedChildren().LastOrDefault();
-                            fn.Params.Add(new YawaParam
+                        case "default_parameter":
                             {
-                                Name = pname.IsValid ? Text(pname) : "",
-                                Type = ptype.IsValid ? Text(ptype) : null,
-                                DefaultValue = pval.IsValid ? ConvertExpr(pval) : null
-                            });
-                            break;
-                        }
+                                var pname = p.NamedChildren().FirstOrDefault(c => c.Type == "identifier");
+                                var pval = p.NamedChildren().LastOrDefault();
+                                fn.Params.Add(new YawaParam
+                                {
+                                    Name = pname.IsValid ? Text(pname) : "",
+                                    DefaultValue = pval.IsValid ? ConvertExpr(pval) : null
+                                });
+                                break;
+                            }
 
-                    default:
-                        _warnings.Add($"Пропущен параметр типа '{p.Type}'");
-                        break;
+                        case "typed_default_parameter":
+                            {
+                                var pname = p.NamedChildren().FirstOrDefault(c => c.Type == "identifier");
+                                var ptype = p.NamedChildren().FirstOrDefault(c => c.Type == "type");
+                                var pval = p.NamedChildren().LastOrDefault();
+                                fn.Params.Add(new YawaParam
+                                {
+                                    Name = pname.IsValid ? Text(pname) : "",
+                                    Type = ptype.IsValid ? Text(ptype) : null,
+                                    DefaultValue = pval.IsValid ? ConvertExpr(pval) : null
+                                });
+                                break;
+                            }
+
+                        case "list_splat_pattern":
+
+                        case "dictionary_splat_pattern":
+                            {
+                                var inner = p.NamedChildren().FirstOrDefault();
+                                if (inner.IsValid && inner.Type == "identifier")
+                                {
+                                    fn.Params.Add(new YawaParam
+                                    {
+                                        Name = Text(inner),
+                                        IsKeywordVariadic = true
+                                    });
+                                }
+                                break;
+                            }
+
+                        default:
+                            _warnings.Add($"Пропущен параметр типа '{p.Type}'");
+                            break;
+                    }
                 }
             }
+
+            if (block.IsValid)
+                fn.Body = ConvertBlock(block);
         }
-
-        if (block.IsValid)
-            fn.Body = ConvertBlock(block);
-        _currentRenameMap = null;
-        _currentFunctionPrefix = savedPrefix;
-
-
-        _currentFunctionPrefix = savedPrefix;
+        finally
+        {
+            _renameStack.Pop();
+            _currentFunctionPrefix = savedPrefix;
+        }
 
         return fn;
     }
@@ -343,8 +377,18 @@ public sealed class PythonToYawa
         var className = Text(nameNode);
         var result = new List<YawaFunction>();
 
+        // Собираем базовые классы (аргументы в скобках после имени)
+        var bases = new List<string>();
+        var argList = children.FirstOrDefault(c => c.Type == "argument_list");
+        if (argList.IsValid)
+        {
+            foreach (var b in argList.NamedChildren())
+                if (b.Type == "identifier") bases.Add(Text(b));
+        }
+
         if (!block.IsValid) return result;
 
+        // Собственные методы класса
         foreach (var stmt in block.NamedChildren())
         {
             if (stmt.Type == "function_definition")
@@ -353,18 +397,14 @@ public sealed class PythonToYawa
                 var fn = ConvertFunction(stmt);
                 fn.Name = $"{className}.{fn.Name}";
                 result.Add(fn);
-
-                // Nested внутри метода — с префиксом метода.
-                foreach (var nested in _pendingNestedFunctions)
-                    result.Add(nested);
+                foreach (var nested in _pendingNestedFunctions) result.Add(nested);
                 _pendingNestedFunctions.Clear();
             }
             else if (stmt.Type == "decorated_definition")
             {
                 var inner = stmt.NamedChildren()
                     .FirstOrDefault(n => n.Type == "function_definition");
-                if (!inner.IsValid)
-                    throw Err("Поддерживаются только декораторы над методами", stmt);
+                if (!inner.IsValid) continue;
 
                 _pendingNestedFunctions.Clear();
                 var fn = ConvertFunction(inner);
@@ -372,19 +412,51 @@ public sealed class PythonToYawa
                 result.Add(fn);
                 _pendingNestedFunctions.Clear();
             }
-            else if (stmt.Type == "expression_statement")
+        }
+
+        // Собираем короткие имена собственных методов
+        var ownNames = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var f in result)
+        {
+            if (f.Name.StartsWith(className + ".", StringComparison.Ordinal))
+                ownNames.Add(f.Name.Substring(className.Length + 1));
+        }
+
+        // Копируем унаследованные методы из баз
+        foreach (var baseName in bases)
+        {
+            if (!_classMethodMap.TryGetValue(baseName, out var baseMethods)) continue;
+
+            foreach (var (shortName, baseFn) in baseMethods)
             {
-                // Атрибуты уровня класса пока игнорируем — можно добавить позже.
-            }
-            else if (stmt.Type == "comment")
-            {
-                // пропускаем
-            }
-            else
-            {
-                _warnings.Add($"Пропущен член класса: {stmt.Type}");
+                if (ownNames.Contains(shortName)) continue;
+
+                var clone = new YawaFunction
+                {
+                    Name = $"{className}.{shortName}",
+                    Params = baseFn.Params.Select(p => new YawaParam
+                    {
+                        Name = p.Name,
+                        Type = p.Type,
+                        DefaultValue = p.DefaultValue,
+                        IsVariadic = p.IsVariadic,
+                        IsKeywordVariadic = p.IsKeywordVariadic
+                    }).ToList(),
+                    Returns = baseFn.Returns,
+                    Body = baseFn.Body
+                };
+                result.Add(clone);
             }
         }
+
+        // Сохраняем в карту для будущих наследников
+        var methodDict = new Dictionary<string, YawaFunction>(StringComparer.Ordinal);
+        foreach (var f in result)
+        {
+            if (f.Name.StartsWith(className + ".", StringComparison.Ordinal))
+                methodDict[f.Name.Substring(className.Length + 1)] = f;
+        }
+        _classMethodMap[className] = methodDict;
 
         return result;
     }
@@ -495,10 +567,44 @@ public sealed class PythonToYawa
                     "Классы не поддерживаются транспайлером. " +
                     "Используйте словари или именованные структуры (dict/tuple).",
                     node);
+            case "assert_statement":
+                return ConvertAssert(node);
+
+            case "global_statement":
+            case "nonlocal_statement":
+                return null;
+
+            case "try_statement":
+                return ConvertTry(node);
+
+            case "delete_statement":
+                return ConvertDelete(node);
 
             default:
                 throw Err($"Неподдерживаемый statement: {node.Type}", node);
         }
+    }
+    private YawaStatement ConvertAssert(TsNode node)
+    {
+        var children = node.NamedChildren().ToList();
+        if (children.Count == 0)
+            throw Err("assert без условия", node);
+
+        return new AssertStatement
+        {
+            Cond = ConvertExpr(children[0]),
+            Message = children.Count > 1 ? ConvertExpr(children[1]) : null
+        };
+    }
+
+    private YawaStatement ConvertDelete(TsNode node)
+    {
+        var targets = node.NamedChildren()
+            .Where(c => c.Type != "comment")
+            .Select(ConvertExpr)
+            .ToList();
+
+        return new DeleteStatement { Targets = targets };
     }
 
     private YawaStatement ConvertAssignment(TsNode assign)
@@ -509,6 +615,26 @@ public sealed class PythonToYawa
 
         var target = children[0];
         var value = children[children.Count - 1];
+
+        // Цепочка: a = b = c = value
+        // value при этом — assignment
+        if (value.Type == "assignment")
+        {
+            var targets = new List<TsNode> { target };
+            var cur = value;
+            while (cur.Type == "assignment")
+            {
+                var c = cur.NamedChildren().ToList();
+                targets.Add(c[0]);
+                cur = c[c.Count - 1];
+            }
+            var last = ConvertExpr(cur);
+            return new TupleAssignStatement
+            {
+                Targets = targets.Select(ConvertLValue).ToList(),
+                Values = targets.Select(_ => last).ToList()
+            };
+        }
 
         // swap: A[i], A[j] = A[j], A[i]
         if (children.Count == 2 && TryConvertSwap(target, value, assign) is { } sw)
@@ -525,33 +651,59 @@ public sealed class PythonToYawa
 
         if (isTupleAssign)
         {
-            // Случай 1: a, b = 1, 2 — два списка одинаковой длины
+            // Есть ли *rest среди target-ов?
+            int splatIdx = -1;
+            for (int i = 0; i < targetItems.Count; i++)
+            {
+                if (targetItems[i].Type == "list_splat_pattern")
+                {
+                    if (splatIdx >= 0)
+                        throw Err("Множественный * в распаковке не поддерживается",
+                                  targetItems[i]);
+                    splatIdx = i;
+                }
+            }
+
+            // Значения формируем как обычно
+            List<YawaExpression> values;
             if (targetItems.Count == valueItems.Count)
             {
-                return new TupleAssignStatement
-                {
-                    Targets = targetItems.Select(ConvertLValue).ToList(),
-                    Values = valueItems.Select(ConvertExpr).ToList()
-                };
+                values = valueItems.Select(ConvertExpr).ToList();
             }
-
-            // Случай 2: a, b = func()  — распаковка tuple-результата функции.
-            // Слева больше одного, справа ровно одно значение.
-            if (valueItems.Count == 1)
+            else if (valueItems.Count == 1)
             {
-                return new TupleAssignStatement
-                {
-                    Targets = targetItems.Select(ConvertLValue).ToList(),
-                    Values = new List<YawaExpression> { ConvertExpr(valueItems[0]) }
-                };
+                values = new List<YawaExpression> { ConvertExpr(valueItems[0]) };
+            }
+            else
+            {
+                throw Err(
+                    $"Несовпадение количества при распаковке: {targetItems.Count} слева, " +
+                    $"{valueItems.Count} справа", assign);
             }
 
-            // Случай 3: a, b, c = x, y — количество слева и справа не совпало и не 1:1
-            throw Err(
-                $"Несовпадение количества при распаковке: {targetItems.Count} слева, " +
-                $"{valueItems.Count} справа. Количество должно совпадать " +
-                $"или справа должен быть один кортеж.",
-                assign);
+            // Цели: splat превращаем в обычный идентификатор (имя) — значение подставим как массив
+            var targets = new List<YawaExpression>();
+            foreach (var ti in targetItems)
+            {
+                if (ti.Type == "list_splat_pattern")
+                {
+                    var inner = ti.NamedChildren().FirstOrDefault();
+                    if (!inner.IsValid || inner.Type != "identifier")
+                        throw Err("Ожидалось имя после * в распаковке", ti);
+                    targets.Add(new RefExpr { Name = Text(inner) });
+                }
+                else
+                {
+                    targets.Add(ConvertLValue(ti));
+                }
+            }
+
+            return new TupleAssignStatement
+            {
+                Targets = targets,
+                Values = values,
+                SplatIndex = splatIdx
+            };
         }
 
         // Обычное присваивание
@@ -604,10 +756,6 @@ public sealed class PythonToYawa
 
     private List<TsNode> FlattenTuple(TsNode node)
     {
-        // Разворачиваем ТОЛЬКО настоящие tuple-паттерны:
-        //   a, b = ...       → target: pattern_list
-        //   x = 1, 2         → value:  expression_list
-        // НЕ разворачиваем list [1,2,3] и (1,2) — это обычные значения.
         if (node.Type is "pattern_list" or "expression_list")
         {
             var result = new List<TsNode>();
@@ -656,6 +804,66 @@ public sealed class PythonToYawa
                 return op[..^1]; // "+=" → "+"
         }
         return null;
+    }
+
+    private YawaStatement ConvertTry(TsNode node)
+    {
+        var children = node.NamedChildren().ToList();
+
+        var bodyBlock = children.FirstOrDefault(c => c.Type == "block");
+        var finallyClause = children.FirstOrDefault(c => c.Type == "finally_clause");
+
+        var stmt = new TryStatement
+        {
+            Body = bodyBlock.IsValid ? ConvertBlock(bodyBlock) : new List<YawaStatement>()
+        };
+
+        // except_clause — может быть несколько
+        foreach (var c in children)
+        {
+            if (c.Type != "except_clause") continue;
+
+            var handler = new ExceptHandler();
+            var cc = c.NamedChildren().ToList();
+
+            // Опциональная переменная: `except ValueError as e:` — структура
+            // except_clause → identifier (ValueError) → identifier (e)
+            // Простая форма: `except:` — ничего лишнего
+            // Мы тип не различаем, но имя переменной вытащим, если есть.
+            var varName = ExtractExceptVar(c);
+            handler.VarName = varName;
+
+            var hblock = cc.FirstOrDefault(x => x.Type == "block");
+            if (hblock.IsValid)
+                handler.Body = ConvertBlock(hblock);
+
+            stmt.Handlers.Add(handler);
+        }
+
+        if (finallyClause.IsValid)
+        {
+            var fblock = finallyClause.NamedChildren().FirstOrDefault(c => c.Type == "block");
+            if (fblock.IsValid)
+                stmt.Finally = ConvertBlock(fblock);
+        }
+
+        return stmt;
+    }
+
+    private string? ExtractExceptVar(TsNode exceptClause)
+    {
+        // `except ValueError as e:` → tree-sitter: except_clause → [identifier, identifier, block]
+        // Не всегда удаётся отличить тип от имени. Упрощённо:
+        //   если есть 2 identifier до block, второй — имя переменной
+        //   если 1 identifier до block, это либо тип, либо имя (берём как имя только если есть 'as' в тексте)
+        var text = Text(exceptClause);
+        if (!text.Contains(" as ")) return null;
+
+        var ids = exceptClause.NamedChildren()
+            .Where(c => c.Type == "identifier")
+            .ToList();
+        // Последний identifier перед block — имя переменной
+        return ids.Count >= 1 ? Text(ids[^1]) : null;
     }
 
     private YawaStatement ConvertIf(TsNode node)
@@ -744,20 +952,18 @@ public sealed class PythonToYawa
 
     private YawaStatement ConvertFor(TsNode node)
     {
-        // for i in range(...):   → ForStatement
-        // for x in seq:          → ForeachStatement
-
-        // В tree-sitter-python for_statement имеет дочерние узлы: identifier, "in", iterable, block
-        // Мы получаем через NamedChildren только identifier и iterable и block
         var children = node.NamedChildren().ToList();
 
-        // Первый identifier — переменная цикла.
-        // Второй named child, не являющийся block и не identifier цикла — iterable.
-        // Внимание: iterable тоже может быть identifier (`for ch in s`).
+        // Левая часть for может быть:
+        //   identifier  — for i in ...
+        //   pattern_list / tuple_pattern — for k, v in ...
         int varIdx = -1;
+        string varKind = "";
         for (int k = 0; k < children.Count; k++)
         {
-            if (children[k].Type == "identifier") { varIdx = k; break; }
+            var t = children[k].Type;
+            if (t == "identifier") { varIdx = k; varKind = "identifier"; break; }
+            if (t == "pattern_list" || t == "tuple_pattern") { varIdx = k; varKind = "pattern"; break; }
         }
 
         if (varIdx < 0)
@@ -770,11 +976,47 @@ public sealed class PythonToYawa
         }
 
         var block = children.FirstOrDefault(c => c.Type == "block");
+        var varNode = children[varIdx];
 
         if (!iterable.IsValid)
             throw Err("Некорректный for-loop (нет iterable)", node);
 
-        var varNode = children[varIdx];
+        // Распаковка: for k, v in pairs → for __tmp in pairs: k = __tmp[0]; v = __tmp[1]
+        if (varKind == "pattern")
+        {
+            var names = varNode.NamedChildren()
+                .Where(c => c.Type == "identifier")
+                .Select(Text)
+                .ToList();
+
+            if (names.Count == 0)
+                throw Err("Не найдены переменные в распаковке for", varNode);
+
+            var tmpVar = $"__tup_{Interlocked.Increment(ref _tmpCounter)}";
+            var realBody = block.IsValid ? ConvertBlock(block) : new List<YawaStatement>();
+
+            var newBody = new List<YawaStatement>();
+            for (int i = 0; i < names.Count; i++)
+            {
+                newBody.Add(new AssignStatement
+                {
+                    Target = new RefExpr { Name = names[i] },
+                    Value = new IndexExpr
+                    {
+                        Target = new RefExpr { Name = tmpVar },
+                        Index = new LiteralExpr { Value = ToJsonElement(i) }
+                    }
+                });
+            }
+            newBody.AddRange(realBody);
+
+            return new ForeachStatement
+            {
+                Var = tmpVar,
+                In = ConvertExpr(iterable),
+                Body = newBody
+            };
+        }
 
         var varName = Text(varNode);
         var body = block.IsValid ? ConvertBlock(block) : new List<YawaStatement>();
@@ -861,7 +1103,7 @@ public sealed class PythonToYawa
                 return new LiteralExpr { Value = ToJsonElement<object?>(null) };
 
             case "identifier":
-                return new RefExpr { Name = Text(node) };
+                return ConvertIdentifier(node);
 
             case "slice":
                 return ConvertSlice(node);
@@ -909,6 +1151,19 @@ public sealed class PythonToYawa
             case "list_comprehension":
                 return ConvertListComp(node);
 
+            case "dictionary_comprehension":
+                return ConvertDictComp(node);
+
+            case "set_comprehension":
+                return ConvertSetComp(node);
+
+            case "generator_expression":
+                // sum(x*x for x in A) → sum([x*x for x in A])
+                return ConvertListComp(node);
+
+            case "lambda":
+                return ConvertLambda(node);
+
             case "list":
                 return ConvertListLiteral(node);
 
@@ -926,6 +1181,74 @@ public sealed class PythonToYawa
             default:
                 throw Err($"Неподдерживаемое выражение: {node.Type}", node);
         }
+    }
+
+    private YawaExpression ConvertIdentifier(TsNode node)
+    {
+        var name = Text(node);
+
+        // Локальная функция (замыкание) — переименовываем через стек.
+        var renamed = LookupRename(name);
+        if (renamed != name)
+            return new FunctionRefExpr { Name = renamed };
+
+        // Top-level функция как значение.
+        if (_functionNames.Contains(name) && !_classNames.Contains(name))
+            return new FunctionRefExpr { Name = name };
+
+        return new RefExpr { Name = name };
+    }
+
+    private YawaExpression ConvertLambda(TsNode node)
+    {
+        // lambda x: expr  |  lambda: expr  |  lambda x, y: expr
+        var children = node.NamedChildren().ToList();
+
+        TsNode paramsNode = default;
+        TsNode body = default;
+
+        foreach (var c in children)
+        {
+            if (c.Type == "lambda_parameters") paramsNode = c;
+            else if (c.Type == "identifier" && !paramsNode.IsValid && children.Count == 2)
+                paramsNode = c; // lambda x: ... — единственный параметр как identifier
+            else if (body.Type == "") body = c;
+        }
+
+        // Иногда body — последний named child
+        if (!body.IsValid)
+        {
+            var last = children.LastOrDefault();
+            if (last.IsValid && last.Type != "lambda_parameters") body = last;
+        }
+
+        var name = $"__lambda_{Interlocked.Increment(ref _tmpCounter)}";
+
+        var fn = new YawaFunction { Name = name };
+
+        if (paramsNode.IsValid)
+        {
+            if (paramsNode.Type == "lambda_parameters")
+            {
+                foreach (var p in paramsNode.NamedChildren())
+                {
+                    if (p.Type == "identifier")
+                        fn.Params.Add(new YawaParam { Name = Text(p) });
+                }
+            }
+            else if (paramsNode.Type == "identifier")
+            {
+                fn.Params.Add(new YawaParam { Name = Text(paramsNode) });
+            }
+        }
+
+        if (!body.IsValid)
+            throw Err("Некорректная lambda — нет тела", node);
+
+        fn.Body.Add(new ReturnStatement { Value = ConvertExpr(body) });
+        _pendingNestedFunctions.Add(fn);
+
+        return new FunctionRefExpr { Name = name };
     }
 
     private YawaExpression ConvertSlice(TsNode node)
@@ -1031,56 +1354,109 @@ public sealed class PythonToYawa
             throw Err("Некорректный list comprehension", node);
 
         var body = children[0];
-        var forClause = children.FirstOrDefault(c => c.Type == "for_in_clause");
-        if (!forClause.IsValid)
-            throw Err("В list comprehension отсутствует 'for'", node);
-
-        var forChildren = forClause.NamedChildren().ToList();
-        if (forChildren.Count < 2)
-            throw Err("Некорректный 'for' в list comprehension", forClause);
-
-        var varNode = forChildren[0];
-        var iterableNode = forChildren[1];
-
-        if (varNode.Type != "identifier")
-            throw Err("Переменная цикла должна быть identifier " +
-                      "(деструктуризация в comprehension не поддерживается)", varNode);
-
-        // Фильтр: либо отдельный if_clause после for_in_clause,
-        // либо внутри for_in_clause (зависит от версии грамматики).
-        TsNode filterClause = default;
-        for (int i = 1; i < children.Count; i++)
-        {
-            if (children[i].Type == "if_clause") { filterClause = children[i]; break; }
-        }
-        if (!filterClause.IsValid)
-        {
-            var innerIf = forChildren.FirstOrDefault(c => c.Type == "if_clause");
-            if (innerIf.IsValid) filterClause = innerIf;
-        }
-
-        YawaExpression? filter = null;
-        if (filterClause.IsValid)
-        {
-            var condNode = filterClause.NamedChildren().FirstOrDefault();
-            if (condNode.IsValid)
-                filter = ConvertExpr(condNode);
-        }
-
-        // Вложенные for_in_clause (двойной comprehension [x+y for x in A for y in B])
-        // пока не поддерживаем — предупреждаем.
-        var extraFors = children.Where(c => c.Type == "for_in_clause").Skip(1).ToList();
-        if (extraFors.Count > 0)
-            throw Err("Вложенные for в одном comprehension пока не поддерживаются. " +
-                      "Разбейте на два выражения или используйте два обычных цикла.", node);
+        var clauses = ParseCompClauses(children.Skip(1).ToList(), node);
+        if (clauses.Count == 0)
+            throw Err("В comprehension нет 'for'", node);
 
         return new ListCompExpr
         {
             Body = ConvertExpr(body),
-            Var = Text(varNode),
-            Source = ConvertExpr(iterableNode),
-            Filter = filter
+            Clauses = clauses
         };
+    }
+
+    private YawaExpression ConvertSetComp(TsNode node)
+    {
+        var children = node.NamedChildren().ToList();
+        if (children.Count < 2)
+            throw Err("Некорректный set comprehension", node);
+
+        var body = children[0];
+        var clauses = ParseCompClauses(children.Skip(1).ToList(), node);
+        if (clauses.Count == 0)
+            throw Err("В set comprehension нет 'for'", node);
+
+        return new SetCompExpr
+        {
+            Body = ConvertExpr(body),
+            Clauses = clauses
+        };
+    }
+
+    private YawaExpression ConvertDictComp(TsNode node)
+    {
+        var children = node.NamedChildren().ToList();
+        if (children.Count < 2)
+            throw Err("Некорректный dict comprehension", node);
+
+        var pair = children[0];
+        if (pair.Type != "pair")
+            throw Err("Ожидалась пара ключ:значение", pair);
+
+        var pairChildren = pair.NamedChildren().ToList();
+        if (pairChildren.Count < 2)
+            throw Err("Некорректная пара в dict comprehension", pair);
+
+        var clauses = ParseCompClauses(children.Skip(1).ToList(), node);
+        if (clauses.Count == 0)
+            throw Err("В dict comprehension нет 'for'", node);
+
+        return new DictCompExpr
+        {
+            BodyKey = ConvertExpr(pairChildren[0]),
+            BodyValue = ConvertExpr(pairChildren[1]),
+            Clauses = clauses
+        };
+    }
+
+    private List<CompClause> ParseCompClauses(List<TsNode> children, TsNode context)
+    {
+        var clauses = new List<CompClause>();
+
+        foreach (var c in children)
+        {
+            if (c.Type == "for_in_clause")
+            {
+                var fc = c.NamedChildren().ToList();
+                if (fc.Count < 2)
+                    throw Err("Некорректный 'for' в comprehension", c);
+
+                var varNode = fc[0];
+                var iterable = fc[1];
+
+                if (varNode.Type != "identifier")
+                    throw Err("Переменная цикла должна быть identifier " +
+                              "(распаковка tuple в comprehension пока не поддерживается)", varNode);
+
+                var clause = new CompClause
+                {
+                    Var = Text(varNode),
+                    Source = ConvertExpr(iterable)
+                };
+
+                // if внутри for_in_clause
+                var innerIf = fc.FirstOrDefault(x => x.Type == "if_clause");
+                if (innerIf.IsValid)
+                {
+                    var cond = innerIf.NamedChildren().FirstOrDefault();
+                    if (cond.IsValid) clause.Filter = ConvertExpr(cond);
+                }
+
+                clauses.Add(clause);
+            }
+            else if (c.Type == "if_clause")
+            {
+                // filter привязан к последнему for
+                if (clauses.Count == 0)
+                    throw Err("if без предшествующего for", c);
+
+                var cond = c.NamedChildren().FirstOrDefault();
+                if (cond.IsValid && clauses[^1].Filter is null)
+                    clauses[^1].Filter = ConvertExpr(cond);
+            }
+        }
+
+        return clauses;
     }
 
     private YawaExpression ConvertAttribute(TsNode node)
@@ -1095,10 +1471,30 @@ public sealed class PythonToYawa
         if (nameNode.Type != "identifier")
             throw Err("Ожидалось имя поля после точки", nameNode);
 
+        var fieldName = Text(nameNode);
+
+        // math.pi / math.e / math.tau — константы
+        if (target.Type == "identifier")
+        {
+            var tname = Text(target);
+            if (tname == "math")
+            {
+                switch (fieldName)
+                {
+                    case "pi":
+                        return new LiteralExpr { Value = ToJsonElement(Math.PI) };
+                    case "e":
+                        return new LiteralExpr { Value = ToJsonElement(Math.E) };
+                    case "tau":
+                        return new LiteralExpr { Value = ToJsonElement(Math.Tau) };
+                }
+            }
+        }
+
         return new FieldExpr
         {
             Target = ConvertExpr(target),
-            FieldName = Text(nameNode)
+            FieldName = fieldName
         };
     }
     private YawaExpression ConvertBinary(TsNode node)
@@ -1235,30 +1631,39 @@ public sealed class PythonToYawa
         if (!callee.IsValid)
             throw Err("Некорректный вызов", node);
 
-        var args = argsList.IsValid
-            ? argsList.NamedChildren()
-                .Where(a => a.Type != "comment")
-                .Select(ConvertExpr).ToList()
-            : new List<YawaExpression>();
+        // Проверяем, есть ли keyword-аргументы
+        if (argsList.IsValid &&
+            argsList.NamedChildren().Any(a => a.Type == "keyword_argument"))
+        {
+            return ConvertCallWithKeywords(node, callee, argsList);
+        }
 
-        // Встроенные: len → length, append → push, pop → pop, и т.д.
+        // В tree-sitter-python call может иметь:
+        //   - argument_list (обычный случай)
+        //   - generator_expression напрямую (sum(x*x for x in A) — без скобок)
+        List<TsNode> argNodes;
+        if (argsList.IsValid)
+            argNodes = argsList.NamedChildren()
+                .Where(a => a.Type != "comment")
+                .ToList();
+        else
+            argNodes = children.Skip(1)
+                .Where(a => a.Type != "comment")
+                .ToList();
+
+        var args = argNodes.Select(ConvertExpr).ToList();
+
+        // Встроенные
         if (callee.Type == "identifier")
         {
             var name = Text(callee);
 
-            // Переименование вложенных функций: если внутри текущей функции
-            // есть локальная функция с таким именем — вызываем её полное имя.
-            if (_currentRenameMap is not null && _currentRenameMap.TryGetValue(name, out var renamed))
-                name = renamed;
+            name = LookupRename(name);
 
-            // Это вызов класса? → instantiate
+            // Вызов класса → instantiate
             if (_classNames.Contains(name))
             {
-                return new InstantiateExpr
-                {
-                    ClassName = name,
-                    Args = args
-                };
+                return new InstantiateExpr { ClassName = name, Args = args };
             }
 
             var mapped = name switch
@@ -1270,13 +1675,28 @@ public sealed class PythonToYawa
                 "abs" => "abs",
                 "print" => "print",
                 "set" => "set",
+                "list" => "list",
+                "tuple" => "tuple",
+                "sum" => "sum",
+                "any" => "any",
+                "all" => "all",
+                "chr" => "chr",
+                "ord" => "ord",
+                "int" => "int",
+                "str" => "str",
+                "float" => "float",
+                "bool" => "bool",
+                "enumerate" => "enumerate",
+                "zip" => "zip",
+                "sorted" => "sorted",
+                "map" => "map",
+                "filter" => "filter",
                 _ => name
             };
             return new CallExpr { Name = mapped, Args = args };
         }
 
-        // Методы: obj.method(...) → CallMethodExpr.
-        // Интерпретатор решит: ClassName__method или builtin (append/pop/...).
+        // Метод
         if (callee.Type == "attribute")
         {
             var attrChildren = callee.NamedChildren().ToList();
@@ -1286,8 +1706,16 @@ public sealed class PythonToYawa
             var receiver = attrChildren[0];
             var methodName = Text(attrChildren[1]);
 
-            // Оставляем имя «как в Python» — интерпретатор сам смапит append → push
-            // для встроенных коллекций.
+            // MathHelper.double(5) — вызов статического метода через имя класса.
+            if (receiver.Type == "identifier" && _classNames.Contains(Text(receiver)))
+            {
+                return new CallExpr
+                {
+                    Name = $"{Text(receiver)}.{methodName}",
+                    Args = args
+                };
+            }
+
             return new CallMethodExpr
             {
                 Receiver = ConvertExpr(receiver),
@@ -1297,6 +1725,80 @@ public sealed class PythonToYawa
         }
 
         throw Err("Неподдерживаемый вызываемый объект", callee);
+    }
+
+    private YawaExpression ConvertCallWithKeywords(TsNode node, TsNode callee, TsNode argsList)
+    {
+        if (callee.Type != "identifier")
+            throw Err("keyword-аргументы поддерживаются только для простых вызовов", node);
+
+        var funcName = Text(callee);
+        var args = new List<YawaExpression>();
+        var keywords = new Dictionary<string, TsNode>();
+
+        foreach (var a in argsList.NamedChildren())
+        {
+            if (a.Type == "comment") continue;
+            if (a.Type == "keyword_argument")
+            {
+                var kw = a.NamedChildren().ToList();
+                if (kw.Count < 2)
+                    throw Err("Некорректный keyword_argument", a);
+                keywords[Text(kw[0])] = kw[1];
+            }
+            else
+            {
+                args.Add(ConvertExpr(a));
+            }
+        }
+
+        // sorted(A, key=abs) / sorted(A, key=len)
+        if (funcName == "sorted")
+        {
+            if (args.Count != 1)
+                throw Err("sorted() должен иметь один позиционный аргумент", node);
+
+            if (!keywords.TryGetValue("key", out var keyNode))
+                return new CallExpr { Name = "sorted", Args = args };
+
+            if (keyNode.Type != "identifier")
+                throw Err("sorted(key=...) принимает только имя функции", keyNode);
+
+            var keyName = Text(keyNode);
+
+            // Специальные встроенные — быстрые пути
+            if (keyName == "abs")
+                return new CallExpr { Name = "sorted_by_abs", Args = args };
+            if (keyName == "len")
+                return new CallExpr { Name = "sorted_by_len", Args = args };
+
+            // Произвольная функция — sorted_with(array, funcref)
+            var funcRef = new FunctionRefExpr { Name = keyName };
+            args.Add(funcRef);
+            return new CallExpr { Name = "sorted_with", Args = args };
+        }
+
+        // Общий случай: упаковываем keyword-аргументы в объект
+        // и добавляем как последний позиционный аргумент.
+        // Функция с **kwargs получит его; без **kwargs — ошибка в runtime.
+        var kwargsObj = new DictExpr();
+        foreach (var (k, v) in keywords)
+        {
+            kwargsObj.Items.Add(new DictEntry
+            {
+                Key = new LiteralExpr { Value = ToJsonElement(k) },
+                Value = ConvertExpr(v)
+            });
+        }
+        args.Add(kwargsObj);
+
+        var finalName = funcName;
+        finalName = LookupRename(finalName);
+
+        if (_classNames.Contains(finalName))
+            return new InstantiateExpr { ClassName = finalName, Args = args };
+
+        return new CallExpr { Name = finalName, Args = args };
     }
 
     private YawaExpression ConvertDict(TsNode node)
@@ -1379,8 +1881,10 @@ public sealed class PythonToYawa
 
     private YawaExpression ConvertLValue(TsNode node)
     {
-        // LValue — та же структура, что и обычное выражение, но интерпретатор
-        // поймёт его как target присваивания.
+        // В позиции target-а identifier — это всегда переменная, не функция.
+        if (node.Type == "identifier")
+            return new RefExpr { Name = Text(node) };
+
         return ConvertExpr(node);
     }
 
@@ -1452,6 +1956,15 @@ public sealed class PythonToYawa
     }
 
     // ─────────── Helpers ───────────
+
+    private string LookupRename(string name)
+    {
+        // Stack перечисляет сверху вниз — сначала проверяем самые вложенные.
+        foreach (var dict in _renameStack)
+            if (dict.TryGetValue(name, out var renamed))
+                return renamed;
+        return name;
+    }
 
     private string Text(TsNode node)
     {

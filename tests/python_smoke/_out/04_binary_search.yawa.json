@@ -11,10 +11,14 @@
       "name": "binary_search",
       "params": [
         {
-          "name": "A"
+          "name": "A",
+          "type": null,
+          "default": null
         },
         {
-          "name": "target"
+          "name": "target",
+          "type": null,
+          "default": null
         }
       ],
       "returns": null,

@@ -11,7 +11,9 @@
       "name": "match_brackets",
       "params": [
         {
-          "name": "s"
+          "name": "s",
+          "type": null,
+          "default": null
         }
       ],
       "returns": null,

@@ -1,0 +1,146 @@
+﻿{
+  "yawa_version": "1.0",
+  "metadata": {
+    "name": "Python \u2192 YAWA",
+    "description": null,
+    "generator": "algovis-transpiler@0.1"
+  },
+  "globals": {},
+  "functions": [
+    {
+      "name": "apply_twice",
+      "params": [
+        {
+          "name": "f",
+          "type": null,
+          "default": null
+        },
+        {
+          "name": "x",
+          "type": null,
+          "default": null
+        }
+      ],
+      "returns": null,
+      "body": [
+        {
+          "op": "return",
+          "value": {
+            "call": "f",
+            "args": [
+              {
+                "call": "f",
+                "args": [
+                  {
+                    "ref": "x"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "inc",
+      "params": [
+        {
+          "name": "x",
+          "type": null,
+          "default": null
+        }
+      ],
+      "returns": null,
+      "body": [
+        {
+          "op": "return",
+          "value": {
+            "bin": "\u002B",
+            "a": {
+              "ref": "x"
+            },
+            "b": {
+              "lit": 1
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "double",
+      "params": [
+        {
+          "name": "x",
+          "type": null,
+          "default": null
+        }
+      ],
+      "returns": null,
+      "body": [
+        {
+          "op": "return",
+          "value": {
+            "bin": "*",
+            "a": {
+              "ref": "x"
+            },
+            "b": {
+              "lit": 2
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "main",
+      "params": [],
+      "returns": null,
+      "body": [
+        {
+          "op": "assign",
+          "target": {
+            "ref": "a"
+          },
+          "value": {
+            "call": "apply_twice",
+            "args": [
+              {
+                "funcref": "inc"
+              },
+              {
+                "lit": 5
+              }
+            ]
+          }
+        },
+        {
+          "op": "assign",
+          "target": {
+            "ref": "b"
+          },
+          "value": {
+            "call": "apply_twice",
+            "args": [
+              {
+                "funcref": "double"
+              },
+              {
+                "lit": 5
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "entry": {
+    "function": "main",
+    "args": []
+  },
+  "limits": {
+    "max_steps": 1000000,
+    "max_depth": 500,
+    "max_seconds": 10,
+    "snapshot_every": 0
+  }
+}

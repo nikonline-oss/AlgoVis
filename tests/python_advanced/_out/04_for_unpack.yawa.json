@@ -1,0 +1,166 @@
+﻿{
+  "yawa_version": "1.0",
+  "metadata": {
+    "name": "Python \u2192 YAWA",
+    "description": null,
+    "generator": "algovis-transpiler@0.1"
+  },
+  "globals": {},
+  "functions": [
+    {
+      "name": "process",
+      "params": [
+        {
+          "name": "pairs",
+          "type": null,
+          "default": null
+        }
+      ],
+      "returns": null,
+      "body": [
+        {
+          "op": "assign",
+          "target": {
+            "ref": "total"
+          },
+          "value": {
+            "lit": 0
+          }
+        },
+        {
+          "op": "foreach",
+          "var": "__tup_1",
+          "in": {
+            "ref": "pairs"
+          },
+          "body": [
+            {
+              "op": "assign",
+              "target": {
+                "ref": "k"
+              },
+              "value": {
+                "index": [
+                  {
+                    "ref": "__tup_1"
+                  },
+                  {
+                    "lit": 0
+                  }
+                ]
+              }
+            },
+            {
+              "op": "assign",
+              "target": {
+                "ref": "v"
+              },
+              "value": {
+                "index": [
+                  {
+                    "ref": "__tup_1"
+                  },
+                  {
+                    "lit": 1
+                  }
+                ]
+              }
+            },
+            {
+              "op": "assign",
+              "target": {
+                "ref": "total"
+              },
+              "value": {
+                "bin": "\u002B",
+                "a": {
+                  "ref": "total"
+                },
+                "b": {
+                  "ref": "v"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "op": "return",
+          "value": {
+            "ref": "total"
+          }
+        }
+      ]
+    },
+    {
+      "name": "main",
+      "params": [],
+      "returns": null,
+      "body": [
+        {
+          "op": "assign",
+          "target": {
+            "ref": "pairs"
+          },
+          "value": {
+            "array": [
+              {
+                "tuple": [
+                  {
+                    "lit": 1
+                  },
+                  {
+                    "lit": 10
+                  }
+                ]
+              },
+              {
+                "tuple": [
+                  {
+                    "lit": 2
+                  },
+                  {
+                    "lit": 20
+                  }
+                ]
+              },
+              {
+                "tuple": [
+                  {
+                    "lit": 3
+                  },
+                  {
+                    "lit": 30
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "op": "assign",
+          "target": {
+            "ref": "s"
+          },
+          "value": {
+            "call": "process",
+            "args": [
+              {
+                "ref": "pairs"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "entry": {
+    "function": "main",
+    "args": []
+  },
+  "limits": {
+    "max_steps": 1000000,
+    "max_depth": 500,
+    "max_seconds": 10,
+    "snapshot_every": 0
+  }
+}

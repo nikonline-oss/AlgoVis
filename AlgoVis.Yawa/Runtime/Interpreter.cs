@@ -107,32 +107,61 @@ public sealed class Interpreter
         return CallFunction(name, args, callerFrame, nodeId);
     }
 
-    public RuntimeValue CallFunction(string name, List<RuntimeValue> args, Frame callerFrame, string? nodeId,
-    bool syncLocalsBackToCaller = false)
+    public RuntimeValue CallFunction(string name, List<RuntimeValue> args, Frame callerFrame, string? nodeId, bool syncLocalsBackToCaller = false)
     {
         CheckLimits();
 
-        // Сначала ищем пользовательскую функцию — она перекрывает builtin.
-        if (!_functions.TryGetValue(name, out var fn))
+        // 1. Локальная функция-значение (в т.ч. с замыканием)
+        if (callerFrame.Locals.TryGetValue(name, out var localVal) &&
+            localVal is FunctionRefValue localFn)
         {
-            // Пользовательской нет — пробуем builtin.
-            if (Builtins.Names.Contains(name))
-            {
-                var result = Builtins.Call(name, args, Recorder);
-                if (name == "print")
-                    Recorder.Record("call", nodeId);
-                return result;
-            }
-            throw new YawaRuntimeException($"Unknown function: {name}");
+            return CallUserFunction(localFn.Name, args, callerFrame, localFn.CapturedFrame,
+                                    nodeId, syncLocalsBackToCaller);
         }
 
-        var frame = new Frame(name, callerFrame);
-        if (args.Count != fn.Params.Count)
-            throw new YawaRuntimeException(
-                $"{name}: expected {fn.Params.Count} args, got {args.Count}");
+        // 1.5. Специальные builtin-ы, требующие доступа к CallFunction/CallFunctionValue.
+        if (name is "filter" or "map")
+            return CallHigherOrderBuiltin(name, args, callerFrame);
 
-        for (int i = 0; i < fn.Params.Count; i++)
-            frame.Declare(fn.Params[i].Name, args[i]);
+        if (name == "sorted_with")
+            return CallSortedWith(args, callerFrame);
+
+        // 2. Builtin (только если нет пользовательской)
+        if (!_functions.ContainsKey(name) && Builtins.Names.Contains(name))
+        {
+            var result = Builtins.Call(name, args, Recorder);
+            if (name == "print")
+                Recorder.Record("call", nodeId);
+            return result;
+        }
+
+        // 3. Пользовательская функция
+        if (!_functions.ContainsKey(name))
+            throw new YawaRuntimeException($"Unknown function: {name}");
+
+        return CallUserFunction(name, args, callerFrame, null, nodeId, syncLocalsBackToCaller);
+    }
+
+    /// <summary>
+    /// Вызов FunctionRefValue с сохранением capturedFrame.
+    /// Используется в higher-order builtins (map/filter/sorted).
+    /// </summary>
+    public RuntimeValue CallFunctionValue(FunctionRefValue fn, List<RuntimeValue> args, Frame callerFrame, string? nodeId)
+    {
+        CheckLimits();
+        return CallUserFunction(fn.Name, args, callerFrame, fn.CapturedFrame, nodeId, false);
+    }
+
+    private RuntimeValue CallUserFunction(string name, List<RuntimeValue> args, Frame callerFrame, Frame? capturedFrame, string? nodeId, bool syncLocalsBackToCaller)
+    {
+        if (!_functions.TryGetValue(name, out var fn))
+            throw new YawaRuntimeException($"Unknown function: {name}");
+
+        // Родитель нового frame-а: захваченный (замыкание) или вызывающий.
+        var parent = capturedFrame ?? callerFrame;
+
+        var frame = new Frame(name, parent);
+        BindArguments(fn, args, frame);
 
         Recorder.SetFrame(frame);
         var argRepr = args.Count == 0
@@ -147,20 +176,158 @@ public sealed class Interpreter
         try
         {
             ExecuteBlock(fn.Body, frame);
-            if (syncLocalsBackToCaller)
-                SyncLocals(fn, frame, callerFrame);
+            if (syncLocalsBackToCaller) SyncLocals(fn, frame, callerFrame);
             return NullValue.Instance;
         }
         catch (ReturnException rex)
         {
-            if (syncLocalsBackToCaller)
-                SyncLocals(fn, frame, callerFrame);
+            if (syncLocalsBackToCaller) SyncLocals(fn, frame, callerFrame);
             return rex.Value;
         }
         finally
         {
             Recorder.SetFrame(callerFrame);
             Recorder.RecordSnapshot(frame, $"exit {name}");
+        }
+    }
+    private RuntimeValue CallHigherOrderBuiltin(string name, List<RuntimeValue> args, Frame callerFrame)
+    {
+        if (args.Count != 2)
+            throw new YawaRuntimeException($"{name}() needs 2 args");
+        if (args[0] is not FunctionRefValue fn)
+            throw new YawaRuntimeException($"{name}() needs function as first arg");
+
+        var items = args[1] switch
+        {
+            ArrayValue a => a.Items,
+            SetValue s => s.Items,
+            TupleValue t => t.Items,
+            _ => throw new YawaRuntimeException($"{name}() needs iterable, got {args[1].TypeName}")
+        };
+
+        var result = new List<RuntimeValue>();
+        foreach (var item in items)
+        {
+            var r = CallFunctionValue(fn, new List<RuntimeValue> { item }, callerFrame, null);
+            if (name == "filter")
+            {
+                if (Evaluator.AsBool(r)) result.Add(item);
+            }
+            else
+            {
+                result.Add(r);
+            }
+        }
+        return new ArrayValue(result);
+    }
+
+    private RuntimeValue CallSortedWith(List<RuntimeValue> args, Frame callerFrame)
+    {
+        if (args.Count != 2)
+            throw new YawaRuntimeException("sorted_with() needs 2 args");
+        if (args[0] is not ArrayValue arr)
+            throw new YawaRuntimeException("sorted_with() needs array");
+        if (args[1] is not FunctionRefValue fn)
+            throw new YawaRuntimeException("sorted_with() needs function as second arg");
+
+        var items = arr.Items.ToList();
+
+        // Insertion sort: стабильная, вызывает key-функцию для каждого элемента.
+        for (int i = 1; i < items.Count; i++)
+        {
+            var current = items[i];
+            var currentKey = CallFunctionValue(fn, new List<RuntimeValue> { current }, callerFrame, null);
+
+            int j = i - 1;
+            while (j >= 0)
+            {
+                var otherKey = CallFunctionValue(fn, new List<RuntimeValue> { items[j] }, callerFrame, null);
+                if (CompareRuntime(otherKey, currentKey) <= 0) break;
+                items[j + 1] = items[j];
+                j--;
+            }
+            items[j + 1] = current;
+        }
+
+        return new ArrayValue(items, arr.ElementType);
+    }
+
+    private static int CompareRuntime(RuntimeValue a, RuntimeValue b)
+    {
+        if (a is IntValue ai && b is IntValue bi) return ai.Value.CompareTo(bi.Value);
+        if (a is FloatValue af && b is FloatValue bf) return af.Value.CompareTo(bf.Value);
+        if (a is IntValue ai2 && b is FloatValue bf2) return ((double)ai2.Value).CompareTo(bf2.Value);
+        if (a is FloatValue af2 && b is IntValue bi2) return af2.Value.CompareTo((double)bi2.Value);
+        if (a is StringValue asv && b is StringValue bsv) return string.CompareOrdinal(asv.Value, bsv.Value);
+        throw new YawaRuntimeException($"Cannot compare {a.TypeName} and {b.TypeName}");
+    }
+
+    /// <summary>
+    /// Привязывает аргументы к параметрам функции с учётом *args / **kwargs.
+    /// </summary>
+    private static void BindArguments(YawaFunction fn, List<RuntimeValue> args, Frame frame)
+    {
+        var hasVariadic = fn.Params.Any(p => p.IsVariadic || p.IsKeywordVariadic);
+        var hasKwVariadic = fn.Params.Any(p => p.IsKeywordVariadic);
+
+        if (!hasVariadic)
+        {
+            if (args.Count != fn.Params.Count)
+                throw new YawaRuntimeException(
+                    $"{fn.Name}: expected {fn.Params.Count} args, got {args.Count}");
+            for (int i = 0; i < fn.Params.Count; i++)
+                frame.Declare(fn.Params[i].Name, args[i]);
+            return;
+        }
+
+        // С variadic: последние параметры — variadic
+        var normalCount = fn.Params.Count(p => !p.IsVariadic && !p.IsKeywordVariadic);
+
+        // Отделяем kwargs от позиционных (kwargs — единственный объект в конце)
+        RuntimeValue? kwargsObj = null;
+        var positional = args;
+        if (hasKwVariadic && args.Count > 0 && args[^1] is ObjectValue obj)
+        {
+            // Не можем однозначно отличить обычный объект от kwargs.
+            // Считаем: если есть **kwargs-параметр и последний аргумент — ObjectValue,
+            // и до этого не хватает аргументов, то это kwargs.
+            var expectAtLeast = fn.Params.Count(p => !p.IsKeywordVariadic);
+            if (args.Count >= expectAtLeast)
+            {
+                kwargsObj = obj;
+                positional = args.GetRange(0, args.Count - 1);
+            }
+        }
+
+        if (positional.Count < normalCount)
+            throw new YawaRuntimeException(
+                $"{fn.Name}: expected at least {normalCount} args, got {positional.Count}");
+
+        // Привязываем обычные
+        int pi = 0;
+        for (; pi < fn.Params.Count; pi++)
+        {
+            var p = fn.Params[pi];
+            if (p.IsVariadic || p.IsKeywordVariadic) break;
+            frame.Declare(p.Name, positional[pi]);
+        }
+
+        var consumed = pi; // сколько позиционных ушло на обычные
+
+        // Если следующий — *args
+        if (pi < fn.Params.Count && fn.Params[pi].IsVariadic)
+        {
+            var rest = positional.Skip(consumed).ToList();
+            frame.Declare(fn.Params[pi].Name, new ArrayValue(rest));
+            pi++;
+        }
+
+        // Если следующий — **kwargs
+        if (pi < fn.Params.Count && fn.Params[pi].IsKeywordVariadic)
+        {
+            frame.Declare(fn.Params[pi].Name,
+                kwargsObj ?? new ObjectValue());
+            pi++;
         }
     }
 
@@ -212,6 +379,11 @@ public sealed class Interpreter
             }
         }
 
+        if (receiver is StringValue sv)
+        {
+            return CallStringMethod(sv, name, argExprs, frame);
+        }
+
         // Специальные методы коллекций — мапим в builtin.
         string? builtinName = name switch
         {
@@ -244,6 +416,105 @@ public sealed class Interpreter
         return CallFunction(name, defaultArgs, frame, nodeId);
     }
 
+    private RuntimeValue CallStringMethod(
+    StringValue s, string name, List<YawaExpression> argExprs, Frame frame)
+    {
+        var args = argExprs.Select(e => Eval.Eval(e, frame)).ToList();
+        string str = s.Value;
+
+        switch (name)
+        {
+            case "strip": return new StringValue(str.Trim());
+            case "lstrip": return new StringValue(str.TrimStart());
+            case "rstrip": return new StringValue(str.TrimEnd());
+            case "lower": return new StringValue(str.ToLowerInvariant());
+            case "upper": return new StringValue(str.ToUpperInvariant());
+            case "capitalize":
+                return new StringValue(str.Length == 0
+                    ? str
+                    : char.ToUpperInvariant(str[0]) + str[1..].ToLowerInvariant());
+            case "title":
+                return new StringValue(System.Globalization.CultureInfo.InvariantCulture
+                    .TextInfo.ToTitleCase(str.ToLowerInvariant()));
+
+            case "split":
+                {
+                    var sep = args.Count > 0 && args[0] is StringValue sepS
+                        ? sepS.Value
+                        : null;
+                    var parts = sep is null
+                        ? str.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries)
+                        : str.Split(sep);
+                    return new ArrayValue(
+                        parts.Select(p => (RuntimeValue)new StringValue(p)));
+                }
+
+            case "join":
+                {
+                    if (args.Count == 0 || args[0] is not ArrayValue arr)
+                        throw new YawaRuntimeException("join() needs array");
+                    return new StringValue(string.Join(str,
+                        arr.Items.Select(v => v is StringValue s2 ? s2.Value : v.ToString())));
+                }
+
+            case "replace":
+                {
+                    if (args.Count < 2)
+                        throw new YawaRuntimeException("replace() needs 2 args");
+                    var oldV = args[0] is StringValue o ? o.Value : args[0].ToString() ?? "";
+                    var newV = args[1] is StringValue n ? n.Value : args[1].ToString() ?? "";
+                    return new StringValue(str.Replace(oldV, newV));
+                }
+
+            case "startswith":
+                {
+                    var prefix = args[0] is StringValue p ? p.Value : args[0].ToString() ?? "";
+                    return str.StartsWith(prefix) ? BoolValue.True : BoolValue.False;
+                }
+
+            case "endswith":
+                {
+                    var suffix = args[0] is StringValue p ? p.Value : args[0].ToString() ?? "";
+                    return str.EndsWith(suffix) ? BoolValue.True : BoolValue.False;
+                }
+
+            case "find":
+                {
+                    var sub = args[0] is StringValue p ? p.Value : args[0].ToString() ?? "";
+                    return new IntValue(str.IndexOf(sub, StringComparison.Ordinal));
+                }
+
+            case "count":
+                {
+                    var sub = args[0] is StringValue p ? p.Value : args[0].ToString() ?? "";
+                    if (sub.Length == 0) return new IntValue(0);
+                    int cnt = 0, idx = 0;
+                    while ((idx = str.IndexOf(sub, idx, StringComparison.Ordinal)) >= 0)
+                    { cnt++; idx += sub.Length; }
+                    return new IntValue(cnt);
+                }
+
+            case "isdigit":
+                return str.Length > 0 && str.All(char.IsDigit)
+                    ? BoolValue.True : BoolValue.False;
+            case "isalpha":
+                return str.Length > 0 && str.All(char.IsLetter)
+                    ? BoolValue.True : BoolValue.False;
+            case "isspace":
+                return str.Length > 0 && str.All(char.IsWhiteSpace)
+                    ? BoolValue.True : BoolValue.False;
+            case "isupper":
+                return str.Length > 0 && str.Any(char.IsLetter) && str.All(c => !char.IsLetter(c) || char.IsUpper(c))
+                    ? BoolValue.True : BoolValue.False;
+            case "islower":
+                return str.Length > 0 && str.Any(char.IsLetter) && str.All(c => !char.IsLetter(c) || char.IsLower(c))
+                    ? BoolValue.True : BoolValue.False;
+
+            default:
+                throw new YawaRuntimeException($"Unknown string method: {name}");
+        }
+    }
+
     private static void SyncLocals(YawaFunction fn, Frame funcFrame, Frame callerFrame)
     {
         foreach (var (name, value) in funcFrame.Locals)
@@ -268,6 +539,7 @@ public sealed class Interpreter
         {
             case DeclareStatement d: ExecuteDeclare(d, frame); break;
             case AssignStatement a: ExecuteAssign(a, frame); break;
+            case AssertStatement asrt: ExecuteAssert(asrt, frame); break;
             case IfStatement i: ExecuteIf(i, frame); break;
             case WhileStatement w: ExecuteWhile(w, frame); break;
             case ForStatement f: ExecuteFor(f, frame); break;
@@ -287,6 +559,8 @@ public sealed class Interpreter
             case SnapshotStatement s: Recorder.RecordSnapshot(frame, s.Label); break;
             case MakeNodeStatement mn: ExecuteMakeNode(mn, frame); break;
             case TupleAssignStatement ta: ExecuteTupleAssign(ta, frame); break;
+            case TryStatement t: ExecuteTry(t, frame); break;
+            case DeleteStatement d: ExecuteDelete(d, frame); break;
             default:
                 throw new YawaRuntimeException($"Unknown statement: {stmt.GetType().Name}");
         }
@@ -302,12 +576,156 @@ public sealed class Interpreter
         });
     }
 
+    private void ExecuteTry(TryStatement s, Frame frame)
+    {
+        try
+        {
+            ExecuteBlock(s.Body, frame);
+        }
+        catch (YawaRuntimeException ex)
+        {
+            var handled = false;
+            foreach (var h in s.Handlers)
+            {
+                var hf = new Frame("<except>", frame);
+                if (!string.IsNullOrEmpty(h.VarName))
+                    hf.Declare(h.VarName!, new StringValue(ex.Message));
+
+                ExecuteBlock(h.Body, hf);
+                handled = true;
+                break;
+            }
+            if (!handled) throw;
+        }
+        finally
+        {
+            if (s.Finally is not null)
+                ExecuteBlock(s.Finally, frame);
+        }
+    }
+
+    private void ExecuteAssert(AssertStatement s, Frame frame)
+    {
+        var cond = Evaluator.AsBool(Eval.Eval(s.Cond, frame));
+        if (cond) return;
+
+        string msg = "Assertion failed";
+        if (s.Message is not null)
+        {
+            var v = Eval.Eval(s.Message, frame);
+            msg = v is StringValue sv ? sv.Value : v.ToString() ?? msg;
+        }
+        throw new YawaRuntimeException(msg);
+    }
+
+    private void ExecuteDelete(DeleteStatement s, Frame frame)
+    {
+        foreach (var target in s.Targets)
+        {
+            switch (target)
+            {
+                case RefExpr r:
+                    frame.Locals.Remove(r.Name);
+                    Recorder.Record("delete", s.NodeId, new[]
+                    {
+                    new Trace.StateChange { Target = r.Name, Old = null, New = null }
+                });
+                    break;
+
+                case IndexExpr ix:
+                    {
+                        var container = Eval.Eval(ix.Target, frame);
+                        var idx = Eval.Eval(ix.Index, frame);
+
+                        if (container is ObjectValue obj)
+                        {
+                            var key = idx is StringValue sv ? sv.Value : idx.ToString() ?? "";
+                            if (obj.Fields.ContainsKey(key))
+                            {
+                                obj.Fields.Remove(key);
+                                var pname = RenderTargetPath(ix.Target, frame);
+                                Recorder.Record("delete", s.NodeId, new[]
+                                {
+                                new Trace.StateChange { Target = $"{pname}[\"{key}\"]", Old = null, New = null }
+                            });
+                            }
+                        }
+                        else if (container is ArrayValue arr)
+                        {
+                            var i = (int)Evaluator.AsInt(idx, "delete index");
+                            if (i < 0) i += arr.Count;
+                            if (i >= 0 && i < arr.Count)
+                            {
+                                arr.Items.RemoveAt(i);
+                                var pname = RenderTargetPath(ix.Target, frame);
+                                Recorder.Record("delete", s.NodeId, new[]
+                                {
+                                new Trace.StateChange { Target = $"{pname}[{i}]", Old = null, New = null }
+                            });
+                            }
+                        }
+                        break;
+                    }
+
+                case FieldExpr fl:
+                    {
+                        var container = Eval.Eval(fl.Target, frame);
+                        if (container is ObjectValue obj && obj.Fields.ContainsKey(fl.FieldName))
+                        {
+                            obj.Fields.Remove(fl.FieldName);
+                            Recorder.Record("delete", s.NodeId);
+                        }
+                        break;
+                    }
+            }
+        }
+    }
+
     private void ExecuteTupleAssign(TupleAssignStatement s, Frame frame)
     {
-        // Вычисляем ВСЕ значения правой части (Python-семантика).
+        // Вычисляем все правые значения.
         var evaluated = s.Values.Select(v => Eval.Eval(v, frame)).ToList();
 
-        // Случай 1: a, b = 1, 2  — количество совпадает
+        // Случай 0: splat — head, *rest = [...]
+        if (s.SplatIndex >= 0)
+        {
+            var leftCount = s.Targets.Count;
+            var splatIdx = s.SplatIndex;
+
+            // Правая часть должна быть одним массивом/кортежем
+            ArrayValue? arr = evaluated.Count == 1 && evaluated[0] is ArrayValue av1
+                ? av1
+                : evaluated.Count == 1 && evaluated[0] is TupleValue tv1
+                    ? new ArrayValue(tv1.Items)
+                    : null;
+
+            if (arr is null)
+                throw new YawaRuntimeException(
+                    "splat-распаковка требует одну последовательность справа");
+
+            var fixedCount = leftCount - 1;
+            if (arr.Count < fixedCount)
+                throw new YawaRuntimeException(
+                    $"splat: нужно минимум {fixedCount} элементов, получено {arr.Count}");
+
+            for (int i = 0; i < splatIdx; i++)
+                AssignTo(s.Targets[i], arr[i], frame, s.NodeId);
+
+            var splatCount = arr.Count - fixedCount;
+            var middle = new List<RuntimeValue>();
+            for (int k = 0; k < splatCount; k++)
+                middle.Add(arr[splatIdx + k]);
+            AssignTo(s.Targets[splatIdx], new ArrayValue(middle), frame, s.NodeId);
+
+            for (int i = splatIdx + 1; i < leftCount; i++)
+            {
+                var fromRight = arr.Count - (leftCount - i);
+                AssignTo(s.Targets[i], arr[fromRight], frame, s.NodeId);
+            }
+            return;
+        }
+
+        // Случай 1: совпадающие списки
         if (evaluated.Count == s.Targets.Count)
         {
             for (int i = 0; i < s.Targets.Count; i++)
@@ -315,7 +733,7 @@ public sealed class Interpreter
             return;
         }
 
-        // Случай 2: a, b = f()  — правая часть одно значение, но это tuple
+        // Случай 2: одна функция вернула tuple
         if (evaluated.Count == 1 && evaluated[0] is TupleValue tup)
         {
             if (tup.Count != s.Targets.Count)
@@ -326,14 +744,14 @@ public sealed class Interpreter
             return;
         }
 
-        // Случай 3: a, b = some_array  — если массив, тоже распаковываем
-        if (evaluated.Count == 1 && evaluated[0] is ArrayValue arr)
+        // Случай 3: одна функция вернула array
+        if (evaluated.Count == 1 && evaluated[0] is ArrayValue arr2)
         {
-            if (arr.Count != s.Targets.Count)
+            if (arr2.Count != s.Targets.Count)
                 throw new YawaRuntimeException(
-                    $"array unpack: expected {s.Targets.Count}, got {arr.Count}");
+                    $"array unpack: expected {s.Targets.Count}, got {arr2.Count}");
             for (int i = 0; i < s.Targets.Count; i++)
-                AssignTo(s.Targets[i], arr[i], frame, s.NodeId);
+                AssignTo(s.Targets[i], arr2[i], frame, s.NodeId);
             return;
         }
 

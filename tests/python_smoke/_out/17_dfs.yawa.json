@@ -11,13 +11,19 @@
       "name": "dfs",
       "params": [
         {
-          "name": "graph"
+          "name": "graph",
+          "type": null,
+          "default": null
         },
         {
-          "name": "node"
+          "name": "node",
+          "type": null,
+          "default": null
         },
         {
-          "name": "visited"
+          "name": "visited",
+          "type": null,
+          "default": null
         }
       ],
       "returns": null,

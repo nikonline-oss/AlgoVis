@@ -1,0 +1,189 @@
+﻿{
+  "yawa_version": "1.0",
+  "metadata": {
+    "name": "Python \u2192 YAWA",
+    "description": null,
+    "generator": "algovis-transpiler@0.1"
+  },
+  "globals": {},
+  "functions": [
+    {
+      "name": "is_sorted",
+      "params": [
+        {
+          "name": "A",
+          "type": null,
+          "default": null
+        }
+      ],
+      "returns": null,
+      "body": [
+        {
+          "op": "for",
+          "var": "i",
+          "from": {
+            "lit": 0
+          },
+          "to": {
+            "bin": "-",
+            "a": {
+              "call": "length",
+              "args": [
+                {
+                  "ref": "A"
+                }
+              ]
+            },
+            "b": {
+              "lit": 1
+            }
+          },
+          "step": null,
+          "body": [
+            {
+              "op": "if",
+              "cond": {
+                "bin": "\u003E",
+                "a": {
+                  "index": [
+                    {
+                      "ref": "A"
+                    },
+                    {
+                      "ref": "i"
+                    }
+                  ]
+                },
+                "b": {
+                  "index": [
+                    {
+                      "ref": "A"
+                    },
+                    {
+                      "bin": "\u002B",
+                      "a": {
+                        "ref": "i"
+                      },
+                      "b": {
+                        "lit": 1
+                      }
+                    }
+                  ]
+                }
+              },
+              "then": [
+                {
+                  "op": "return",
+                  "value": {
+                    "lit": false
+                  }
+                }
+              ],
+              "else": null
+            }
+          ]
+        },
+        {
+          "op": "return",
+          "value": {
+            "lit": true
+          }
+        }
+      ]
+    },
+    {
+      "name": "verify",
+      "params": [
+        {
+          "name": "A",
+          "type": null,
+          "default": null
+        }
+      ],
+      "returns": null,
+      "body": [
+        {
+          "op": "assert",
+          "cond": {
+            "call": "is_sorted",
+            "args": [
+              {
+                "ref": "A"
+              }
+            ]
+          },
+          "message": {
+            "lit": "not sorted"
+          }
+        },
+        {
+          "op": "assert",
+          "cond": {
+            "bin": "\u003E",
+            "a": {
+              "call": "length",
+              "args": [
+                {
+                  "ref": "A"
+                }
+              ]
+            },
+            "b": {
+              "lit": 0
+            }
+          },
+          "message": null
+        },
+        {
+          "op": "return",
+          "value": {
+            "ref": "A"
+          }
+        }
+      ]
+    },
+    {
+      "name": "main",
+      "params": [],
+      "returns": null,
+      "body": [
+        {
+          "op": "assign",
+          "target": {
+            "ref": "A"
+          },
+          "value": {
+            "lit": [
+              1,
+              2,
+              3,
+              4,
+              5
+            ]
+          }
+        },
+        {
+          "op": "expr",
+          "value": {
+            "call": "verify",
+            "args": [
+              {
+                "ref": "A"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "entry": {
+    "function": "main",
+    "args": []
+  },
+  "limits": {
+    "max_steps": 1000000,
+    "max_depth": 500,
+    "max_seconds": 10,
+    "snapshot_every": 0
+  }
+}

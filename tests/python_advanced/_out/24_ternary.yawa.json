@@ -1,0 +1,157 @@
+﻿{
+  "yawa_version": "1.0",
+  "metadata": {
+    "name": "Python \u2192 YAWA",
+    "description": null,
+    "generator": "algovis-transpiler@0.1"
+  },
+  "globals": {},
+  "functions": [
+    {
+      "name": "absolute",
+      "params": [
+        {
+          "name": "x",
+          "type": null,
+          "default": null
+        }
+      ],
+      "returns": null,
+      "body": [
+        {
+          "op": "return",
+          "value": {
+            "ternary": {
+              "cond": {
+                "bin": "\u003C",
+                "a": {
+                  "ref": "x"
+                },
+                "b": {
+                  "lit": 0
+                }
+              },
+              "then": {
+                "un": "-",
+                "a": {
+                  "ref": "x"
+                }
+              },
+              "else": {
+                "ref": "x"
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "classify",
+      "params": [
+        {
+          "name": "x",
+          "type": null,
+          "default": null
+        }
+      ],
+      "returns": null,
+      "body": [
+        {
+          "op": "assign",
+          "target": {
+            "ref": "result"
+          },
+          "value": {
+            "ternary": {
+              "cond": {
+                "bin": "\u003E",
+                "a": {
+                  "ref": "x"
+                },
+                "b": {
+                  "lit": 0
+                }
+              },
+              "then": {
+                "lit": "positive"
+              },
+              "else": {
+                "ternary": {
+                  "cond": {
+                    "bin": "==",
+                    "a": {
+                      "ref": "x"
+                    },
+                    "b": {
+                      "lit": 0
+                    }
+                  },
+                  "then": {
+                    "lit": "zero"
+                  },
+                  "else": {
+                    "lit": "negative"
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "op": "return",
+          "value": {
+            "ref": "result"
+          }
+        }
+      ]
+    },
+    {
+      "name": "main",
+      "params": [],
+      "returns": null,
+      "body": [
+        {
+          "op": "assign",
+          "target": {
+            "ref": "a"
+          },
+          "value": {
+            "call": "absolute",
+            "args": [
+              {
+                "un": "-",
+                "a": {
+                  "lit": 5
+                }
+              }
+            ]
+          }
+        },
+        {
+          "op": "assign",
+          "target": {
+            "ref": "c"
+          },
+          "value": {
+            "call": "classify",
+            "args": [
+              {
+                "lit": 10
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "entry": {
+    "function": "main",
+    "args": []
+  },
+  "limits": {
+    "max_steps": 1000000,
+    "max_depth": 500,
+    "max_seconds": 10,
+    "snapshot_every": 0
+  }
+}

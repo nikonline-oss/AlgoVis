@@ -22,6 +22,9 @@ namespace AlgoVis.Yawa.Yawa.Statements;
 [JsonDerivedType(typeof(SnapshotStatement), "snapshot")]
 [JsonDerivedType(typeof(MakeNodeStatement), "make_node")]
 [JsonDerivedType(typeof(TupleAssignStatement), "tuple_assign")]
+[JsonDerivedType(typeof(AssertStatement), "assert")]
+[JsonDerivedType(typeof(TryStatement), "try")]
+[JsonDerivedType(typeof(DeleteStatement),   "delete")]
 public abstract class YawaStatement
 {
     /// <summary>Необязательный ID узла — для отладки и трассировки.</summary>

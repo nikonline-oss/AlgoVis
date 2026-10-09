@@ -11,13 +11,19 @@
       "name": "in_range",
       "params": [
         {
-          "name": "x"
+          "name": "x",
+          "type": null,
+          "default": null
         },
         {
-          "name": "lo"
+          "name": "lo",
+          "type": null,
+          "default": null
         },
         {
-          "name": "hi"
+          "name": "hi",
+          "type": null,
+          "default": null
         }
       ],
       "returns": null,

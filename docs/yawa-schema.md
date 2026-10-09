@@ -1,270 +1,315 @@
-# YAWA — Yet Another Visualization Abstraction
+# YAWA — схема форматов
 
-Версия схемы: **1.0**
-Формат: JSON (UTF-8)
+Документ описывает два формата:
+- **YAWA** — входной формат программы (генерируется транспайлером)
+- **Trace** — выходной формат исполнения (отдаётся клиенту)
 
-## Назначение
+## YAWA — формат программы
 
-YAWA — внутренний формат программ-алгоритмов, которые интерпретируются
-для построения пошаговой визуализации. Не пишется руками: генерируется
-транспайлером из Python или визуальным конструктором.
-
-## Структура верхнего уровня
+### Верхний уровень
 
 ```json
 {
   "yawa_version": "1.0",
   "metadata": {
-    "name": "Bubble Sort",
-    "description": "Сортировка пузырьком",
-    "generator": "hand-written"
+    "name": "Python → YAWA",
+    "description": null,
+    "generator": "algovis-transpiler@0.1"
   },
   "globals": {
-    "N": { "type": "int", "value": {"lit": 10} }
+    "N": { "value": { "lit": 10 } }
   },
-  "functions": [ /* FunctionDef[] */ ],
+  "functions": [ /* YawaFunction[] */ ],
   "entry": {
-    "function": "bubble_sort",
-    "args": [ {"lit": [5, 2, 8, 1, 9, 3]} ]
+    "function": "main",
+    "args": []
   },
   "limits": {
-    "max_steps": 100000,
-    "max_depth": 1000,
+    "max_steps": 1000000,
+    "max_depth": 500,
     "max_seconds": 10,
-    "snapshot_every": 100
+    "snapshot_every": 0
   }
 }
 ```
 
-## FunctionDef
+### `YawaFunction`
 
 ```json
 {
   "name": "bubble_sort",
-  "params": [ {"name": "A", "type": "array<int>"} ],
-  "returns": "array<int>",
-  "body": [ /* Statement[] */ ]
+  "params": [
+    { "name": "A" },
+    { "name": "args", "variadic": true },
+    { "name": "kwargs", "kwvariadic": true }
+  ],
+  "returns": null,
+  "body": [ /* YawaStatement[] */ ]
 }
 ```
 
-## Statement — список операций
+Флаги:
+- `variadic: true` — `*args`
+- `kwvariadic: true` — `**kwargs`
 
-Каждый statement — объект с полем `"op"`.
+### Statements
+
+Каждый statement — объект с полем `op`.
 
 | `op` | Описание | Поля |
 |---|---|---|
-| `assign` | Присваивание | `target` (LValue), `value` (Expr) |
-| `declare` | Объявление переменной | `name`, `type` (опц.), `value` (опц.) |
-| `if` | Ветвление | `cond`, `then` (Statement[]), `else` (опц., Statement[]) |
-| `while` | Цикл с условием | `cond`, `body` |
-| `for` | Цикл с числом | `var`, `from`, `to`, `step` (опц., по умолч. 1), `body` |
-| `foreach` | Обход коллекции | `var`, `in`, `body` |
-| `return` | Возврат из функции | `value` (опц.) |
-| `break` | Прервать цикл | — |
-| `continue` | Следующая итерация | — |
-| `expr` | Выражение-инструкция | `value` (Expr) |
-| `swap` | Обмен значений | `a` (LValue), `b` (LValue) |
-| `compare` | Сравнение с подсветкой | `a`, `b`, `result` (`<`, `>`, `==` и т.д.), `label` (опц.) |
-| `mark` | Подсветка целевого узла | `target` (LValue), `color`, `label` (опц.) |
-| `unmark` | Снять подсветку | `target` (LValue) |
-| `annotate` | Комментарий к текущему шагу | `text` |
-| `count` | Пользовательский счётчик | `name`, `delta` (опц., по умолч. 1) |
-| `snapshot` | Явно сделать snapshot | `label` (опц.) |
+| `assign` | Присваивание | `target`, `value` |
+| `declare` | Объявление | `name`, `type?`, `value?` |
+| `tuple_assign` | Распаковка | `targets[]`, `values[]`, `splatIndex` |
+| `if` | Ветвление | `cond`, `then[]`, `else[]?` |
+| `while` | Цикл | `cond`, `body[]` |
+| `for` | Range-цикл | `var`, `from`, `to`, `step?`, `body[]` |
+| `foreach` | Обход коллекции | `var`, `in`, `body[]` |
+| `return` | Возврат | `value?` |
+| `break`, `continue` | Управление | — |
+| `expr` | Выражение | `value` |
+| `swap` | Обмен | `a`, `b` |
+| `compare` | Сравнение с подсветкой | `a`, `b`, `result`, `label?` |
+| `mark` | Подсветка | `target`, `color`, `label?` |
+| `unmark` | Снять подсветку | `target` |
+| `annotate` | Комментарий | `text` |
+| `count` | Счётчик | `name`, `delta` |
+| `assert` | Проверка | `cond`, `message?` |
+| `try` | Try/except | `body[]`, `handlers[]`, `finally[]?` |
+| `delete` | del | `targets[]` |
+| `snapshot` | Явный snapshot | `label?` |
 
-### Примеры statements
+### Expressions
 
-```json
-{"op": "assign",
- "target": {"ref": "x"},
- "value": {"bin": "+", "a": {"lit": 1}, "b": {"lit": 2}}}
-
-{"op": "declare", "name": "n", "type": "int",
- "value": {"call": "length", "args": [{"ref": "A"}]}}
-
-{"op": "swap",
- "a": {"index": ["A", {"ref": "i"}]},
- "b": {"index": ["A", {"ref": "j"}]}}
-
-{"op": "compare",
- "a": {"index": ["A", {"ref": "i"}]},
- "b": {"index": ["A", {"bin": "+", "a": {"ref": "i"}, "b": {"lit": 1}}]},
- "result": ">",
- "label": "сравниваем пару"}
-
-{"op": "mark", "target": {"index": ["A", {"ref": "i"}]},
- "color": "red", "label": "минимум"}
-
-{"op": "annotate", "text": "нашли новый минимум"}
-```
-
-## Expression — выражения
-
-| Форма | Описание | Пример |
+| Форма | Пример | Описание |
 |---|---|---|
-| `lit` | Литерал | `{"lit": 5}`, `{"lit": "hi"}`, `{"lit": true}`, `{"lit": null}`, `{"lit": [1,2,3]}` |
-| `ref` | Ссылка на переменную | `{"ref": "x"}` |
-| `index` | Доступ по индексу | `{"index": ["A", {"ref": "i"}]}` |
-| `field` | Доступ к полю объекта | `{"field": ["obj", "x"]}` |
-| `bin` | Бинарная операция | `{"bin": "+", "a": ..., "b": ...}` |
-| `un` | Унарная операция | `{"un": "-", "a": ...}` |
-| `call` | Вызов функции | `{"call": "min", "args": [...]}` |
-| `call_method` | Вызов метода (ресивер → первый аргумент) | `{"call_method": {"ref": "obj"}, "name": "area", "args": []}` |
-| `new_object` | Создание объекта | `{"new_object": {"x": 0, "y": 0}}` |
-| `len` | Длина | `{"len": {"ref": "A"}}` |
-| `ternary` | Тернарный оператор | `{"ternary": {"cond": ..., "then": ..., "else": ...}}` |
+| `lit` | `{"lit": 5}` | Литерал (int, float, string, bool, null, array) |
+| `ref` | `{"ref": "x"}` | Переменная |
+| `index` | `{"index": [target, idx]}` | `A[i]` |
+| `field` | `{"field": [target, "name"]}` | `obj.name` |
+| `bin` | `{"bin": "+", "a": ..., "b": ...}` | Бинарная операция |
+| `un` | `{"un": "-", "a": ...}` | Унарная |
+| `call` | `{"call": "f", "args": [...]}` | Вызов функции |
+| `call_method` | `{"call_method": recv, "name": "m", "args": [...]}` | `obj.m()` |
+| `instantiate` | `{"instantiate": "Point", "args": [...]}` | Создание объекта |
+| `new_object` | `{"new_object": {"x": 0}}` | Анонимный объект |
+| `array` | `{"array": [expr...]}` | Массив с выражениями |
+| `dict` | `{"dict": [{"k": ..., "v": ...}, ...]}` | Словарь |
+| `set` | `{"set": [expr...]}` | Множество |
+| `tuple` | `{"tuple": [expr...]}` | Кортеж |
+| `slice` | `{"slice": [target, start, stop, step]}` | Срез (любой компонент = null) |
+| `ternary` | `{"ternary": {"cond": ..., "then": ..., "else": ...}}` | Тернарный |
+| `len` | `{"len": target}` | Длина |
+| `funcref` | `{"funcref": "name"}` | Ссылка на функцию |
+| `comp_body`, `comp_clauses` | см. ниже | List comprehension |
+| `setc_body`, `setc_clauses` | см. ниже | Set comprehension |
+| `dictk_key`, `dictk_value`, `dictk_clauses` | см. ниже | Dict comprehension |
 
-### Бинарные операторы
-
-`+`, `-`, `*`, `/`, `%`, `**`, `==`, `!=`, `<`, `<=`, `>`, `>=`, `and`, `or`,
-а также `in`, `not_in` для проверки вхождения.
-
-### Унарные
-
-`-` (минус), `not`, `+`.
-
-## LValue — то, куда можно присвоить
-
-| Форма | Пример |
-|---|---|
-| `ref` | `{"ref": "x"}` — переменная |
-| `index` | `{"index": ["A", {"ref": "i"}]}` — элемент массива |
-| `field` | `{"field": ["obj", "x"}]` — поле объекта |
-
-> LValue отличается от Expr тем, что интерпретатор умеет его *изменять*.
-> Синтаксически совпадает с соответствующими Expr.
-
-## Классы и объекты
-
-Классов в YAWA **нет**. Есть объекты — анонимные словари полей.
-
-- Создание: `{"new_object": {"x": 0, "y": 0}}`
-- Доступ: `{"field": ["obj", "x"]}`
-- Присваивание: `{"op": "assign", "target": {"field": ["obj", "x"]}, "value": {"lit": 5}}`
-
-Метод вызывается через `call_method`. Интерпретатор ищет **глобальную функцию**
-с таким именем и подставляет `obj` первым аргументом:
+### Comprehensions
 
 ```json
-{"call_method": {"ref": "obj"}, "name": "area", "args": []}
+{
+  "comp_body": { "bin": "*", "a": { "ref": "x" }, "b": { "lit": 2 } },
+  "comp_clauses": [
+    {
+      "var": "x",
+      "source": { "ref": "A" },
+      "filter": { "bin": ">", "a": { "ref": "x" }, "b": { "lit": 0 } }
+    }
+  ]
+}
 ```
 
-эквивалентно
+Вложенные comprehension — несколько clauses:
 
 ```json
-{"call": "area", "args": [{"ref": "obj"}]}
+{
+  "comp_body": { "bin": "*", "a": { "ref": "a" }, "b": { "ref": "b" } },
+  "comp_clauses": [
+    { "var": "a", "source": { "ref": "A" } },
+    { "var": "b", "source": { "ref": "B" } }
+  ]
+}
 ```
 
-Поле `__type__` в объекте — необязательная метка для рендера:
+### Операторы
 
-```json
-{"new_object": {"__type__": "Point", "x": 0, "y": 0}}
-```
+**Бинарные:** `+ - * / // % ** == != < <= > >= and or in not_in`
 
-Интерпретатор его игнорирует, фронт может использовать для отрисовки.
+**Унарные:** `- + not`
 
-## Встроенные функции
-
-| Имя | Аргументы | Возвращает |
-|---|---|---|
-| `length` / `len` | `array` \| `string` | `int` |
-| `min`, `max` | `array` \| список аргументов | значение |
-| `abs` | число | число |
-| `print` | произвольное число аргументов | `null` (пишет в annotation) |
-| `range` | `(n)` \| `(start, stop)` \| `(start, stop, step)` | `array<int>` |
-| `push` | `(array, value)` | новый размер |
-| `pop` | `(array)` | значение |
-| `insert` | `(array, index, value)` | `null` |
-| `remove` | `(array, index)` | значение |
-| `contains` | `(array, value)` | `bool` |
-| `find` | `(array, value)` | индекс \| `-1` |
-| `insert_node` | `(tree, value)` | `null` |
-| `delete_node` | `(tree, value)` | `bool` |
-| `find_node` | `(tree, value)` | узел \| `null` |
-| `add_edge` | `(graph, a, b, weight?)` | `null` |
-| `remove_edge` | `(graph, a, b)` | `bool` |
-
-## Структуры данных (встроенные)
-
-Значения YAWA бывают:
-
-- `int`, `float`, `string`, `bool`, `null`
-- `array<T>` — упорядоченный список
-- `object` — словарь полей
-- `tree` — бинарное дерево (корень + левый/правый)
-- `graph` — граф (узлы + рёбра)
-- `stack`, `queue`, `hash_table` — по мере необходимости
-
-Литерал массива: `{"lit": [1, 2, 3]}`.
-
-## Trace — выходной формат
+## Trace — формат выходной трассы
 
 ```json
 {
   "yawa_version": "1.0",
-  "session_id": "...",
-  "metadata": { /* из YAWA */ },
-  "structure": { /* описание начального состояния */ },
-  "steps": [ /* Step[] */ ],
-  "final_state": { /* состояние после завершения */ },
+  "session_id": "abc123...",
+  "metadata": { "name": "Python → YAWA" },
+  "structure": {
+    "variables": [
+      { "name": "A", "type": "array", "visual": "array" }
+    ]
+  },
+  "steps": [ /* TraceStep[] */ ],
+  "final_state": {
+    "A": [1, 2, 3, 5, 8, 9],
+    "__return__": [1, 2, 3, 5, 8, 9]
+  },
   "statistics": {
-    "total_steps": 47,
-    "comparisons": 12,
-    "swaps": 6,
-    "memory_accesses": 30,
-    "user_counters": { "comparisons": 12, "swaps": 6 },
-    "structure_sizes": { "A": 6 },
-    "big_o_hint": null
+    "total_steps": 100,
+    "comparisons": 28,
+    "swaps": 13,
+    "memory_accesses": 112,
+    "user_counters": { "comparisons": 28 },
+    "structure_sizes": { "A": 8 }
   }
 }
 ```
 
-### Step
+### `TraceStep`
 
 ```json
 {
-  "n": 1,
+  "n": 5,
   "kind": "compare",
-  "node_id": "n17",
+  "node_id": null,
   "diff": [
-    {"target": "compare.a", "old": null, "new": "A[0]"},
-    {"target": "compare.b", "old": null, "new": "A[1]"}
+    { "target": "compare.a", "old": null, "new": 5 },
+    { "target": "compare.b", "old": null, "new": 2 }
   ],
   "highlight": ["A[0]", "A[1]"],
   "annotation": "сравниваем пару",
   "stats": {
     "comparisons": 1,
     "swaps": 0,
-    "steps_total": 1
+    "memoryAccesses": 2,
+    "stepsTotal": 6,
+    "userCounters": {}
+  },
+  "vars": {
+    "A": [5, 2, 8, 1],
+    "i": 0,
+    "j": 1
   },
   "snapshot": null
 }
 ```
 
-### Виды Step.kind
+### Виды `step.kind`
 
-- `init` — старт программы
-- `assign`, `declare`, `call`, `return`, `eval` — обычные операции
-- `compare`, `swap`, `mark`, `unmark` — визуальные операции
-- `snapshot` — полный snapshot (для быстрого отката)
-- `error` — ошибка (переполнение лимитов и т.п.)
-- `end` — завершение
+| Kind | Что значит |
+|---|---|
+| `init` | Старт программы |
+| `end` | Конец программы |
+| `assign` | Присваивание |
+| `declare` | Объявление переменной |
+| `call` | Вызов функции |
+| `return` | Возврат из функции |
+| `compare` | Сравнение (с подсветкой) |
+| `swap` | Обмен значений |
+| `mark` / `unmark` | Подсветка элемента |
+| `for` / `foreach` | Итерация цикла |
+| `delete` | Удаление переменной/элемента |
+| `annotate` | Пользовательский комментарий |
+| `count` | Пользовательский счётчик |
+| `snapshot` | Полное состояние (для быстрого перехода) |
+| `error` | Программа упала |
 
-### Периодичность snapshot
+### Snapshot vs diff
 
-- При входе в функцию → `snapshot` со `kind = "snapshot"`
-- При выходе из функции → `snapshot`
-- Каждые `snapshot_every` шагов (если задано в YAWA) → `snapshot`
-- Явно через `{"op": "snapshot"}`
+**diff** — список изменений на шаге:
 
-Фронт может использовать snapshot-ы для быстрого перехода к произвольному шагу
-(последний snapshot до нужного шага + проигрывание diff-ов).
+```json
+{ "target": "A[3]", "old": 5, "new": 2 }
+```
+
+Форматы `target`:
+- `"A[3]"` — элемент массива
+- `"A[1][2]"` — элемент матрицы
+- `"obj.field"` — поле объекта
+- `"i"` — переменная
+- `"compare.a"` — служебное (можно игнорировать)
+
+**snapshot** — полное состояние всех видимых переменных. Записывается при
+входе/выходе из функции и периодически (по `snapshot_every`).
+
+### Восстановление состояния на шаге N
+
+```javascript
+function stateAt(stepIdx, steps, snapshots) {
+  // Найти ближайший snapshot до stepIdx
+  let snapIdx = -1;
+  for (const i of snapshots) {
+    if (i <= stepIdx && i > snapIdx) snapIdx = i;
+  }
+
+  // Начальное состояние
+  let state = {};
+  if (snapIdx >= 0) state = JSON.parse(JSON.stringify(steps[snapIdx].snapshot));
+
+  // Применить diff'ы от snapshot до stepIdx
+  for (let i = snapIdx + 1; i <= stepIdx; i++) {
+    const st = steps[i];
+    if (!st.diff) continue;
+    for (const d of st.diff) {
+      const t = String(d.target);
+      if (t.startsWith('compare.') || t.startsWith('__')) continue;
+
+      let m = t.match(/^([A-Za-z_]\w*)\[(\d+)\]\[(\d+)\]$/);
+      if (m) {
+        const arr = state[m[1]];
+        if (Array.isArray(arr) && Array.isArray(arr[+m[2]]))
+          arr[+m[2]][+m[3]] = d.new;
+        continue;
+      }
+
+      m = t.match(/^([A-Za-z_]\w*)\[(\d+)\]$/);
+      if (m) {
+        const arr = state[m[1]];
+        if (Array.isArray(arr)) arr[+m[2]] = d.new;
+        continue;
+      }
+
+      m = t.match(/^([A-Za-z_]\w*)\.(\w+)$/);
+      if (m && m[1] !== 'object') {
+        const obj = state[m[1]];
+        if (obj && typeof obj === 'object') obj[m[2]] = d.new;
+        continue;
+      }
+
+      if (/^[A-Za-z_]\w*$/.test(t)) state[t] = d.new;
+    }
+  }
+  return state;
+}
+```
+
+### Значения в snapshot и vars
+
+| YAWA-тип | JSON-форма |
+|---|---|
+| int | `42` |
+| float | `3.14` |
+| string | `"hi"` |
+| bool | `true` / `false` |
+| null | `null` |
+| array | `[1, 2, 3]` |
+| object | `{"__type": "Point", "x": 0, "y": 0}` |
+| set | `{"__type": "set", "items": [1, 2]}` |
+| tuple | `{"__type": "tuple", "items": [1, 2]}` |
+| tree_node | `{"value": 5, "left": {...}, "right": {...}}` |
+
+### Специальные переменные
+
+- `__return__` — возвращаемое значение entry-функции (появляется в конце)
+- `__tup_N` — временные переменные для распаковки for-цикла (можно игнорировать)
+- `__lambda_N` — сгенерированные имена для лямбда-функций
 
 ## Лимиты безопасности
 
-- `max_steps` — при превышении: `Step.kind = "error"`, интерпретация прерывается.
-- `max_depth` — лимит глубины рекурсии.
-- `max_seconds` — реальное время.
-- `max_array_size` — лимит размера массива (по умолчанию 10 000).
-- `max_object_fields` — лимит числа полей объекта (по умолчанию 1 000).
+При превышении любого лимита исполнение прерывается с `step.kind = "error"`.
 
-Лимиты могут быть переопределены на уровне `entry.limits`.
+- `max_steps` — количество шагов (по умолчанию 1M)
+- `max_depth` — глубина рекурсии
+- `max_seconds` — реальное время
+- `max_array_size` — размер массива

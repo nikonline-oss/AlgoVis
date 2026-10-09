@@ -1,0 +1,145 @@
+﻿{
+  "yawa_version": "1.0",
+  "metadata": {
+    "name": "Python \u2192 YAWA",
+    "description": null,
+    "generator": "algovis-transpiler@0.1"
+  },
+  "globals": {},
+  "functions": [
+    {
+      "name": "by_abs",
+      "params": [
+        {
+          "name": "A",
+          "type": null,
+          "default": null
+        }
+      ],
+      "returns": null,
+      "body": [
+        {
+          "op": "return",
+          "value": {
+            "call": "sorted_by_abs",
+            "args": [
+              {
+                "ref": "A"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "by_length",
+      "params": [
+        {
+          "name": "words",
+          "type": null,
+          "default": null
+        }
+      ],
+      "returns": null,
+      "body": [
+        {
+          "op": "return",
+          "value": {
+            "call": "sorted_by_len",
+            "args": [
+              {
+                "ref": "words"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "main",
+      "params": [],
+      "returns": null,
+      "body": [
+        {
+          "op": "assign",
+          "target": {
+            "ref": "A"
+          },
+          "value": {
+            "array": [
+              {
+                "lit": 3
+              },
+              {
+                "un": "-",
+                "a": {
+                  "lit": 1
+                }
+              },
+              {
+                "un": "-",
+                "a": {
+                  "lit": 4
+                }
+              },
+              {
+                "lit": 2
+              }
+            ]
+          }
+        },
+        {
+          "op": "assign",
+          "target": {
+            "ref": "sorted_A"
+          },
+          "value": {
+            "call": "by_abs",
+            "args": [
+              {
+                "ref": "A"
+              }
+            ]
+          }
+        },
+        {
+          "op": "assign",
+          "target": {
+            "ref": "words"
+          },
+          "value": {
+            "lit": [
+              "ccc",
+              "a",
+              "bb"
+            ]
+          }
+        },
+        {
+          "op": "assign",
+          "target": {
+            "ref": "sorted_w"
+          },
+          "value": {
+            "call": "by_length",
+            "args": [
+              {
+                "ref": "words"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "entry": {
+    "function": "main",
+    "args": []
+  },
+  "limits": {
+    "max_steps": 1000000,
+    "max_depth": 500,
+    "max_seconds": 10,
+    "snapshot_every": 0
+  }
+}

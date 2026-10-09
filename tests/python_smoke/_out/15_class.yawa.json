@@ -11,7 +11,9 @@
       "name": "Counter.__init__",
       "params": [
         {
-          "name": "self"
+          "name": "self",
+          "type": null,
+          "default": null
         }
       ],
       "returns": null,
@@ -36,7 +38,9 @@
       "name": "Counter.inc",
       "params": [
         {
-          "name": "self"
+          "name": "self",
+          "type": null,
+          "default": null
         }
       ],
       "returns": null,

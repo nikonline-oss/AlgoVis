@@ -11,10 +11,14 @@
       "name": "bfs",
       "params": [
         {
-          "name": "graph"
+          "name": "graph",
+          "type": null,
+          "default": null
         },
         {
-          "name": "start"
+          "name": "start",
+          "type": null,
+          "default": null
         }
       ],
       "returns": null,

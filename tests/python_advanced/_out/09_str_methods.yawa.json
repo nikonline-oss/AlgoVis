@@ -1,0 +1,164 @@
+﻿{
+  "yawa_version": "1.0",
+  "metadata": {
+    "name": "Python \u2192 YAWA",
+    "description": null,
+    "generator": "algovis-transpiler@0.1"
+  },
+  "globals": {},
+  "functions": [
+    {
+      "name": "normalize",
+      "params": [
+        {
+          "name": "s",
+          "type": null,
+          "default": null
+        }
+      ],
+      "returns": null,
+      "body": [
+        {
+          "op": "return",
+          "value": {
+            "call_method": {
+              "call_method": {
+                "ref": "s"
+              },
+              "name": "strip",
+              "args": []
+            },
+            "name": "lower",
+            "args": []
+          }
+        }
+      ]
+    },
+    {
+      "name": "split_words",
+      "params": [
+        {
+          "name": "s",
+          "type": null,
+          "default": null
+        }
+      ],
+      "returns": null,
+      "body": [
+        {
+          "op": "return",
+          "value": {
+            "call_method": {
+              "ref": "s"
+            },
+            "name": "split",
+            "args": [
+              {
+                "lit": ","
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "join_words",
+      "params": [
+        {
+          "name": "A",
+          "type": null,
+          "default": null
+        }
+      ],
+      "returns": null,
+      "body": [
+        {
+          "op": "return",
+          "value": {
+            "call_method": {
+              "lit": "-"
+            },
+            "name": "join",
+            "args": [
+              {
+                "ref": "A"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "main",
+      "params": [],
+      "returns": null,
+      "body": [
+        {
+          "op": "assign",
+          "target": {
+            "ref": "s"
+          },
+          "value": {
+            "lit": "  Hello, World  "
+          }
+        },
+        {
+          "op": "assign",
+          "target": {
+            "ref": "n"
+          },
+          "value": {
+            "call": "normalize",
+            "args": [
+              {
+                "ref": "s"
+              }
+            ]
+          }
+        },
+        {
+          "op": "assign",
+          "target": {
+            "ref": "parts"
+          },
+          "value": {
+            "call": "split_words",
+            "args": [
+              {
+                "lit": "a,b,c"
+              }
+            ]
+          }
+        },
+        {
+          "op": "assign",
+          "target": {
+            "ref": "joined"
+          },
+          "value": {
+            "call": "join_words",
+            "args": [
+              {
+                "lit": [
+                  "x",
+                  "y",
+                  "z"
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "entry": {
+    "function": "main",
+    "args": []
+  },
+  "limits": {
+    "max_steps": 1000000,
+    "max_depth": 500,
+    "max_seconds": 10,
+    "snapshot_every": 0
+  }
+}

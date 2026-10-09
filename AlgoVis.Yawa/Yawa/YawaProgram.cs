@@ -49,14 +49,19 @@ public sealed class YawaFunction
 public sealed class YawaParam
 {
     [JsonPropertyName("name")] public string Name { get; set; } = "";
-    [JsonPropertyName("type")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public string? Type { get; set; }
-    [JsonPropertyName("default")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public YawaExpression? DefaultValue { get; set; }
-}
+    [JsonPropertyName("type")] public string? Type { get; set; }
+    [JsonPropertyName("default")] public YawaExpression? DefaultValue { get; set; }
 
+    /// <summary>*args — собирает все позиционные аргументы.</summary>
+    [JsonPropertyName("variadic")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public bool IsVariadic { get; set; }
+
+    /// <summary>**kwargs — собирает все keyword-аргументы в объект.</summary>
+    [JsonPropertyName("kwvariadic")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public bool IsKeywordVariadic { get; set; }
+}
 public sealed class YawaEntry
 {
     [JsonPropertyName("function")] public string Function { get; set; } = "";

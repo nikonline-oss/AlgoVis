@@ -11,7 +11,9 @@
       "name": "outer",
       "params": [
         {
-          "name": "n"
+          "name": "n",
+          "type": null,
+          "default": null
         }
       ],
       "returns": null,
@@ -19,7 +21,7 @@
         {
           "op": "return",
           "value": {
-            "call": "inner",
+            "call": "outer__inner",
             "args": [
               {
                 "ref": "n"
@@ -33,7 +35,9 @@
       "name": "outer__inner",
       "params": [
         {
-          "name": "x"
+          "name": "x",
+          "type": null,
+          "default": null
         }
       ],
       "returns": null,
@@ -56,7 +60,9 @@
       "name": "inner",
       "params": [
         {
-          "name": "x"
+          "name": "x",
+          "type": null,
+          "default": null
         }
       ],
       "returns": null,

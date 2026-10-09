@@ -127,18 +127,44 @@ public sealed class TupleExpr : YawaExpression
     public List<YawaExpression> Items { get; set; } = new();
 }
 
+public sealed class CompClause
+{
+    [JsonPropertyName("var")] public string Var { get; set; } = "";
+    [JsonPropertyName("source")] public YawaExpression Source { get; set; } = null!;
+    [JsonPropertyName("filter")] public YawaExpression? Filter { get; set; }
+}
+
 public sealed class ListCompExpr : YawaExpression
 {
-    /// <summary>Что вычисляется для каждого элемента: [ Body for Var in Source if Filter ]</summary>
     [JsonPropertyName("comp_body")]
     public YawaExpression Body { get; set; } = null!;
 
-    [JsonPropertyName("comp_var")]
-    public string Var { get; set; } = "";
+    [JsonPropertyName("comp_clauses")]
+    public List<CompClause> Clauses { get; set; } = new();
+}
 
-    [JsonPropertyName("comp_source")]
-    public YawaExpression Source { get; set; } = null!;
+public sealed class SetCompExpr : YawaExpression
+{
+    [JsonPropertyName("setc_body")]
+    public YawaExpression Body { get; set; } = null!;
 
-    [JsonPropertyName("comp_filter")]
-    public YawaExpression? Filter { get; set; }
+    [JsonPropertyName("setc_clauses")]
+    public List<CompClause> Clauses { get; set; } = new();
+}
+
+public sealed class DictCompExpr : YawaExpression
+{
+    [JsonPropertyName("dictk_key")]
+    public YawaExpression BodyKey { get; set; } = null!;
+
+    [JsonPropertyName("dictk_value")]
+    public YawaExpression BodyValue { get; set; } = null!;
+
+    [JsonPropertyName("dictk_clauses")]
+    public List<CompClause> Clauses { get; set; } = new();
+}
+public sealed class FunctionRefExpr : YawaExpression
+{
+    [JsonPropertyName("funcref")]
+    public string Name { get; set; } = "";
 }

@@ -1,0 +1,290 @@
+﻿{
+  "yawa_version": "1.0",
+  "metadata": {
+    "name": "Python \u2192 YAWA",
+    "description": null,
+    "generator": "algovis-transpiler@0.1"
+  },
+  "globals": {},
+  "functions": [
+    {
+      "name": "sort_by_second",
+      "params": [
+        {
+          "name": "pairs",
+          "type": null,
+          "default": null
+        }
+      ],
+      "returns": null,
+      "body": [
+        {
+          "op": "return",
+          "value": {
+            "call": "sorted_with",
+            "args": [
+              {
+                "ref": "pairs"
+              },
+              {
+                "funcref": "second_element"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "second_element",
+      "params": [
+        {
+          "name": "p",
+          "type": null,
+          "default": null
+        }
+      ],
+      "returns": null,
+      "body": [
+        {
+          "op": "return",
+          "value": {
+            "index": [
+              {
+                "ref": "p"
+              },
+              {
+                "lit": 1
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "group_by_length",
+      "params": [
+        {
+          "name": "words",
+          "type": null,
+          "default": null
+        }
+      ],
+      "returns": null,
+      "body": [
+        {
+          "op": "assign",
+          "target": {
+            "ref": "groups"
+          },
+          "value": {
+            "dict": []
+          }
+        },
+        {
+          "op": "foreach",
+          "var": "w",
+          "in": {
+            "ref": "words"
+          },
+          "body": [
+            {
+              "op": "assign",
+              "target": {
+                "ref": "ln"
+              },
+              "value": {
+                "call": "length",
+                "args": [
+                  {
+                    "ref": "w"
+                  }
+                ]
+              }
+            },
+            {
+              "op": "if",
+              "cond": {
+                "bin": "in",
+                "a": {
+                  "ref": "ln"
+                },
+                "b": {
+                  "ref": "groups"
+                }
+              },
+              "then": [
+                {
+                  "op": "expr",
+                  "value": {
+                    "call_method": {
+                      "index": [
+                        {
+                          "ref": "groups"
+                        },
+                        {
+                          "ref": "ln"
+                        }
+                      ]
+                    },
+                    "name": "append",
+                    "args": [
+                      {
+                        "ref": "w"
+                      }
+                    ]
+                  }
+                }
+              ],
+              "else": [
+                {
+                  "op": "assign",
+                  "target": {
+                    "index": [
+                      {
+                        "ref": "groups"
+                      },
+                      {
+                        "ref": "ln"
+                      }
+                    ]
+                  },
+                  "value": {
+                    "array": [
+                      {
+                        "ref": "w"
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "op": "return",
+          "value": {
+            "ref": "groups"
+          }
+        }
+      ]
+    },
+    {
+      "name": "main",
+      "params": [],
+      "returns": null,
+      "body": [
+        {
+          "op": "assign",
+          "target": {
+            "ref": "pairs"
+          },
+          "value": {
+            "array": [
+              {
+                "tuple": [
+                  {
+                    "lit": 1
+                  },
+                  {
+                    "lit": 5
+                  }
+                ]
+              },
+              {
+                "tuple": [
+                  {
+                    "lit": 2
+                  },
+                  {
+                    "lit": 3
+                  }
+                ]
+              },
+              {
+                "tuple": [
+                  {
+                    "lit": 3
+                  },
+                  {
+                    "lit": 8
+                  }
+                ]
+              },
+              {
+                "tuple": [
+                  {
+                    "lit": 4
+                  },
+                  {
+                    "lit": 1
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "op": "assign",
+          "target": {
+            "ref": "sorted_p"
+          },
+          "value": {
+            "call": "sort_by_second",
+            "args": [
+              {
+                "ref": "pairs"
+              }
+            ]
+          }
+        },
+        {
+          "op": "annotate",
+          "text": "\u0022\u043E\u0442\u0441\u043E\u0440\u0442\u0438\u0440\u043E\u0432\u0430\u043D\u043E \u043F\u043E \u0432\u0442\u043E\u0440\u043E\u043C\u0443: {sorted_p}"
+        },
+        {
+          "op": "assign",
+          "target": {
+            "ref": "words"
+          },
+          "value": {
+            "lit": [
+              "apple",
+              "cat",
+              "dog",
+              "banana",
+              "hi"
+            ]
+          }
+        },
+        {
+          "op": "assign",
+          "target": {
+            "ref": "groups"
+          },
+          "value": {
+            "call": "group_by_length",
+            "args": [
+              {
+                "ref": "words"
+              }
+            ]
+          }
+        },
+        {
+          "op": "annotate",
+          "text": "\u0022\u0433\u0440\u0443\u043F\u043F\u044B: {len(groups)}"
+        }
+      ]
+    }
+  ],
+  "entry": {
+    "function": "main",
+    "args": []
+  },
+  "limits": {
+    "max_steps": 1000000,
+    "max_depth": 500,
+    "max_seconds": 10,
+    "snapshot_every": 0
+  }
+}

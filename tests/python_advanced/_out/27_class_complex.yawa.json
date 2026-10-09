@@ -1,0 +1,332 @@
+﻿{
+  "yawa_version": "1.0",
+  "metadata": {
+    "name": "Python \u2192 YAWA",
+    "description": null,
+    "generator": "algovis-transpiler@0.1"
+  },
+  "globals": {},
+  "functions": [
+    {
+      "name": "Stack.__init__",
+      "params": [
+        {
+          "name": "self",
+          "type": null,
+          "default": null
+        }
+      ],
+      "returns": null,
+      "body": [
+        {
+          "op": "assign",
+          "target": {
+            "field": [
+              {
+                "ref": "self"
+              },
+              "items"
+            ]
+          },
+          "value": {
+            "lit": []
+          }
+        }
+      ]
+    },
+    {
+      "name": "Stack.push",
+      "params": [
+        {
+          "name": "self",
+          "type": null,
+          "default": null
+        },
+        {
+          "name": "x",
+          "type": null,
+          "default": null
+        }
+      ],
+      "returns": null,
+      "body": [
+        {
+          "op": "expr",
+          "value": {
+            "call_method": {
+              "field": [
+                {
+                  "ref": "self"
+                },
+                "items"
+              ]
+            },
+            "name": "append",
+            "args": [
+              {
+                "ref": "x"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Stack.pop",
+      "params": [
+        {
+          "name": "self",
+          "type": null,
+          "default": null
+        }
+      ],
+      "returns": null,
+      "body": [
+        {
+          "op": "if",
+          "cond": {
+            "bin": "==",
+            "a": {
+              "call": "length",
+              "args": [
+                {
+                  "field": [
+                    {
+                      "ref": "self"
+                    },
+                    "items"
+                  ]
+                }
+              ]
+            },
+            "b": {
+              "lit": 0
+            }
+          },
+          "then": [
+            {
+              "op": "return",
+              "value": {
+                "lit": null
+              }
+            }
+          ],
+          "else": null
+        },
+        {
+          "op": "assign",
+          "target": {
+            "ref": "last"
+          },
+          "value": {
+            "index": [
+              {
+                "field": [
+                  {
+                    "ref": "self"
+                  },
+                  "items"
+                ]
+              },
+              {
+                "bin": "-",
+                "a": {
+                  "call": "length",
+                  "args": [
+                    {
+                      "field": [
+                        {
+                          "ref": "self"
+                        },
+                        "items"
+                      ]
+                    }
+                  ]
+                },
+                "b": {
+                  "lit": 1
+                }
+              }
+            ]
+          }
+        },
+        {
+          "op": "assign",
+          "target": {
+            "field": [
+              {
+                "ref": "self"
+              },
+              "items"
+            ]
+          },
+          "value": {
+            "slice": [
+              {
+                "field": [
+                  {
+                    "ref": "self"
+                  },
+                  "items"
+                ]
+              },
+              {
+                "lit": 0
+              },
+              {
+                "bin": "-",
+                "a": {
+                  "call": "length",
+                  "args": [
+                    {
+                      "field": [
+                        {
+                          "ref": "self"
+                        },
+                        "items"
+                      ]
+                    }
+                  ]
+                },
+                "b": {
+                  "lit": 1
+                }
+              },
+              null
+            ]
+          }
+        },
+        {
+          "op": "return",
+          "value": {
+            "ref": "last"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Stack.size",
+      "params": [
+        {
+          "name": "self",
+          "type": null,
+          "default": null
+        }
+      ],
+      "returns": null,
+      "body": [
+        {
+          "op": "return",
+          "value": {
+            "call": "length",
+            "args": [
+              {
+                "field": [
+                  {
+                    "ref": "self"
+                  },
+                  "items"
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "main",
+      "params": [],
+      "returns": null,
+      "body": [
+        {
+          "op": "assign",
+          "target": {
+            "ref": "s"
+          },
+          "value": {
+            "instantiate": "Stack",
+            "args": []
+          }
+        },
+        {
+          "op": "expr",
+          "value": {
+            "call_method": {
+              "ref": "s"
+            },
+            "name": "push",
+            "args": [
+              {
+                "lit": 1
+              }
+            ]
+          }
+        },
+        {
+          "op": "expr",
+          "value": {
+            "call_method": {
+              "ref": "s"
+            },
+            "name": "push",
+            "args": [
+              {
+                "lit": 2
+              }
+            ]
+          }
+        },
+        {
+          "op": "expr",
+          "value": {
+            "call_method": {
+              "ref": "s"
+            },
+            "name": "push",
+            "args": [
+              {
+                "lit": 3
+              }
+            ]
+          }
+        },
+        {
+          "op": "assign",
+          "target": {
+            "ref": "a"
+          },
+          "value": {
+            "call_method": {
+              "ref": "s"
+            },
+            "name": "pop",
+            "args": []
+          }
+        },
+        {
+          "op": "assign",
+          "target": {
+            "ref": "n"
+          },
+          "value": {
+            "call_method": {
+              "ref": "s"
+            },
+            "name": "size",
+            "args": []
+          }
+        }
+      ]
+    }
+  ],
+  "entry": {
+    "function": "main",
+    "args": []
+  },
+  "limits": {
+    "max_steps": 1000000,
+    "max_depth": 500,
+    "max_seconds": 10,
+    "snapshot_every": 0
+  }
+}

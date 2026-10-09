@@ -1,0 +1,459 @@
+﻿{
+  "yawa_version": "1.0",
+  "metadata": {
+    "name": "Python \u2192 YAWA",
+    "description": null,
+    "generator": "algovis-transpiler@0.1"
+  },
+  "globals": {},
+  "functions": [
+    {
+      "name": "transpose",
+      "params": [
+        {
+          "name": "M",
+          "type": null,
+          "default": null
+        }
+      ],
+      "returns": null,
+      "body": [
+        {
+          "op": "if",
+          "cond": {
+            "bin": "==",
+            "a": {
+              "call": "length",
+              "args": [
+                {
+                  "ref": "M"
+                }
+              ]
+            },
+            "b": {
+              "lit": 0
+            }
+          },
+          "then": [
+            {
+              "op": "return",
+              "value": {
+                "lit": []
+              }
+            }
+          ],
+          "else": null
+        },
+        {
+          "op": "assign",
+          "target": {
+            "ref": "rows"
+          },
+          "value": {
+            "call": "length",
+            "args": [
+              {
+                "ref": "M"
+              }
+            ]
+          }
+        },
+        {
+          "op": "assign",
+          "target": {
+            "ref": "cols"
+          },
+          "value": {
+            "call": "length",
+            "args": [
+              {
+                "index": [
+                  {
+                    "ref": "M"
+                  },
+                  {
+                    "lit": 0
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "op": "assign",
+          "target": {
+            "ref": "result"
+          },
+          "value": {
+            "lit": []
+          }
+        },
+        {
+          "op": "for",
+          "var": "j",
+          "from": {
+            "lit": 0
+          },
+          "to": {
+            "ref": "cols"
+          },
+          "step": null,
+          "body": [
+            {
+              "op": "assign",
+              "target": {
+                "ref": "new_row"
+              },
+              "value": {
+                "lit": []
+              }
+            },
+            {
+              "op": "for",
+              "var": "i",
+              "from": {
+                "lit": 0
+              },
+              "to": {
+                "ref": "rows"
+              },
+              "step": null,
+              "body": [
+                {
+                  "op": "expr",
+                  "value": {
+                    "call_method": {
+                      "ref": "new_row"
+                    },
+                    "name": "append",
+                    "args": [
+                      {
+                        "index": [
+                          {
+                            "index": [
+                              {
+                                "ref": "M"
+                              },
+                              {
+                                "ref": "i"
+                              }
+                            ]
+                          },
+                          {
+                            "ref": "j"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "op": "expr",
+              "value": {
+                "call_method": {
+                  "ref": "result"
+                },
+                "name": "append",
+                "args": [
+                  {
+                    "ref": "new_row"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "op": "return",
+          "value": {
+            "ref": "result"
+          }
+        }
+      ]
+    },
+    {
+      "name": "trace",
+      "params": [
+        {
+          "name": "M",
+          "type": null,
+          "default": null
+        }
+      ],
+      "returns": null,
+      "body": [
+        {
+          "op": "assign",
+          "target": {
+            "ref": "n"
+          },
+          "value": {
+            "call": "min",
+            "args": [
+              {
+                "call": "length",
+                "args": [
+                  {
+                    "ref": "M"
+                  }
+                ]
+              },
+              {
+                "call": "length",
+                "args": [
+                  {
+                    "index": [
+                      {
+                        "ref": "M"
+                      },
+                      {
+                        "lit": 0
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "op": "assign",
+          "target": {
+            "ref": "total"
+          },
+          "value": {
+            "lit": 0
+          }
+        },
+        {
+          "op": "for",
+          "var": "i",
+          "from": {
+            "lit": 0
+          },
+          "to": {
+            "ref": "n"
+          },
+          "step": null,
+          "body": [
+            {
+              "op": "assign",
+              "target": {
+                "ref": "total"
+              },
+              "value": {
+                "bin": "\u002B",
+                "a": {
+                  "ref": "total"
+                },
+                "b": {
+                  "index": [
+                    {
+                      "index": [
+                        {
+                          "ref": "M"
+                        },
+                        {
+                          "ref": "i"
+                        }
+                      ]
+                    },
+                    {
+                      "ref": "i"
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "op": "return",
+          "value": {
+            "ref": "total"
+          }
+        }
+      ]
+    },
+    {
+      "name": "row_sums",
+      "params": [
+        {
+          "name": "M",
+          "type": null,
+          "default": null
+        }
+      ],
+      "returns": null,
+      "body": [
+        {
+          "op": "assign",
+          "target": {
+            "ref": "result"
+          },
+          "value": {
+            "lit": []
+          }
+        },
+        {
+          "op": "foreach",
+          "var": "row",
+          "in": {
+            "ref": "M"
+          },
+          "body": [
+            {
+              "op": "assign",
+              "target": {
+                "ref": "total"
+              },
+              "value": {
+                "lit": 0
+              }
+            },
+            {
+              "op": "foreach",
+              "var": "x",
+              "in": {
+                "ref": "row"
+              },
+              "body": [
+                {
+                  "op": "assign",
+                  "target": {
+                    "ref": "total"
+                  },
+                  "value": {
+                    "bin": "\u002B",
+                    "a": {
+                      "ref": "total"
+                    },
+                    "b": {
+                      "ref": "x"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "op": "expr",
+              "value": {
+                "call_method": {
+                  "ref": "result"
+                },
+                "name": "append",
+                "args": [
+                  {
+                    "ref": "total"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "op": "return",
+          "value": {
+            "ref": "result"
+          }
+        }
+      ]
+    },
+    {
+      "name": "main",
+      "params": [],
+      "returns": null,
+      "body": [
+        {
+          "op": "assign",
+          "target": {
+            "ref": "M"
+          },
+          "value": {
+            "array": [
+              {
+                "lit": [
+                  1,
+                  2,
+                  3
+                ]
+              },
+              {
+                "lit": [
+                  4,
+                  5,
+                  6
+                ]
+              },
+              {
+                "lit": [
+                  7,
+                  8,
+                  9
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "op": "assign",
+          "target": {
+            "ref": "T"
+          },
+          "value": {
+            "call": "transpose",
+            "args": [
+              {
+                "ref": "M"
+              }
+            ]
+          }
+        },
+        {
+          "op": "assign",
+          "target": {
+            "ref": "t"
+          },
+          "value": {
+            "call": "trace",
+            "args": [
+              {
+                "ref": "M"
+              }
+            ]
+          }
+        },
+        {
+          "op": "assign",
+          "target": {
+            "ref": "rs"
+          },
+          "value": {
+            "call": "row_sums",
+            "args": [
+              {
+                "ref": "M"
+              }
+            ]
+          }
+        },
+        {
+          "op": "annotate",
+          "text": "\u0022trace = {t}"
+        }
+      ]
+    }
+  ],
+  "entry": {
+    "function": "main",
+    "args": []
+  },
+  "limits": {
+    "max_steps": 1000000,
+    "max_depth": 500,
+    "max_seconds": 10,
+    "snapshot_every": 0
+  }
+}

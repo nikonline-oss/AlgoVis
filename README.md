@@ -1,6 +1,3 @@
-
-```bash
-cat > ~/projects/AlgoVis/README.md <<'MD'
 # AlgoVis
 
 Платформа для пошаговой визуализации алгоритмов. Пользователь пишет код на Python,
@@ -183,5 +180,3 @@ dotnet test AlgoVis.Server.Tests/AlgoVis.Server.Tests.csproj
 ## Лицензия
 
 Внутренний проект.
-MD
-```

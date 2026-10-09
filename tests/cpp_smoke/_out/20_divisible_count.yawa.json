@@ -1,0 +1,137 @@
+﻿{
+  "yawa_version": "1.0",
+  "metadata": {
+    "name": "C\u002B\u002B \u2192 YAWA",
+    "description": null,
+    "generator": "algovis-transpiler-cpp@0.1"
+  },
+  "globals": {},
+  "functions": [
+    {
+      "name": "countDivisible",
+      "params": [
+        {
+          "name": "n",
+          "type": null,
+          "default": null
+        },
+        {
+          "name": "d",
+          "type": null,
+          "default": null
+        }
+      ],
+      "returns": null,
+      "body": [
+        {
+          "op": "declare",
+          "name": "count",
+          "type": null,
+          "value": {
+            "lit": 0
+          }
+        },
+        {
+          "op": "for",
+          "var": "i",
+          "from": {
+            "lit": 1
+          },
+          "to": {
+            "bin": "\u002B",
+            "a": {
+              "ref": "n"
+            },
+            "b": {
+              "lit": 1
+            }
+          },
+          "step": null,
+          "body": [
+            {
+              "op": "if",
+              "cond": {
+                "bin": "==",
+                "a": {
+                  "bin": "%",
+                  "a": {
+                    "ref": "i"
+                  },
+                  "b": {
+                    "ref": "d"
+                  }
+                },
+                "b": {
+                  "lit": 0
+                }
+              },
+              "then": [
+                {
+                  "op": "assign",
+                  "target": {
+                    "ref": "count"
+                  },
+                  "value": {
+                    "bin": "\u002B",
+                    "a": {
+                      "ref": "count"
+                    },
+                    "b": {
+                      "lit": 1
+                    }
+                  }
+                }
+              ],
+              "else": null
+            }
+          ]
+        },
+        {
+          "op": "return",
+          "value": {
+            "ref": "count"
+          }
+        }
+      ]
+    },
+    {
+      "name": "main",
+      "params": [],
+      "returns": null,
+      "body": [
+        {
+          "op": "declare",
+          "name": "c",
+          "type": null,
+          "value": {
+            "call": "countDivisible",
+            "args": [
+              {
+                "lit": 20
+              },
+              {
+                "lit": 3
+              }
+            ]
+          }
+        },
+        {
+          "op": "return",
+          "value": {
+            "lit": 0
+          }
+        }
+      ]
+    }
+  ],
+  "entry": {
+    "function": "main",
+    "args": []
+  },
+  "limits": {
+    "max_steps": 1000000,
+    "max_depth": 500,
+    "max_seconds": 10,
+    "snapshot_every": 0
+  }
+}

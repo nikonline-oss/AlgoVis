@@ -23,6 +23,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AlgoVis.Data", "AlgoVis.Dat
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AlgoVis.Server.Tests", "AlgoVis.Server.Tests\AlgoVis.Server.Tests.csproj", "{B1ACDDC5-F036-4CE0-8FE5-7D16CB577358}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AlgoVis.Transpiler.Cpp", "AlgoVis.Transpiler.Cpp\AlgoVis.Transpiler.Cpp.csproj", "{64A95CA9-BC5E-417F-8D51-77E031F3FAC2}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -69,6 +71,10 @@ Global
 		{B1ACDDC5-F036-4CE0-8FE5-7D16CB577358}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B1ACDDC5-F036-4CE0-8FE5-7D16CB577358}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B1ACDDC5-F036-4CE0-8FE5-7D16CB577358}.Release|Any CPU.Build.0 = Release|Any CPU
+		{64A95CA9-BC5E-417F-8D51-77E031F3FAC2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{64A95CA9-BC5E-417F-8D51-77E031F3FAC2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{64A95CA9-BC5E-417F-8D51-77E031F3FAC2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{64A95CA9-BC5E-417F-8D51-77E031F3FAC2}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

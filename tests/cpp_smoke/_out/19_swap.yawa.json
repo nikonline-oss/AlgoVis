@@ -1,0 +1,108 @@
+﻿{
+  "yawa_version": "1.0",
+  "metadata": {
+    "name": "C\u002B\u002B \u2192 YAWA",
+    "description": null,
+    "generator": "algovis-transpiler-cpp@0.1"
+  },
+  "globals": {},
+  "functions": [
+    {
+      "name": "swapValues",
+      "params": [
+        {
+          "name": "a",
+          "type": null,
+          "default": null
+        },
+        {
+          "name": "b",
+          "type": null,
+          "default": null
+        }
+      ],
+      "returns": null,
+      "body": [
+        {
+          "op": "declare",
+          "name": "temp",
+          "type": null,
+          "value": {
+            "ref": "a"
+          }
+        },
+        {
+          "op": "assign",
+          "target": {
+            "ref": "a"
+          },
+          "value": {
+            "ref": "b"
+          }
+        },
+        {
+          "op": "assign",
+          "target": {
+            "ref": "b"
+          },
+          "value": {
+            "ref": "temp"
+          }
+        }
+      ]
+    },
+    {
+      "name": "main",
+      "params": [],
+      "returns": null,
+      "body": [
+        {
+          "op": "declare",
+          "name": "x",
+          "type": null,
+          "value": {
+            "lit": 5
+          }
+        },
+        {
+          "op": "declare",
+          "name": "y",
+          "type": null,
+          "value": {
+            "lit": 10
+          }
+        },
+        {
+          "op": "expr",
+          "value": {
+            "call": "swapValues",
+            "args": [
+              {
+                "ref": "x"
+              },
+              {
+                "ref": "y"
+              }
+            ]
+          }
+        },
+        {
+          "op": "return",
+          "value": {
+            "lit": 0
+          }
+        }
+      ]
+    }
+  ],
+  "entry": {
+    "function": "main",
+    "args": []
+  },
+  "limits": {
+    "max_steps": 1000000,
+    "max_depth": 500,
+    "max_seconds": 10,
+    "snapshot_every": 0
+  }
+}

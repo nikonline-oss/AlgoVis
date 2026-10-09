@@ -1,0 +1,258 @@
+﻿{
+  "yawa_version": "1.0",
+  "metadata": {
+    "name": "C\u002B\u002B \u2192 YAWA",
+    "description": null,
+    "generator": "algovis-transpiler-cpp@0.1"
+  },
+  "globals": {},
+  "functions": [
+    {
+      "name": "binarySearch",
+      "params": [
+        {
+          "name": "A",
+          "type": null,
+          "default": null
+        },
+        {
+          "name": "n",
+          "type": null,
+          "default": null
+        },
+        {
+          "name": "target",
+          "type": null,
+          "default": null
+        }
+      ],
+      "returns": null,
+      "body": [
+        {
+          "op": "declare",
+          "name": "lo",
+          "type": null,
+          "value": {
+            "lit": 0
+          }
+        },
+        {
+          "op": "declare",
+          "name": "hi",
+          "type": null,
+          "value": {
+            "bin": "-",
+            "a": {
+              "ref": "n"
+            },
+            "b": {
+              "lit": 1
+            }
+          }
+        },
+        {
+          "op": "while",
+          "cond": {
+            "bin": "\u003C=",
+            "a": {
+              "ref": "lo"
+            },
+            "b": {
+              "ref": "hi"
+            }
+          },
+          "body": [
+            {
+              "op": "declare",
+              "name": "mid",
+              "type": null,
+              "value": {
+                "bin": "/",
+                "a": {
+                  "bin": "\u002B",
+                  "a": {
+                    "ref": "lo"
+                  },
+                  "b": {
+                    "ref": "hi"
+                  }
+                },
+                "b": {
+                  "lit": 2
+                }
+              }
+            },
+            {
+              "op": "if",
+              "cond": {
+                "bin": "==",
+                "a": {
+                  "index": [
+                    {
+                      "ref": "A"
+                    },
+                    {
+                      "ref": "mid"
+                    }
+                  ]
+                },
+                "b": {
+                  "ref": "target"
+                }
+              },
+              "then": [
+                {
+                  "op": "return",
+                  "value": {
+                    "ref": "mid"
+                  }
+                }
+              ],
+              "else": [
+                {
+                  "op": "if",
+                  "cond": {
+                    "bin": "\u003C",
+                    "a": {
+                      "index": [
+                        {
+                          "ref": "A"
+                        },
+                        {
+                          "ref": "mid"
+                        }
+                      ]
+                    },
+                    "b": {
+                      "ref": "target"
+                    }
+                  },
+                  "then": [
+                    {
+                      "op": "assign",
+                      "target": {
+                        "ref": "lo"
+                      },
+                      "value": {
+                        "bin": "\u002B",
+                        "a": {
+                          "ref": "mid"
+                        },
+                        "b": {
+                          "lit": 1
+                        }
+                      }
+                    }
+                  ],
+                  "else": [
+                    {
+                      "op": "assign",
+                      "target": {
+                        "ref": "hi"
+                      },
+                      "value": {
+                        "bin": "-",
+                        "a": {
+                          "ref": "mid"
+                        },
+                        "b": {
+                          "lit": 1
+                        }
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "op": "return",
+          "value": {
+            "lit": -1
+          }
+        }
+      ]
+    },
+    {
+      "name": "main",
+      "params": [],
+      "returns": null,
+      "body": [
+        {
+          "op": "declare",
+          "name": "A",
+          "type": null,
+          "value": {
+            "array": [
+              {
+                "lit": 1
+              },
+              {
+                "lit": 3
+              },
+              {
+                "lit": 5
+              },
+              {
+                "lit": 7
+              },
+              {
+                "lit": 9
+              },
+              {
+                "lit": 11
+              },
+              {
+                "lit": 13
+              }
+            ]
+          }
+        },
+        {
+          "op": "declare",
+          "name": "n",
+          "type": null,
+          "value": {
+            "lit": 7
+          }
+        },
+        {
+          "op": "declare",
+          "name": "idx",
+          "type": null,
+          "value": {
+            "call": "binarySearch",
+            "args": [
+              {
+                "ref": "A"
+              },
+              {
+                "ref": "n"
+              },
+              {
+                "lit": 9
+              }
+            ]
+          }
+        },
+        {
+          "op": "return",
+          "value": {
+            "lit": 0
+          }
+        }
+      ]
+    }
+  ],
+  "entry": {
+    "function": "main",
+    "args": []
+  },
+  "limits": {
+    "max_steps": 1000000,
+    "max_depth": 500,
+    "max_seconds": 10,
+    "snapshot_every": 0
+  }
+}

@@ -1,0 +1,167 @@
+﻿{
+  "yawa_version": "1.0",
+  "metadata": {
+    "name": "C\u002B\u002B \u2192 YAWA",
+    "description": null,
+    "generator": "algovis-transpiler-cpp@0.1"
+  },
+  "globals": {},
+  "functions": [
+    {
+      "name": "countPositive",
+      "params": [
+        {
+          "name": "A",
+          "type": null,
+          "default": null
+        },
+        {
+          "name": "n",
+          "type": null,
+          "default": null
+        }
+      ],
+      "returns": null,
+      "body": [
+        {
+          "op": "declare",
+          "name": "count",
+          "type": null,
+          "value": {
+            "lit": 0
+          }
+        },
+        {
+          "op": "for",
+          "var": "i",
+          "from": {
+            "lit": 0
+          },
+          "to": {
+            "ref": "n"
+          },
+          "step": null,
+          "body": [
+            {
+              "op": "if",
+              "cond": {
+                "bin": "\u003E",
+                "a": {
+                  "index": [
+                    {
+                      "ref": "A"
+                    },
+                    {
+                      "ref": "i"
+                    }
+                  ]
+                },
+                "b": {
+                  "lit": 0
+                }
+              },
+              "then": [
+                {
+                  "op": "assign",
+                  "target": {
+                    "ref": "count"
+                  },
+                  "value": {
+                    "bin": "\u002B",
+                    "a": {
+                      "ref": "count"
+                    },
+                    "b": {
+                      "lit": 1
+                    }
+                  }
+                }
+              ],
+              "else": null
+            }
+          ]
+        },
+        {
+          "op": "return",
+          "value": {
+            "ref": "count"
+          }
+        }
+      ]
+    },
+    {
+      "name": "main",
+      "params": [],
+      "returns": null,
+      "body": [
+        {
+          "op": "declare",
+          "name": "A",
+          "type": null,
+          "value": {
+            "array": [
+              {
+                "lit": -3
+              },
+              {
+                "lit": 1
+              },
+              {
+                "lit": -2
+              },
+              {
+                "lit": 4
+              },
+              {
+                "lit": 5
+              },
+              {
+                "lit": -1
+              }
+            ]
+          }
+        },
+        {
+          "op": "declare",
+          "name": "n",
+          "type": null,
+          "value": {
+            "lit": 6
+          }
+        },
+        {
+          "op": "declare",
+          "name": "p",
+          "type": null,
+          "value": {
+            "call": "countPositive",
+            "args": [
+              {
+                "ref": "A"
+              },
+              {
+                "ref": "n"
+              }
+            ]
+          }
+        },
+        {
+          "op": "return",
+          "value": {
+            "lit": 0
+          }
+        }
+      ]
+    }
+  ],
+  "entry": {
+    "function": "main",
+    "args": []
+  },
+  "limits": {
+    "max_steps": 1000000,
+    "max_depth": 500,
+    "max_seconds": 10,
+    "snapshot_every": 0
+  }
+}

@@ -1,0 +1,246 @@
+﻿{
+  "yawa_version": "1.0",
+  "metadata": {
+    "name": "C\u002B\u002B \u2192 YAWA",
+    "description": null,
+    "generator": "algovis-transpiler-cpp@0.1"
+  },
+  "globals": {},
+  "functions": [
+    {
+      "name": "bubbleSort",
+      "params": [
+        {
+          "name": "A",
+          "type": null,
+          "default": null
+        },
+        {
+          "name": "n",
+          "type": null,
+          "default": null
+        }
+      ],
+      "returns": null,
+      "body": [
+        {
+          "op": "for",
+          "var": "i",
+          "from": {
+            "lit": 0
+          },
+          "to": {
+            "bin": "-",
+            "a": {
+              "ref": "n"
+            },
+            "b": {
+              "lit": 1
+            }
+          },
+          "step": null,
+          "body": [
+            {
+              "op": "for",
+              "var": "j",
+              "from": {
+                "lit": 0
+              },
+              "to": {
+                "bin": "-",
+                "a": {
+                  "bin": "-",
+                  "a": {
+                    "ref": "n"
+                  },
+                  "b": {
+                    "ref": "i"
+                  }
+                },
+                "b": {
+                  "lit": 1
+                }
+              },
+              "step": null,
+              "body": [
+                {
+                  "op": "if",
+                  "cond": {
+                    "bin": "\u003E",
+                    "a": {
+                      "index": [
+                        {
+                          "ref": "A"
+                        },
+                        {
+                          "ref": "j"
+                        }
+                      ]
+                    },
+                    "b": {
+                      "index": [
+                        {
+                          "ref": "A"
+                        },
+                        {
+                          "bin": "\u002B",
+                          "a": {
+                            "ref": "j"
+                          },
+                          "b": {
+                            "lit": 1
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  "then": [
+                    {
+                      "op": "declare",
+                      "name": "temp",
+                      "type": null,
+                      "value": {
+                        "index": [
+                          {
+                            "ref": "A"
+                          },
+                          {
+                            "ref": "j"
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "op": "assign",
+                      "target": {
+                        "index": [
+                          {
+                            "ref": "A"
+                          },
+                          {
+                            "ref": "j"
+                          }
+                        ]
+                      },
+                      "value": {
+                        "index": [
+                          {
+                            "ref": "A"
+                          },
+                          {
+                            "bin": "\u002B",
+                            "a": {
+                              "ref": "j"
+                            },
+                            "b": {
+                              "lit": 1
+                            }
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "op": "assign",
+                      "target": {
+                        "index": [
+                          {
+                            "ref": "A"
+                          },
+                          {
+                            "bin": "\u002B",
+                            "a": {
+                              "ref": "j"
+                            },
+                            "b": {
+                              "lit": 1
+                            }
+                          }
+                        ]
+                      },
+                      "value": {
+                        "ref": "temp"
+                      }
+                    }
+                  ],
+                  "else": null
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "main",
+      "params": [],
+      "returns": null,
+      "body": [
+        {
+          "op": "declare",
+          "name": "A",
+          "type": null,
+          "value": {
+            "array": [
+              {
+                "lit": 5
+              },
+              {
+                "lit": 2
+              },
+              {
+                "lit": 8
+              },
+              {
+                "lit": 1
+              },
+              {
+                "lit": 9
+              },
+              {
+                "lit": 3
+              }
+            ]
+          }
+        },
+        {
+          "op": "declare",
+          "name": "n",
+          "type": null,
+          "value": {
+            "lit": 6
+          }
+        },
+        {
+          "op": "expr",
+          "value": {
+            "call": "bubbleSort",
+            "args": [
+              {
+                "ref": "A"
+              },
+              {
+                "ref": "n"
+              }
+            ]
+          }
+        },
+        {
+          "op": "return",
+          "value": {
+            "lit": 0
+          }
+        }
+      ]
+    }
+  ],
+  "entry": {
+    "function": "main",
+    "args": []
+  },
+  "limits": {
+    "max_steps": 1000000,
+    "max_depth": 500,
+    "max_seconds": 10,
+    "snapshot_every": 0
+  }
+}

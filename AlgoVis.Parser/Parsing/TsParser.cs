@@ -18,15 +18,17 @@ public sealed class TsParser : IDisposable
         LibLoader.Register();
     }
 
-    public TsParser()
+    public TsParser() : this(PythonLanguage.tree_sitter_python()) { }
+
+    public TsParser(IntPtr language)
     {
         _parser = TsNative.ts_parser_new();
         if (_parser == IntPtr.Zero)
             throw new InvalidOperationException("ts_parser_new failed");
 
-        _language = PythonLanguage.tree_sitter_python();
+        _language = language;
         if (_language == IntPtr.Zero)
-            throw new InvalidOperationException("tree_sitter_python returned null");
+            throw new InvalidOperationException("language pointer is null");
 
         if (!TsNative.ts_parser_set_language(_parser, _language))
             throw new InvalidOperationException("ts_parser_set_language failed");

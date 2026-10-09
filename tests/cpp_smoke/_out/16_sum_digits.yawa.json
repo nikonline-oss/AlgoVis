@@ -1,0 +1,124 @@
+﻿{
+  "yawa_version": "1.0",
+  "metadata": {
+    "name": "C\u002B\u002B \u2192 YAWA",
+    "description": null,
+    "generator": "algovis-transpiler-cpp@0.1"
+  },
+  "globals": {},
+  "functions": [
+    {
+      "name": "sumDigits",
+      "params": [
+        {
+          "name": "n",
+          "type": null,
+          "default": null
+        }
+      ],
+      "returns": null,
+      "body": [
+        {
+          "op": "declare",
+          "name": "total",
+          "type": null,
+          "value": {
+            "lit": 0
+          }
+        },
+        {
+          "op": "while",
+          "cond": {
+            "bin": "\u003E",
+            "a": {
+              "ref": "n"
+            },
+            "b": {
+              "lit": 0
+            }
+          },
+          "body": [
+            {
+              "op": "assign",
+              "target": {
+                "ref": "total"
+              },
+              "value": {
+                "bin": "\u002B",
+                "a": {
+                  "ref": "total"
+                },
+                "b": {
+                  "bin": "%",
+                  "a": {
+                    "ref": "n"
+                  },
+                  "b": {
+                    "lit": 10
+                  }
+                }
+              }
+            },
+            {
+              "op": "assign",
+              "target": {
+                "ref": "n"
+              },
+              "value": {
+                "bin": "/",
+                "a": {
+                  "ref": "n"
+                },
+                "b": {
+                  "lit": 10
+                }
+              }
+            }
+          ]
+        },
+        {
+          "op": "return",
+          "value": {
+            "ref": "total"
+          }
+        }
+      ]
+    },
+    {
+      "name": "main",
+      "params": [],
+      "returns": null,
+      "body": [
+        {
+          "op": "declare",
+          "name": "s",
+          "type": null,
+          "value": {
+            "call": "sumDigits",
+            "args": [
+              {
+                "lit": 9876
+              }
+            ]
+          }
+        },
+        {
+          "op": "return",
+          "value": {
+            "lit": 0
+          }
+        }
+      ]
+    }
+  ],
+  "entry": {
+    "function": "main",
+    "args": []
+  },
+  "limits": {
+    "max_steps": 1000000,
+    "max_depth": 500,
+    "max_seconds": 10,
+    "snapshot_every": 0
+  }
+}

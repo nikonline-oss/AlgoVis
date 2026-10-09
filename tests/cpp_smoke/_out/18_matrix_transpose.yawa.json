@@ -1,0 +1,225 @@
+﻿{
+  "yawa_version": "1.0",
+  "metadata": {
+    "name": "C\u002B\u002B \u2192 YAWA",
+    "description": null,
+    "generator": "algovis-transpiler-cpp@0.1"
+  },
+  "globals": {},
+  "functions": [
+    {
+      "name": "transpose",
+      "params": [
+        {
+          "name": "M",
+          "type": null,
+          "default": null
+        },
+        {
+          "name": "M2",
+          "type": null,
+          "default": null
+        }
+      ],
+      "returns": null,
+      "body": [
+        {
+          "op": "for",
+          "var": "i",
+          "from": {
+            "lit": 0
+          },
+          "to": {
+            "lit": 3
+          },
+          "step": null,
+          "body": [
+            {
+              "op": "for",
+              "var": "j",
+              "from": {
+                "lit": 0
+              },
+              "to": {
+                "lit": 3
+              },
+              "step": null,
+              "body": [
+                {
+                  "op": "assign",
+                  "target": {
+                    "index": [
+                      {
+                        "index": [
+                          {
+                            "ref": "M2"
+                          },
+                          {
+                            "ref": "j"
+                          }
+                        ]
+                      },
+                      {
+                        "ref": "i"
+                      }
+                    ]
+                  },
+                  "value": {
+                    "index": [
+                      {
+                        "index": [
+                          {
+                            "ref": "M"
+                          },
+                          {
+                            "ref": "i"
+                          }
+                        ]
+                      },
+                      {
+                        "ref": "j"
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "main",
+      "params": [],
+      "returns": null,
+      "body": [
+        {
+          "op": "declare",
+          "name": "M",
+          "type": null,
+          "value": {
+            "array": [
+              {
+                "array": [
+                  {
+                    "lit": 1
+                  },
+                  {
+                    "lit": 2
+                  },
+                  {
+                    "lit": 3
+                  }
+                ]
+              },
+              {
+                "array": [
+                  {
+                    "lit": 4
+                  },
+                  {
+                    "lit": 5
+                  },
+                  {
+                    "lit": 6
+                  }
+                ]
+              },
+              {
+                "array": [
+                  {
+                    "lit": 7
+                  },
+                  {
+                    "lit": 8
+                  },
+                  {
+                    "lit": 9
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "op": "declare",
+          "name": "M2",
+          "type": null,
+          "value": {
+            "array": [
+              {
+                "array": [
+                  {
+                    "lit": 0
+                  },
+                  {
+                    "lit": 0
+                  },
+                  {
+                    "lit": 0
+                  }
+                ]
+              },
+              {
+                "array": [
+                  {
+                    "lit": 0
+                  },
+                  {
+                    "lit": 0
+                  },
+                  {
+                    "lit": 0
+                  }
+                ]
+              },
+              {
+                "array": [
+                  {
+                    "lit": 0
+                  },
+                  {
+                    "lit": 0
+                  },
+                  {
+                    "lit": 0
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "op": "expr",
+          "value": {
+            "call": "transpose",
+            "args": [
+              {
+                "ref": "M"
+              },
+              {
+                "ref": "M2"
+              }
+            ]
+          }
+        },
+        {
+          "op": "return",
+          "value": {
+            "lit": 0
+          }
+        }
+      ]
+    }
+  ],
+  "entry": {
+    "function": "main",
+    "args": []
+  },
+  "limits": {
+    "max_steps": 1000000,
+    "max_depth": 500,
+    "max_seconds": 10,
+    "snapshot_every": 0
+  }
+}

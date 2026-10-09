@@ -25,6 +25,12 @@ public sealed class CppToYawa
     }
 
     public IReadOnlyList<string> Warnings => _warnings;
+    private readonly List<YawaStatement?> _topLevelDeclarations = new();
+    private readonly HashSet<string> _classNamesCpp = new(StringComparer.Ordinal);
+    private HashSet<string>? _currentClassFields;
+    private string? _currentClassName;
+    private Dictionary<string, (string key, string value)>? _iterPairReplacement;
+    private HashSet<string>? _iterSimpleReplacement;
 
     // ─────────── Точка входа ───────────
 
@@ -73,17 +79,61 @@ public sealed class CppToYawa
                 case "using_declaration":
                 case "namespace_definition":
                 case "comment":
-                case "declaration":
-                    // Пропускаем: include, using, forward declarations
+                    // Пропускаем: include, using, namespace, forward declarations
                     break;
+                case "declaration":
+                    {
+                        // top-level const/static — глобальные переменные
+                        var decl = ConvertDeclaration(child);
+                        // ConvertDeclaration возвращает ExprStatement/If/DeclareStatement.
+                        // DeclareStatement — то, что нам нужно, но он умеет работать и в top-level.
+                        // Однако наш интерпретатор ожидает global в program.Globals (YawaGlobal с value).
+                        // Простое решение: обернуть как отдельную функцию "__globals__" — нет.
+                        // Другой вариант: конвертируем в declaration внутри main. Но main уже есть.
+                        //
+                        // Самое простое: пропустить, но запомнить и вставить в начало main.
+                        // Сделаем это через очередь "_topDeclarations" и вставим в начало main.
+                        _topLevelDeclarations.Add(decl);
+                        break;
+                    }
 
                 case "linkage_specification":
                     // extern "C" { ... } — пропускаем
                     break;
 
+                case "class_specifier":
+                case "struct_specifier":
+                    {
+                        var nameNode = child.NamedChildren().FirstOrDefault(c => c.Type == "type_identifier");
+                        if (nameNode.IsValid)
+                            _classNamesCpp.Add(Text(nameNode));
+
+                        var methods = ExtractClassMethods(child);
+                        foreach (var m in methods)
+                        {
+                            if (!string.IsNullOrEmpty(m.Name) && _functionNames.Add(m.Name))
+                                program.Functions.Add(m);
+                        }
+                        break;
+                    }
+
                 default:
                     _warnings.Add($"Пропущен top-level: {child.Type}");
                     break;
+            }
+        }
+
+        // Вставляем top-level declarations в начало main
+        if (_topLevelDeclarations.Count > 0)
+        {
+            var mainCandidate = program.Functions.FirstOrDefault(f => f.Name == "main");
+            if (mainCandidate is not null)
+            {
+                var prefix = _topLevelDeclarations
+                    .Where(d => d is not null)
+                    .Cast<YawaStatement>()
+                    .ToList();
+                mainCandidate.Body.InsertRange(0, prefix);
             }
         }
 
@@ -150,6 +200,163 @@ public sealed class CppToYawa
 
         return fn;
     }
+    /// <summary>
+    /// Извлекает методы класса/структуры как top-level функции ClassName.method
+    /// с неявным self как первым параметром.
+    /// </summary>
+    private List<YawaFunction> ExtractClassMethods(TsNode classNode)
+    {
+        var result = new List<YawaFunction>();
+
+        var children = classNode.NamedChildren().ToList();
+        var nameNode = children.FirstOrDefault(c => c.Type == "type_identifier");
+        if (!nameNode.IsValid) return result;
+        var className = Text(nameNode);
+
+        var bodyNode = children.FirstOrDefault(c => c.Type == "field_declaration_list");
+        if (!bodyNode.IsValid) return result;
+
+        // Собираем имена полей: `int value;` → "value"
+        var fields = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var member in bodyNode.NamedChildren())
+        {
+            if (member.Type == "field_declaration")
+            {
+                var id = FindChildByType(member, "field_identifier");
+                if (!id.IsValid) id = FindChildByType(member, "identifier");
+                if (id.IsValid) fields.Add(Text(id));
+            }
+        }
+
+        var savedFields = _currentClassFields;
+        var savedClass = _currentClassName;
+        _currentClassFields = fields;
+        _currentClassName = className;
+
+        try
+        {
+            foreach (var member in bodyNode.NamedChildren())
+            {
+                if (member.Type != "function_definition") continue;
+
+                var funcDecl = FindChildByType(member, "function_declarator");
+
+                // Методы класса имеют field_identifier, конструктор — identifier
+                var nameId = default(TsNode);
+                if (funcDecl.IsValid)
+                {
+                    nameId = FindChildByType(funcDecl, "field_identifier");
+                    if (!nameId.IsValid)
+                        nameId = FindChildByType(funcDecl, "identifier");
+                }
+
+                if (nameId.IsValid)
+                {
+                    var methodName = Text(nameId);
+
+                    // Конструктор — имя совпадает с классом
+                    if (methodName == className)
+                    {
+                        var fn = ConvertConstructor(member, funcDecl, className);
+                        if (fn is not null) result.Add(fn);
+                    }
+                    else
+                    {
+                        var fn = ConvertMethod(member, funcDecl, methodName, className);
+                        if (fn is not null) result.Add(fn);
+                    }
+                }
+                else
+                {
+                    // Безымянный function_definition внутри класса — очень странно
+                    // Пробуем как конструктор
+                    var fn = ConvertConstructor(member, funcDecl, className);
+                    if (fn is not null) result.Add(fn);
+                }
+            }
+        }
+        finally
+        {
+            _currentClassFields = savedFields;
+            _currentClassName = savedClass;
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// Метод класса C++ → Counter.inc с self первым параметром.
+    /// </summary>
+    private YawaFunction? ConvertMethod(TsNode funcDef, TsNode funcDecl, string methodName, string className)
+    {
+        var fn = new YawaFunction
+        {
+            Name = $"{className}.{methodName}"
+        };
+
+        // Параметры (кроме self)
+        if (funcDecl.IsValid)
+        {
+            var paramList = FindChildByType(funcDecl, "parameter_list");
+            if (paramList.IsValid)
+            {
+                foreach (var p in paramList.NamedChildren())
+                {
+                    if (p.Type != "parameter_declaration") continue;
+                    var pName = FindDeepIdentifier(p);
+                    if (!string.IsNullOrEmpty(pName))
+                        fn.Params.Add(new YawaParam { Name = pName });
+                }
+            }
+        }
+
+        // self — первый
+        fn.Params.Insert(0, new YawaParam { Name = "self" });
+
+        // Тело
+        var body = FindChildByType(funcDef, "compound_statement");
+        if (body.IsValid)
+            fn.Body = ConvertBlock(body);
+
+        return fn;
+    }
+
+    /// <summary>
+    /// Конструктор C++ → метод ClassName.ClassName с self первым параметром.
+    /// </summary>
+    private YawaFunction? ConvertConstructor(TsNode funcDef, TsNode funcDecl, string className)
+    {
+        var fn = new YawaFunction
+        {
+            Name = $"{className}.{className}"
+        };
+
+        // Параметры (без self — его добавим)
+        if (funcDecl.IsValid)
+        {
+            var paramList = FindChildByType(funcDecl, "parameter_list");
+            if (paramList.IsValid)
+            {
+                foreach (var p in paramList.NamedChildren())
+                {
+                    if (p.Type != "parameter_declaration") continue;
+                    var pName = FindDeepIdentifier(p);
+                    if (!string.IsNullOrEmpty(pName))
+                        fn.Params.Add(new YawaParam { Name = pName });
+                }
+            }
+        }
+
+        // self — первый
+        fn.Params.Insert(0, new YawaParam { Name = "self" });
+
+        // Тело
+        var body = FindChildByType(funcDef, "compound_statement");
+        if (body.IsValid)
+            fn.Body = ConvertBlock(body);
+
+        return fn;
+    }
 
     private string ExtractFunctionName(TsNode funcDef)
     {
@@ -187,12 +394,34 @@ public sealed class CppToYawa
                 };
 
             case "declaration":
+            case "init_declarator":
                 return ConvertDeclaration(node);
 
             case "expression_statement":
                 {
                     var inner = node.NamedChildren().FirstOrDefault();
                     if (!inner.IsValid) return null;
+
+                    // swap(a, b) → SwapRefStatement
+                    if (inner.Type == "call_expression")
+                    {
+                        var callKids = inner.NamedChildren().ToList();
+                        if (callKids.Count >= 1 && callKids[0].Type == "identifier" &&
+                            Text(callKids[0]) == "swap")
+                        {
+                            var argList = callKids.FirstOrDefault(c => c.Type == "argument_list");
+                            if (argList.IsValid)
+                            {
+                                var args = argList.NamedChildren()
+                                    .Where(a => a.Type != "comment")
+                                    .Select(ConvertExpr).ToList();
+                                if (args.Count == 2)
+                                {
+                                    return new SwapRefStatement { A = args[0], B = args[1] };
+                                }
+                            }
+                        }
+                    }
 
                     // cout << ... — специальный случай
                     if (inner.Type == "binary_expression" &&
@@ -202,15 +431,11 @@ public sealed class CppToYawa
                     }
 
                     // cin >> ... — специальный случай
-                    if (inner.Type == "binary_expression" &&
-                        IsCinChain(inner))
+                    if (inner.Type == "binary_expression" && IsCinChain(inner))
                     {
-                        // Просто пропускаем — мы не можем читать stdin в реальном времени
-                        // (для олимпиадных задач нужно подавать данные — это отдельная фича)
-                        _warnings.Add("cin >> ... — чтение ввода игнорируется");
-                        return null;
+                        // cin >> x — игнорируем (нет stdin в визуализаторе).
+                        return new AnnotateStatement { Text = "cin (ввод не поддерживается в демо)" };
                     }
-
                     // Присваивание
                     if (inner.Type == "assignment_expression")
                         return ConvertAssignment(inner);
@@ -241,6 +466,7 @@ public sealed class CppToYawa
             case "for_statement":
                 return ConvertFor(node);
 
+            case "for_range_loop":
             case "range_based_for_statement":
                 return ConvertRangeFor(node);
 
@@ -262,17 +488,16 @@ public sealed class CppToYawa
 
     private YawaStatement ConvertDeclaration(TsNode node)
     {
-        // declaration:
-        //   int x = 5;            → init_declarator
-        //   int x, y;             → identifier, identifier
-        //   vector<int> v = {...}; → init_declarator с initializer_list
-        //   int A[5];             → array_declarator
         var statements = new List<YawaStatement>();
 
-        // Определяем "тип" — нужен для vector/array
+        // Определяем "тип" — vector / array / обычный
         var typeNode = node.NamedChildren().FirstOrDefault(c =>
             c.Type is "primitive_type" or "type_identifier" or "template_type");
         var typeName = typeNode.IsValid ? Text(typeNode) : "";
+        var isContainer = IsVectorType(typeName) || typeName.Contains("set") || typeName.Contains("map");
+        var isSet = typeName.Contains("set") && !typeName.Contains("bitset");
+        var isMap = typeName.Contains("map") && !typeName.Contains("unordered_map")
+                 || typeName.Contains("unordered_map");
 
         foreach (var child in node.NamedChildren())
         {
@@ -283,55 +508,71 @@ public sealed class CppToYawa
                 var target = parts[0];
                 var value = parts[^1];
 
-                // Имя переменной — последний identifier в target-е (в array_declarator это [N])
                 var declName = ExtractDeclaratorName(target);
                 if (string.IsNullOrEmpty(declName)) continue;
 
-                // Инициализация из списка — массив
+                YawaExpression initValue;
                 if (value.Type == "initializer_list")
                 {
-                    statements.Add(new DeclareStatement
+                    if (isSet)
                     {
-                        Name = declName,
-                        Value = ConvertInitializerList(value)
-                    });
+                        initValue = new SetLiteralExpr
+                        {
+                            Items = value.NamedChildren().Select(ConvertExpr).ToList()
+                        };
+                    }
+                    else
+                    {
+                        initValue = ConvertInitializerList(value);
+                    }
                 }
-                else if (IsVectorType(typeName) && value.Type == "call_expression")
+                else if (value.Type == "call_expression")
                 {
-                    // vector<int> v(n, 0) — на будущее
-                    statements.Add(new DeclareStatement
-                    {
-                        Name = declName,
-                        Value = ConvertExpr(value)
-                    });
+                    initValue = ConvertExpr(value);
                 }
                 else
                 {
-                    statements.Add(new DeclareStatement
-                    {
-                        Name = declName,
-                        Value = ConvertExpr(value)
-                    });
+                    initValue = ConvertExpr(value);
                 }
+
+                statements.Add(new DeclareStatement
+                {
+                    Name = declName,
+                    Value = initValue
+                });
             }
             else if (child.Type == "identifier")
             {
+                YawaExpression initValue;
+                if (isSet)
+                    initValue = new SetLiteralExpr();
+                else if (isMap)
+                    initValue = new DictExpr();
+                else if (isContainer)
+                    initValue = new ArrayExpr();
+                else if (_classNamesCpp.Contains(typeName))
+                    // Counter c; → Instantiate("Counter")
+                    initValue = new InstantiateExpr { ClassName = typeName, Args = new() };
+                else if (IsUserType(typeName))
+                    // Неизвестный тип → пустой объект с __type__
+                    initValue = new NewObjectExpr
+                    {
+                        Fields = { ["__type__"] = Lit(typeName) }
+                    };
+                else
+                    initValue = Lit(null);
+
                 statements.Add(new DeclareStatement
                 {
                     Name = Text(child),
-                    Value = Lit(null)
+                    Value = initValue
                 });
             }
             else if (child.Type == "array_declarator")
             {
-                // int A[5];           → [0,0,0,0,0]
-                // int M[3][3];        → [[0,0,0],[0,0,0],[0,0,0]]
-                // int A[];            → []
-                // int M[][3];         → (в параметрах, но на всякий случай)
                 var declName = ExtractDeclaratorName(child);
                 if (string.IsNullOrEmpty(declName)) continue;
 
-                // Ищем initializer_list внутри array_declarator (для int A[] = {...})
                 var initList = FindChildByType(child, "initializer_list");
                 if (initList.IsValid)
                 {
@@ -343,7 +584,6 @@ public sealed class CppToYawa
                     continue;
                 }
 
-                // Иначе — фиксированный размер (может быть многомерным)
                 var sizes = new List<int>();
                 CollectArraySizes(child, sizes);
 
@@ -378,30 +618,31 @@ public sealed class CppToYawa
         };
     }
 
+    /// <summary>
+    /// Проверяет, является ли тип "vector&lt;...&gt;" или "array&lt;...&gt;".
+    /// </summary>
+    private bool IsVectorType(string typeName) =>
+        typeName.StartsWith("vector") || typeName.StartsWith("std::vector")
+        || typeName.StartsWith("array") || typeName.StartsWith("std::array")
+        || typeName.Contains("vector<") || typeName.Contains("array<");
+
     private string ExtractDeclaratorName(TsNode declarator)
     {
         switch (declarator.Type)
         {
             case "identifier":
                 return Text(declarator);
-
             case "init_declarator":
                 return ExtractDeclaratorName(declarator.NamedChildren().First());
-
             case "array_declarator":
             case "pointer_declarator":
             case "reference_declarator":
-                // Используем рекурсивный поиск: identifier может быть на любом уровне
                 return FindDeepIdentifier(declarator);
 
             default:
                 return FindDeepIdentifier(declarator);
         }
     }
-
-    private bool IsVectorType(string typeName) =>
-        typeName.Contains("vector") || typeName.Contains("array");
-
     private YawaExpression ConvertInitializerList(TsNode node)
     {
         var items = node.NamedChildren()
@@ -417,34 +658,65 @@ public sealed class CppToYawa
     {
         var children = node.NamedChildren().ToList();
 
-        var cond = children.FirstOrDefault(c =>
-            c.Type != "compound_statement" &&
-            c.Type != "else_clause");
-        var thenBlock = children.FirstOrDefault(c => c.Type == "compound_statement");
+        TsNode condNode = default;
+        TsNode thenNode = default;
+        TsNode elseClause = default;
 
-        // condition_clause — разворачиваем
-        var condExpr = UnwrapConditionClause(cond);
+        bool condSeen = false;
+        foreach (var c in children)
+        {
+            if (c.Type == "condition_clause" && !condSeen)
+            {
+                condNode = c;
+                condSeen = true;
+                continue;
+            }
+            if (c.Type == "else_clause")
+            {
+                elseClause = c;
+                continue;
+            }
+            if (condSeen && !thenNode.IsValid)
+                thenNode = c;
+        }
 
         var stmt = new IfStatement
         {
-            Cond = ConvertExpr(condExpr),
-            Then = thenBlock.IsValid ? ConvertBlock(thenBlock) : new List<YawaStatement>()
+            Cond = ConvertExpr(UnwrapConditionClause(condNode)),
+            Then = ConvertBody(thenNode)
         };
 
-        var elseClause = children.FirstOrDefault(c => c.Type == "else_clause");
         if (elseClause.IsValid)
         {
             var ec = elseClause.NamedChildren().ToList();
-            var elseBlock = ec.FirstOrDefault(c => c.Type == "compound_statement");
-            var elseIf = ec.FirstOrDefault(c => c.Type == "if_statement");
-
-            if (elseBlock.IsValid)
-                stmt.Else = ConvertBlock(elseBlock);
-            else if (elseIf.IsValid)
-                stmt.Else = new List<YawaStatement> { ConvertIf(elseIf) };
+            TsNode elseBody = default;
+            foreach (var c in ec)
+            {
+                if (c.Type == "if_statement")
+                {
+                    stmt.Else = new List<YawaStatement> { ConvertIf(c) };
+                    return stmt;
+                }
+                if (!elseBody.IsValid) elseBody = c;
+            }
+            stmt.Else = ConvertBody(elseBody);
         }
 
         return stmt;
+    }
+
+    /// <summary>
+    /// Тело if/while/for: либо { statements }, либо один statement.
+    /// </summary>
+    private List<YawaStatement> ConvertBody(TsNode node)
+    {
+        if (!node.IsValid) return new List<YawaStatement>();
+
+        if (node.Type == "compound_statement")
+            return ConvertBlock(node);
+
+        var s = ConvertStatement(node);
+        return s is null ? new List<YawaStatement>() : new List<YawaStatement> { s };
     }
 
     /// <summary>
@@ -469,15 +741,27 @@ public sealed class CppToYawa
     private YawaStatement ConvertWhile(TsNode node)
     {
         var children = node.NamedChildren().ToList();
-        var cond = children.FirstOrDefault(c => c.Type != "compound_statement");
-        var block = children.FirstOrDefault(c => c.Type == "compound_statement");
 
-        var condExpr = UnwrapConditionClause(cond);
+        TsNode condNode = default;
+        TsNode bodyNode = default;
+
+        bool condSeen = false;
+        foreach (var c in children)
+        {
+            if (c.Type == "condition_clause" && !condSeen)
+            {
+                condNode = c;
+                condSeen = true;
+                continue;
+            }
+            if (condSeen && !bodyNode.IsValid)
+                bodyNode = c;
+        }
 
         return new WhileStatement
         {
-            Cond = ConvertExpr(condExpr),
-            Body = block.IsValid ? ConvertBlock(block) : new List<YawaStatement>()
+            Cond = ConvertExpr(UnwrapConditionClause(condNode)),
+            Body = ConvertBody(bodyNode)
         };
     }
 
@@ -499,6 +783,8 @@ public sealed class CppToYawa
 
         // Разворачиваем named children, заходя в condition_clause
         var flat = new List<TsNode>();
+        if (TryConvertIteratorFor(node) is { } r) return r;
+
         foreach (var child in node.NamedChildren())
         {
             if (child.Type == "condition_clause")
@@ -653,18 +939,197 @@ public sealed class CppToYawa
             From = startValue ?? Lit(0),
             To = to,
             Step = step,
-            Body = block.IsValid ? ConvertBlock(block) : new List<YawaStatement>()
+            Body = ConvertBody(block)
         };
+    }
+    private YawaStatement? TryConvertIteratorFor(TsNode node)
+    {
+        // Быстрая проверка по тексту: должен быть .begin() и .end()
+        var fullText = Text(node);
+        if (!fullText.Contains(".begin()") || !fullText.Contains(".end()"))
+            return null;
+
+        // Найдём body
+        TsNode body = default;
+        foreach (var c in node.NamedChildren())
+            if (c.Type == "compound_statement") { body = c; break; }
+        if (!body.IsValid) return null;
+
+        // Найдём init: первый named child, НЕ condition_clause, НЕ compound_statement, НЕ update_expression
+        TsNode init = default;
+        foreach (var c in node.NamedChildren())
+        {
+            if (c.Type == "compound_statement") continue;
+            if (c.Type == "condition_clause") continue;
+            if (c.Type == "update_expression") continue;
+            if (c.Type == "expression_statement" && Text(c).Contains("++")) continue;
+            init = c;
+            break;
+        }
+        if (!init.IsValid) return null;
+
+        // Теперь рекурсивно по всему init ищем:
+        //   - iterName — первый identifier, стоящий до ".begin()"
+        //   - containerNode — receiver перед ".begin"
+        var initText = Text(init);
+        var beginIdx = initText.IndexOf(".begin()", StringComparison.Ordinal);
+        if (beginIdx < 0) return null;
+
+        string iterName = "";
+        TsNode containerNode = default;
+
+        ScanForIter(init, beginIdx, ref iterName, ref containerNode);
+
+        if (string.IsNullOrEmpty(iterName) || !containerNode.IsValid)
+            return null;
+
+        bool hasPairAccess = BodyHasFieldAccess(body, iterName, "first")
+                          || BodyHasFieldAccess(body, iterName, "second");
+
+        if (hasPairAccess)
+        {
+            var keyVar = iterName + "_k";
+            var valueVar = iterName + "_v";
+            _iterPairReplacement = new Dictionary<string, (string, string)>
+            {
+                [iterName] = (keyVar, valueVar)
+            };
+            var convertedBody = ConvertBlock(body);
+            _iterPairReplacement = null;
+
+            return new ForeachPairStatement
+            {
+                KeyVar = keyVar,
+                ValueVar = valueVar,
+                In = ConvertExpr(containerNode),
+                Body = convertedBody
+            };
+        }
+
+        _iterSimpleReplacement = new HashSet<string> { iterName };
+        var convertedBody2 = ConvertBlock(body);
+        _iterSimpleReplacement = null;
+
+        return new ForeachStatement
+        {
+            Var = iterName,
+            In = ConvertExpr(containerNode),
+            Body = convertedBody2
+        };
+    }
+
+    /// <summary>
+    /// Рекурсивный обход init: ищет identifier до позиции beginIdx (iterName),
+    /// и field_expression с "begin" (containerNode = receiver).
+    /// </summary>
+    private void ScanForIter(TsNode n, int beginIdx, ref string iterName, ref TsNode containerNode)
+    {
+        if (!string.IsNullOrEmpty(iterName) && containerNode.IsValid) return;
+
+        if (n.Type == "identifier" && string.IsNullOrEmpty(iterName))
+        {
+            iterName = Text(n);
+        }
+
+        if (n.Type == "field_expression" && !containerNode.IsValid)
+        {
+            var fc = n.NamedChildren().ToList();
+            if (fc.Count >= 2 &&
+                fc[^1].Type == "field_identifier" &&
+                Text(fc[^1]) == "begin")
+            {
+                containerNode = fc[0];
+            }
+        }
+
+        foreach (var c in n.NamedChildren())
+            ScanForIter(c, beginIdx, ref iterName, ref containerNode);
+    }
+
+    private bool BodyHasFieldAccess(TsNode node, string iterName, string fieldName)
+    {
+        if (node.Type == "field_expression")
+        {
+            var children = node.NamedChildren().ToList();
+            if (children.Count >= 2 &&
+                children[0].Type == "identifier" && Text(children[0]) == iterName &&
+                children[^1].Type == "field_identifier" && Text(children[^1]) == fieldName)
+                return true;
+        }
+        foreach (var c in node.NamedChildren())
+            if (BodyHasFieldAccess(c, iterName, fieldName)) return true;
+        return false;
     }
 
     private YawaStatement ConvertRangeFor(TsNode node)
     {
-        // for (int x : A) { ... }
-        // Пока не поддерживается — редкий случай для визуализации
-        throw Err("range-based for (for (x : A)) пока не поддерживается. " +
-                  "Используйте for (int i = 0; i < ...; i++)", node);
-    }
+        // for (int x : v) { ... }
+        // for (auto &x : v) { ... }
+        // for (char c : s) { ... }
+        // for (Point p : points) { ... }
+        //
+        // Возможные структуры в tree-sitter-cpp:
+        //   v0.23.x: [primitive_type, identifier(x), identifier(v), compound_statement]
+        //   другие:  [declaration(int x), identifier(v), compound_statement]
+        //   auto:    [identifier(x), identifier(v), compound_statement]
+        //   auto&:   [reference_declarator(x), identifier(v), compound_statement]
 
+        var children = node.NamedChildren().ToList();
+
+        var blockNode = children.FirstOrDefault(c => c.Type == "compound_statement");
+        var others = children.Where(c => c.Type != "compound_statement").ToList();
+
+        string varName = "";
+        TsNode iterableNode = default;
+
+        // ─── Подход 1: declaration + identifier ───
+        var decl = others.FirstOrDefault(c => c.Type == "declaration");
+        if (decl.IsValid)
+        {
+            varName = FindDeepIdentifier(decl);
+            var idx = others.IndexOf(decl);
+            if (idx + 1 < others.Count)
+                iterableNode = others[idx + 1];
+        }
+
+        // ─── Подход 2: primitive_type + identifier + identifier (v0.23.x) ───
+        if (string.IsNullOrEmpty(varName))
+        {
+            var ids = others.Where(c => c.Type == "identifier").ToList();
+            if (ids.Count >= 2)
+            {
+                varName = Text(ids[^2]);       // предпоследний identifier
+                iterableNode = ids[^1];        // последний identifier
+            }
+        }
+
+        // ─── Подход 3: reference_declarator / pointer_declarator + identifier ───
+        if (string.IsNullOrEmpty(varName))
+        {
+            var refDecl = others.FirstOrDefault(c =>
+                c.Type == "reference_declarator" || c.Type == "pointer_declarator");
+            if (refDecl.IsValid)
+            {
+                varName = FindDeepIdentifier(refDecl);
+                var idx = others.IndexOf(refDecl);
+                if (idx + 1 < others.Count)
+                    iterableNode = others[idx + 1];
+            }
+        }
+
+        if (string.IsNullOrEmpty(varName) || !iterableNode.IsValid)
+        {
+            var shape = string.Join(", ", children.Select(c => c.Type));
+            throw Err($"Не удалось разобрать for-range (узлы: {shape})", node);
+        }
+
+        return new ForeachStatement
+        {
+            Var = varName,
+            In = ConvertExpr(iterableNode),
+            Body = blockNode.IsValid ? ConvertBlock(blockNode) : new List<YawaStatement>()
+        };
+    }
     // ─────────── Assignment / Update ───────────
 
     private YawaStatement ConvertAssignment(TsNode node)
@@ -841,6 +1306,21 @@ public sealed class CppToYawa
             case "field_expression":
                 return ConvertFieldAccess(node);
 
+            case "pointer_expression":
+                {
+                    var inner = node.NamedChildren().FirstOrDefault();
+                    if (!inner.IsValid) return Lit(null);
+
+                    // *it внутри for-iterator по set → сам it
+                    if (inner.Type == "identifier" &&
+                        _iterSimpleReplacement?.Contains(Text(inner)) == true)
+                    {
+                        return new RefExpr { Name = Text(inner) };
+                    }
+
+                    return ConvertExpr(inner);
+                }
+
             case "binary_expression":
                 return ConvertBinary(node);
 
@@ -921,6 +1401,18 @@ public sealed class CppToYawa
         if (fieldNameNode.Type != "field_identifier")
             throw Err("Ожидалось имя поля после .", fieldNameNode);
 
+        // Замена it->first / it->second внутри for-iterator по map
+        if (_iterPairReplacement is not null && obj.Type == "identifier")
+        {
+            var iterName = Text(obj);
+            var fieldName = Text(fieldNameNode);
+            if (_iterPairReplacement.TryGetValue(iterName, out var repl))
+            {
+                if (fieldName == "first") return new RefExpr { Name = repl.key };
+                if (fieldName == "second") return new RefExpr { Name = repl.value };
+            }
+        }
+
         return new FieldExpr
         {
             Target = ConvertExpr(obj),
@@ -993,23 +1485,75 @@ public sealed class CppToYawa
         var callee = children[0];
         var argsList = children.FirstOrDefault(c => c.Type == "argument_list");
 
+        // X.erase(X.begin()) → erase_first(X)
+        if (callee.Type == "field_expression")
+        {
+            var fc = callee.NamedChildren().ToList();
+            if (fc.Count >= 2 && fc[^1].Type == "field_identifier"
+                             && Text(fc[^1]) == "erase")
+            {
+                var receiverText = Text(fc[0]);
+                if (argsList.IsValid)
+                {
+                    var argsRaw = argsList.NamedChildren().ToList();
+                    if (argsRaw.Count == 1 && argsRaw[0].Type == "call_expression")
+                    {
+                        var innerCall = argsRaw[0].NamedChildren().ToList();
+                        if (innerCall.Count > 0 && innerCall[0].Type == "field_expression")
+                        {
+                            var innerFc = innerCall[0].NamedChildren().ToList();
+                            if (innerFc.Count >= 2 && Text(innerFc[^1]) == "begin"
+                                                  && Text(innerFc[0]) == receiverText)
+                            {
+                                return new CallExpr
+                                {
+                                    Name = "erase_first",
+                                    Args = new List<YawaExpression> { ConvertExpr(fc[0]) }
+                                };
+                            }
+                        }
+                    }
+                }
+            }
+        }
         var args = argsList.IsValid
             ? argsList.NamedChildren()
                 .Where(a => a.Type != "comment")
                 .Select(ConvertExpr).ToList()
             : new List<YawaExpression>();
 
+        // STL-итераторы: sort(v.begin(), v.end()) → sort(v)
+        // Ловим паттерн: args[0] = v.begin(), args[1] = v.end() с одинаковым v
+        if (args.Count >= 2 && IsBeginEndPair(argsList, out var container))
+        {
+            var cleanArgs = new List<YawaExpression> { container! };
+            // Для accumulate третьим аргументом идёт начальное значение — оставляем его
+            for (int i = 2; i < args.Count; i++)
+                cleanArgs.Add(args[i]);
+
+            // min_element/max_element возвращают указатель — обычно используется как *min_element
+            // а мы уже развернули pointer_expression в значении — значит просто отдаём container.
+
+            var simpleName = Text(callee);
+            return new CallExpr { Name = simpleName, Args = cleanArgs };
+        }
+
         // Прямой вызов функции
         if (callee.Type == "identifier")
         {
             var name = Text(callee);
+
+            // C++: Counter() → Instantiate
+            if (_classNamesCpp.Contains(name))
+                return new InstantiateExpr { ClassName = name, Args = args };
+
             var mapped = name switch
             {
                 "min" => "min",
                 "max" => "max",
                 "abs" => "abs",
                 "fabs" => "abs",
-                "swap" => "__cpp_swap",   // специальный
+                "swap" => "__cpp_swap",
                 _ => name
             };
             return new CallExpr { Name = mapped, Args = args };
@@ -1035,6 +1579,60 @@ public sealed class CppToYawa
         throw Err($"Неподдерживаемый вызов: {callee.Type}", callee);
     }
 
+    /// <summary>
+    /// Проверяет, что argsList содержит паттерн v.begin(), v.end() (с одинаковым v).
+    /// Возвращает v как YawaExpression.
+    /// </summary>
+    private bool IsBeginEndPair(TsNode argsList, out YawaExpression? container)
+    {
+        container = null;
+        if (!argsList.IsValid) return false;
+
+        var args = argsList.NamedChildren()
+            .Where(a => a.Type != "comment")
+            .ToList();
+
+        if (args.Count < 2) return false;
+
+        var first = args[0];
+        var second = args[1];
+
+        var firstRecv = ExtractMethodReceiver(first, "begin");
+        var secondRecv = ExtractMethodReceiver(second, "end");
+
+        if (firstRecv is null || secondRecv is null) return false;
+
+        // Оба должны быть одинаковыми (v.begin() и v.end())
+        if (Text(firstRecv.Value) != Text(secondRecv.Value)) return false;
+
+        container = ConvertExpr(firstRecv.Value);
+        return true;
+    }
+
+    /// <summary>
+    /// Извлекает receiver из вызова v.method() или v.method(…).
+    /// Возвращает null, если это не вызов метода с указанным именем.
+    /// </summary>
+    private TsNode? ExtractMethodReceiver(TsNode call, string methodName)
+    {
+        if (call.Type != "call_expression") return null;
+
+        var children = call.NamedChildren().ToList();
+        if (children.Count == 0) return null;
+
+        var callee = children[0];
+        if (callee.Type != "field_expression") return null;
+
+        var fc = callee.NamedChildren().ToList();
+        if (fc.Count < 2) return null;
+
+        var methodId = fc[^1];
+        if (methodId.Type != "field_identifier") return null;
+        if (Text(methodId) != methodName) return null;
+
+        return fc[0];
+    }
+
     private YawaExpression ConvertTernary(TsNode node)
     {
         var children = node.NamedChildren().ToList();
@@ -1054,17 +1652,26 @@ public sealed class CppToYawa
 
     private YawaExpression ConvertLValue(TsNode node)
     {
-        switch (node.Type)
+        if (node.Type == "identifier")
         {
-            case "identifier":
-                return new RefExpr { Name = Text(node) };
-            case "subscript_expression":
-                return ConvertSubscript(node);
-            case "field_expression":
-                return ConvertFieldAccess(node);
-            default:
-                return ConvertExpr(node);
+            var name = Text(node);
+
+            // Поле класса
+            if (_currentClassName is not null &&
+                _currentClassFields is not null &&
+                _currentClassFields.Contains(name))
+            {
+                return new FieldExpr
+                {
+                    Target = new RefExpr { Name = "self" },
+                    FieldName = name
+                };
+            }
+
+            return new RefExpr { Name = name };
         }
+
+        return ConvertExpr(node);
     }
 
     // ─────────── Helpers ───────────
@@ -1075,6 +1682,23 @@ public sealed class CppToYawa
         var e = (int)node.EndByte;
         if (s < 0 || e <= s || e > _bytes.Length) return "";
         return Encoding.UTF8.GetString(_bytes, s, e - s);
+    }
+
+    /// <summary>
+    /// Пользовательский тип — struct/class (не primitive, не STL-контейнер).
+    /// </summary>
+    private bool IsUserType(string typeName)
+    {
+        if (string.IsNullOrEmpty(typeName)) return false;
+        if (IsVectorType(typeName)) return false;
+        if (typeName.Contains("set") || typeName.Contains("map")) return false;
+        if (typeName.Contains("stack") || typeName.Contains("queue")) return false;
+        if (typeName.Contains("pair")) return false;
+        if (typeName == "int" || typeName == "long" || typeName == "short"
+            || typeName == "char" || typeName == "bool" || typeName == "float"
+            || typeName == "double" || typeName == "void" || typeName == "string"
+            || typeName == "auto") return false;
+        return true;
     }
 
     private string ExtractOperator(TsNode node)
@@ -1089,6 +1713,29 @@ public sealed class CppToYawa
         var end = (int)b.StartByte;
         if (start >= end) return "";
         return Encoding.UTF8.GetString(_bytes, start, end - start).Trim();
+    }
+
+    private YawaExpression ConvertIdentifier(TsNode node)
+    {
+        var name = Text(node);
+
+        // Внутри метода класса — если name это поле класса, значит self.name
+        if (_currentClassName is not null &&
+            _currentClassFields is not null &&
+            _currentClassFields.Contains(name))
+        {
+            return new FieldExpr
+            {
+                Target = new RefExpr { Name = "self" },
+                FieldName = name
+            };
+        }
+
+        // Глобальная функция как значение
+        if (_functionNames.Contains(name) && !_classNamesCpp.Contains(name))
+            return new FunctionRefExpr { Name = name };
+
+        return new RefExpr { Name = name };
     }
 
     private string ExtractAssignmentOperator(TsNode node)

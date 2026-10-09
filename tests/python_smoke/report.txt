@@ -19,16 +19,3 @@
 ✅ 13_fstrings  (steps=8, cmp=0, swaps=0)
 ✅ 14_nested_func  (steps=9, cmp=0, swaps=0)
 ✅ 15_class  (steps=15, cmp=0, swaps=0)
-✅ 16_bfs  (steps=26, cmp=5, swaps=0)
-✅ 17_dfs  (steps=18, cmp=0, swaps=0)
-✅ 18_bst_func  (steps=28, cmp=7, swaps=0)
-✅ 19_dict  (steps=18, cmp=0, swaps=0)
-✅ 20_stack  (steps=20, cmp=8, swaps=0)
-
-═══════════════════════════════════════════════════════════════
-  Итого:
-    Всего:              20
-    Прошло полностью:   20
-    Упало транспайлер:  0
-    Упало исполнение:   0
-═══════════════════════════════════════════════════════════════

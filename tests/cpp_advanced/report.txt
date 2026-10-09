@@ -1,0 +1,42 @@
+══════════════════════════════════════════════════════════
+  C++ Advanced → YAWA tests
+══════════════════════════════════════════════════════════
+
+✅ 01_vector_basic  (steps=18)
+✅ 02_vector_sort  (steps=6)
+✅ 03_pair  (steps=28)
+✅ 04_struct  (steps=16)
+✅ 05_class  (steps=21)
+✅ 06_stack  (steps=40)
+✅ 07_queue  (steps=17)
+✅ 08_map  (steps=13)
+✅ 09_set  (steps=13)
+✅ 10_string  (steps=17)
+✅ 11_swap_ref  (steps=17)
+✅ 12_max_function  (steps=36)
+✅ 13_gcd_rec  (steps=18)
+✅ 14_count_chars  (steps=51)
+✅ 15_vector_iterate  (steps=19)
+✅ 16_matrix_vec  (steps=13)
+✅ 17_vec_binary_search  (steps=24)
+✅ 18_vec_sort  (steps=65)
+✅ 19_std_swap  (steps=13)
+✅ 20_ternary  (steps=14)
+✅ 21_map_lookup  (steps=11)
+✅ 22_set_ops  (steps=27)
+✅ 23_reverse_vec  (steps=7)
+✅ 24_min_max_element  (steps=8)
+✅ 25_accumulate  (steps=7)
+✅ 26_const_static  (steps=16)
+✅ 27_range_for  (steps=20)
+✅ 28_template  (steps=11)
+✅ 29_pair_return  (steps=12)
+✅ 30_cout  (steps=10)
+
+══════════════════════════════════════════════════════════
+  Итого:
+    Всего:              30
+    Прошло полностью:   30
+    Упало транспайлер:  0
+    Упало исполнение:   0
+══════════════════════════════════════════════════════════

@@ -122,6 +122,7 @@ public sealed class TraceRecorder
         foreach (var (k, v) in frame.AllVisible())
         {
             if (k.StartsWith("__") && k != "__return__") continue;
+            if (k.EndsWith("_k") || k.EndsWith("_v")) continue;
             d[k] = ToCompact(v);
         }
         return d;
@@ -215,6 +216,8 @@ public sealed class TraceRecorder
         {
             // Оставляем __return__, скрываем остальные __*
             if (k.StartsWith("__") && k != "__return__") continue;
+            // Скрываем внутренние имена foreach_pair: it_k, it_v и подобные
+            if (k.EndsWith("_k") || k.EndsWith("_v")) continue;
             result[k] = v.ToJson();
         }
         return result;

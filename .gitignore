@@ -368,3 +368,4 @@ chapi-service/.kotlin/
 chapi-service/.idea/
 chapi-service/*.iml
 traces/
+_out/

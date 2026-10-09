@@ -148,6 +148,17 @@ public sealed class Evaluator
                 _ => throw new YawaRuntimeException($"TreeNode has no field '{fl.FieldName}'")
             };
         }
+        if (target is TupleValue tup)
+        {
+            var idx = fl.FieldName switch
+            {
+                "first" => 0,
+                "second" => 1,
+                _ => -1
+            };
+            if (idx >= 0 && idx < tup.Count)
+                return tup[idx];
+        }
         throw new YawaRuntimeException($"Cannot access field '{fl.FieldName}' on {target.TypeName}");
     }
 

@@ -341,6 +341,11 @@ public sealed class Interpreter
         obj.SetField("__type__", new StringValue(className));
 
         var initName = $"{className}.__init__";
+        if (!_functions.ContainsKey(initName))
+        {
+            // C++: конструктор называется по имени класса
+            initName = $"{className}.{className}";
+        }
         if (_functions.ContainsKey(initName))
         {
             var args = new List<RuntimeValue> { obj };
@@ -379,20 +384,102 @@ public sealed class Interpreter
             }
         }
 
+        // C++-специфичные методы
+        if (receiver is SetValue)
+        {
+            switch (name)
+            {
+                case "insert":
+                case "add":
+                    {
+                        if (argExprs.Count != 1)
+                            throw new YawaRuntimeException($"{name}() needs 1 arg");
+                        var val = Eval.Eval(argExprs[0], frame);
+                        ((SetValue)receiver).Add(val);
+                        return NullValue.Instance;
+                    }
+                case "count":
+                case "contains":
+                    {
+                        if (argExprs.Count != 1)
+                            throw new YawaRuntimeException($"{name}() needs 1 arg");
+                        var val = Eval.Eval(argExprs[0], frame);
+                        var has = ((SetValue)receiver).Contains(val);
+                        // C++ ожидает число, Python — bool. Возвращаем IntValue (0/1),
+                        // для if это тоже сработает через AsBool.
+                        return new IntValue(has ? 1 : 0);
+                    }
+                case "erase":
+                case "remove":
+                case "discard":
+                    {
+                        if (argExprs.Count != 1)
+                            throw new YawaRuntimeException($"{name}() needs 1 arg");
+                        var val = Eval.Eval(argExprs[0], frame);
+                        ((SetValue)receiver).Remove(val);
+                        return NullValue.Instance;
+                    }
+                case "size":
+                case "length":
+                    return new IntValue(((SetValue)receiver).Count);
+            }
+        }
+
+        if (receiver is ObjectValue obj2)
+        {
+            // m.count(key) → 1/0
+            if (name == "count" && argExprs.Count == 1)
+            {
+                var key = Eval.Eval(argExprs[0], frame);
+                var keyStr = key is StringValue sv1 ? sv1.Value : key.ToString() ?? "";
+                return obj2.HasField(keyStr) ? new IntValue(1) : new IntValue(0);
+            }
+            // m.erase(key)
+            if ((name == "erase" || name == "remove") && argExprs.Count == 1)
+            {
+                var key = Eval.Eval(argExprs[0], frame);
+                var keyStr = key is StringValue sv1 ? sv1.Value : key.ToString() ?? "";
+                obj2.Fields.Remove(keyStr);
+                return new IntValue(obj2.HasField(keyStr) ? 1 : 0);
+            }
+            if (name == "find" && argExprs.Count == 1)
+            {
+                var key = Eval.Eval(argExprs[0], frame);
+                var keyStr = key is StringValue sv1 ? sv1.Value : key.ToString() ?? "";
+                return obj2.HasField(keyStr) ? new IntValue(1) : new IntValue(0);
+            }
+            if (name == "find" && argExprs.Count == 1)
+            {
+                var key = Eval.Eval(argExprs[0], frame);
+                var keyStr = key is StringValue sv1 ? sv1.Value : key.ToString() ?? "";
+                return obj2.HasField(keyStr) ? new IntValue(1) : new IntValue(0);
+            }
+
+            if (name == "end")
+            {
+                // C++ итератор "end" — у нас маркер "ничего не найдено" = 0
+                return new IntValue(0);
+            }
+        }
+
         if (receiver is StringValue sv)
         {
             return CallStringMethod(sv, name, argExprs, frame);
         }
 
         // Специальные методы коллекций — мапим в builtin.
-        string? builtinName = name switch
+        var builtinName = name switch
         {
             "append" => "push",
+            "push_back" => "push",     // C++ vector
             "pop" => "pop",
+            "pop_back" => "pop",      // C++ vector
             "insert" => "insert",
             "remove" => "remove",
             "add" => "add",
             "discard" => "discard",
+            "size" => "length",   // C++ string, vector
+            "length" => "length",
             _ => null
         };
 
@@ -509,6 +596,10 @@ public sealed class Interpreter
             case "islower":
                 return str.Length > 0 && str.Any(char.IsLetter) && str.All(c => !char.IsLetter(c) || char.IsLower(c))
                     ? BoolValue.True : BoolValue.False;
+            case "size":
+                return new IntValue(str.Length);
+            case "length":
+                return new IntValue(str.Length);
 
             default:
                 throw new YawaRuntimeException($"Unknown string method: {name}");
@@ -561,9 +652,57 @@ public sealed class Interpreter
             case TupleAssignStatement ta: ExecuteTupleAssign(ta, frame); break;
             case TryStatement t: ExecuteTry(t, frame); break;
             case DeleteStatement d: ExecuteDelete(d, frame); break;
+            case SwapRefStatement sw: ExecuteSwapRef(sw, frame); break;
+            case ForeachPairStatement fp: ExecuteForeachPair(fp, frame); break;
             default:
                 throw new YawaRuntimeException($"Unknown statement: {stmt.GetType().Name}");
         }
+    }
+    private void ExecuteForeachPair(ForeachPairStatement s, Frame frame)
+    {
+        var collection = Eval.Eval(s.In, frame);
+        var items = new List<(RuntimeValue k, RuntimeValue v)>();
+
+        switch (collection)
+        {
+            case ObjectValue obj:
+                foreach (var kv in obj.Fields)
+                    if (!kv.Key.StartsWith("__"))
+                        items.Add((new StringValue(kv.Key), kv.Value));
+                break;
+            case ArrayValue arr:
+                for (int i = 0; i < arr.Count; i++)
+                    items.Add((new IntValue(i), arr[i]));
+                break;
+            case SetValue st:
+                foreach (var v in st.Items)
+                    items.Add((v, v));
+                break;
+            default:
+                throw new YawaRuntimeException($"foreach_pair on {collection.TypeName}");
+        }
+
+        foreach (var (k, v) in items)
+        {
+            frame.Declare(s.KeyVar, k);
+            frame.Declare(s.ValueVar, v);
+            try { ExecuteBlock(s.Body, frame); }
+            catch (BreakException) { break; }
+            catch (ContinueException) { continue; }
+        }
+    }
+
+    private void ExecuteSwapRef(SwapRefStatement s, Frame frame)
+    {
+        // Вычисляем оба значения
+        var aVal = Eval.Eval(s.A, frame);
+        var bVal = Eval.Eval(s.B, frame);
+
+        // Присваиваем через AssignTo (учитывает index/field/ref)
+        AssignTo(s.A, bVal, frame, s.NodeId);
+        AssignTo(s.B, aVal, frame, s.NodeId);
+
+        Recorder.Stats.Swaps++;
     }
 
     private void ExecuteDeclare(DeclareStatement d, Frame frame)

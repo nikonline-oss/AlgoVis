@@ -12,7 +12,8 @@ public static class Builtins
         "set", "add", "discard", "remove_from_set",
         "chr", "ord", "int", "str", "float", "bool", "sum", "any", "all",
         "enumerate", "zip", "list", "tuple", "sorted", "sorted_by_abs", "sorted_by_len",
-        "sorted_with"
+        "sorted_with", "make_pair", "sort", "reverse", "min_element", "max_element", "accumulate",
+        "erase_first"
     };
 
     public static RuntimeValue Call(string name, List<RuntimeValue> args, TraceRecorder rec)
@@ -305,6 +306,81 @@ public static class Builtins
                         .OrderBy(v => ValueLength(v))
                         .ToList();
                     return new ArrayValue(items, arr.ElementType);
+                }
+
+            case "make_pair":
+                {
+                    if (args.Count != 2)
+                        throw new YawaRuntimeException("make_pair() needs 2 args");
+                    return new TupleValue(new[] { args[0], args[1] });
+                }
+
+            case "sort":
+                {
+                    if (args[0] is not ArrayValue arr)
+                        throw new YawaRuntimeException("sort() needs array");
+                    var items = arr.Items.ToList();
+                    items.Sort(CompareValues);
+                    arr.Items.Clear();
+                    arr.Items.AddRange(items);
+                    return NullValue.Instance;
+                }
+
+            case "reverse":
+                {
+                    if (args[0] is not ArrayValue arr)
+                        throw new YawaRuntimeException("reverse() needs array");
+                    arr.Items.Reverse();
+                    return NullValue.Instance;
+                }
+
+            case "min_element":
+                {
+                    if (args[0] is not ArrayValue arr || arr.Count == 0)
+                        throw new YawaRuntimeException("min_element() needs non-empty array");
+                    var min = arr.Items[0];
+                    foreach (var v in arr.Items)
+                        if (CompareValues(v, min) < 0) min = v;
+                    return min;
+                }
+
+            case "max_element":
+                {
+                    if (args[0] is not ArrayValue arr || arr.Count == 0)
+                        throw new YawaRuntimeException("max_element() needs non-empty array");
+                    var max = arr.Items[0];
+                    foreach (var v in arr.Items)
+                        if (CompareValues(v, max) > 0) max = v;
+                    return max;
+                }
+
+            case "accumulate":
+                {
+                    if (args[0] is not ArrayValue arr)
+                        throw new YawaRuntimeException("accumulate() needs array");
+                    var init = args.Count > 1 ? args[1] : (RuntimeValue)new IntValue(0);
+
+                    // Числовое суммирование
+                    long total = 0;
+                    double ftotal = 0;
+                    bool isFloat = false;
+                    if (init is IntValue ii) total = ii.Value;
+                    else if (init is FloatValue ff) { isFloat = true; ftotal = ff.Value; }
+
+                    foreach (var v in arr.Items)
+                    {
+                        if (v is IntValue iv) { total += iv.Value; }
+                        else if (v is FloatValue fv) { isFloat = true; ftotal += fv.Value; }
+                    }
+                    return isFloat ? new FloatValue(total + ftotal) : new IntValue(total);
+                }
+            case "erase_first":
+                {
+                    if (args[0] is not ArrayValue arr)
+                        throw new YawaRuntimeException("erase_first() needs array");
+                    if (arr.Count == 0) return NullValue.Instance;
+                    arr.Items.RemoveAt(0);
+                    return NullValue.Instance;
                 }
 
             default:

@@ -22,7 +22,19 @@ public sealed class Frame
     public RuntimeValue Get(string name)
     {
         if (Locals.TryGetValue(name, out var v)) return v;
-        if (Parent is not null) return Parent.Get(name);
+        if (Parent is not null)
+        {
+            try { return Parent.Get(name); }
+            catch (KeyNotFoundException) { /* fallback на self ниже */ }
+        }
+
+        // Fallback: если в текущем Locals есть self и это ObjectValue — ищем поле.
+        // Нужно для C++-методов, где `value = value + 1` неявно значит `this->value`.
+        if (Locals.TryGetValue("self", out var selfVal) && selfVal is ObjectValue obj)
+        {
+            if (obj.HasField(name)) return obj.GetField(name);
+        }
+
         throw new KeyNotFoundException($"Variable '{name}' not found");
     }
 
@@ -34,6 +46,17 @@ public sealed class Frame
 
     public void Set(string name, RuntimeValue value)
     {
+        // 1. Если self есть в Locals и у него есть поле name → пишем в поле.
+        if (Locals.TryGetValue("self", out var selfVal) && selfVal is ObjectValue obj)
+        {
+            if (obj.HasField(name))
+            {
+                obj.SetField(name, value);
+                return;
+            }
+        }
+
+        // 2. Иначе — обычная запись в Locals (Python-семантика).
         Locals[name] = value;
     }
 

@@ -142,3 +142,17 @@ public sealed class DeleteStatement : YawaStatement
     [JsonPropertyName("targets")]
     public List<YawaExpression> Targets { get; set; } = new();
 }
+
+public sealed class SwapRefStatement : YawaStatement
+{
+    [JsonPropertyName("a")] public YawaExpression A { get; set; } = null!;
+    [JsonPropertyName("b")] public YawaExpression B { get; set; } = null!;
+}
+
+public sealed class ForeachPairStatement : YawaStatement
+{
+    [JsonPropertyName("key_var")] public string KeyVar { get; set; } = "";
+    [JsonPropertyName("value_var")] public string ValueVar { get; set; } = "";
+    [JsonPropertyName("in")] public YawaExpression In { get; set; } = null!;
+    [JsonPropertyName("body")] public List<YawaStatement> Body { get; set; } = new();
+}

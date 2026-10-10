@@ -114,7 +114,14 @@ public sealed class Evaluator
             var key = index is StringValue sv ? sv.Value : index.ToString();
             _interp.Recorder.Stats.MemoryAccesses++;
             if (!obj.HasField(key))
-                throw new YawaRuntimeException($"Key '{key}' not found in dictionary");
+            {
+                // C++ map[k] на несуществующем ключе создаёт значение по умолчанию.
+                // Используем пустой ArrayValue — чтобы `map[k].push_back(...)` работал.
+                // Если потом идёт `map[k] = 5` — значение перезапишется.
+                var def = new ArrayValue(Enumerable.Empty<RuntimeValue>());
+                obj.SetField(key, def);
+                return def;
+            }
             return obj.GetField(key);
         }
 

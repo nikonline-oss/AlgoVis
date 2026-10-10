@@ -1,12 +1,12 @@
 # AlgoVis
 
-Платформа для пошаговой визуализации алгоритмов. Пользователь пишет код на Python,
-система транспилирует его в промежуточный формат YAWA, исполняет с трассировкой
-и показывает каждый шаг в браузере.
+Платформа для пошаговой визуализации алгоритмов. Пользователь пишет код на Python
+или C++, система транспилирует его в промежуточный формат YAWA, исполняет
+с трассировкой и показывает каждый шаг в браузере.
 
 ```
-Python-код  ──►  YAWA (JSON)  ──►  Trace (JSON)  ──►  Viewer
-              транспайлер      интерпретатор        браузер / UI
+Python / C++ ──► YAWA (JSON) ──► Trace (JSON) ──► Viewer
+транспайлер интерпретатор браузер / UI
 ```
 
 ## Возможности
@@ -122,6 +122,7 @@ def main():
 |---|---|
 | `AlgoVis.Parser` | Парсер Python через tree-sitter (P/Invoke). Возвращает CST. |
 | `AlgoVis.Transpiler` | Python → YAWA. Поддерживает широкое подмножество языка. |
+| `AlgoVis.Transpiler.Cpp` | C++ → YAWA. vector/set/map/queue/stack, классы, шаблоны. |
 | `AlgoVis.Yawa` | Модель YAWA, runtime, интерпретатор, trace-рекордер. |
 | `AlgoVis.Yawa.Cli` | CLI: `load`, `run`, `inspect`, `from-python`. |
 | `AlgoVis.Data` | Модели БД, EF Core, PostgreSQL. |
@@ -132,7 +133,9 @@ def main():
 ## Документация
 
 - [`docs/architecture.md`](docs/architecture.md) — модули, поток данных, ключевые решения
+- [`docs/language-support.md`](docs/language-support.md) — индекс: Python + C++
 - [`docs/python-support.md`](docs/python-support.md) — что поддерживает транспайлер Python
+- [`docs/cpp-support.md`](docs/cpp-support.md) — что поддерживает транспайлер C++
 - [`docs/yawa-schema.md`](docs/yawa-schema.md) — формат YAWA и Trace JSON
 - [`docs/api.md`](docs/api.md) — REST API контракты
 - [`docs/install-native.md`](docs/install-native.md) — сборка tree-sitter
@@ -140,25 +143,25 @@ def main():
 
 ## Тесты
 
-Три набора в `tests/`:
+Шесть наборов в `tests/`:
 
 ```bash
-tests/python_smoke/run_all.sh      # 20 базовых тестов транспайлера
+tests/python_smoke/run_all.sh      # 20 базовых тестов Python
 tests/python_advanced/run_all.sh   # 30 тестов сложного Python
-tests/python_real/run_all.sh       # 10 реальных алгоритмов
-```
+tests/python_real/run_all.sh       # 10 реальных Python-алгоритмов
+tests/cpp_smoke/run_all.sh         # 20 базовых тестов C++
+tests/cpp_advanced/run_all.sh      # 30 тестов сложного C++
+tests/cpp_real/run_all.sh          # 10 реальных C++-алгоритмов
 
-Все три набора должны показывать **100% прохождения**.
-
+# Или все сразу:
+tests/run_all.sh
 Интеграционные тесты API:
 
 ```bash
 dotnet test AlgoVis.Server.Tests/AlgoVis.Server.Tests.csproj
 ```
-
-Ожидаемо: **88/88** зелёных.
-
-## Поддерживаемый Python
+##Поддерживаемые языки
+##Python
 
 Транспайлер поддерживает широкое подмножество Python 3, включая:
 
@@ -176,6 +179,21 @@ dotnet test AlgoVis.Server.Tests/AlgoVis.Server.Tests.csproj
 - Импорты (`import math`)
 
 Полный список см. в [`docs/python-support.md`](docs/python-support.md).
+
+##C++
+
+Транспайлер поддерживает:
+
+- Все базовые конструкции (if/else, for, while, break, continue, return)
+- `vector`, `set`, `map`, `unordered_map`, `queue`, `stack`, `deque`, `list`, `pair`
+- `sort`, `reverse`, `min_element`, `max_element`, `accumulate`
+- Range-based for и итераторы (`for (auto it = m.begin(); ...)`)
+- `struct`, `class`, конструкторы, методы, наследование
+- `template<typename T>` для функций и классов
+- Массивы (одномерные и многомерные), `make_pair`, `swap`
+- `cout << ... << endl` → annotate
+
+Полный список см. в [`docs/cpp-support.md`](docs/cpp-support.md).
 
 ## Лицензия
 

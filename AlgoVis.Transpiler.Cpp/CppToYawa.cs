@@ -116,6 +116,27 @@ public sealed class CppToYawa
                         }
                         break;
                     }
+                case "template_declaration":
+                    foreach (var inner in child.NamedChildren())
+                    {
+                        if (inner.Type is "class_specifier" or "struct_specifier")
+                        {
+                            var tn = inner.NamedChildren().FirstOrDefault(c => c.Type == "type_identifier");
+                            if (tn.IsValid) _classNamesCpp.Add(Text(tn));
+
+                            var methods = ExtractClassMethods(inner);
+                            foreach (var m in methods)
+                                if (!string.IsNullOrEmpty(m.Name) && _functionNames.Add(m.Name))
+                                    program.Functions.Add(m);
+                        }
+                        else if (inner.Type == "function_definition")
+                        {
+                            var fname = ExtractFunctionName(inner);
+                            if (!string.IsNullOrEmpty(fname)) _functionNames.Add(fname);
+                            program.Functions.Add(ConvertFunction(inner));
+                        }
+                    }
+                    break;
 
                 default:
                     _warnings.Add($"Пропущен top-level: {child.Type}");
@@ -228,6 +249,8 @@ public sealed class CppToYawa
             }
         }
 
+
+
         var savedFields = _currentClassFields;
         var savedClass = _currentClassName;
         _currentClassFields = fields;
@@ -274,6 +297,73 @@ public sealed class CppToYawa
                     if (fn is not null) result.Add(fn);
                 }
             }
+            // ── Инициализация полей класса ──
+            // C++ default-constructs поля. У нас ObjectValue пустой —
+            // self.data не существует, пока его не создадим явно.
+            if (fields.Count > 0)
+            {
+                var ctor = result.FirstOrDefault(f => f.Name == $"{className}.{className}")
+                        ?? result.FirstOrDefault(f => f.Name == $"{className}.__init__");
+                if (ctor is null)
+                {
+                    ctor = new YawaFunction
+                    {
+                        Name = $"{className}.__init__",
+                        Params = { new YawaParam { Name = "self" } }
+                    };
+                    result.Add(ctor);
+                }
+
+                var fieldInits = new List<YawaStatement>();
+                foreach (var member in bodyNode.NamedChildren())
+                {
+                    if (member.Type != "field_declaration") continue;
+
+                    var idNode = FindChildByType(member, "field_identifier");
+                    if (!idNode.IsValid) idNode = FindChildByType(member, "identifier");
+                    if (!idNode.IsValid) continue;
+
+                    var fieldName = Text(idNode);
+                    var typeN = member.NamedChildren().FirstOrDefault(c =>
+                        c.Type is "primitive_type" or "type_identifier" or "template_type");
+                    var fieldType = typeN.IsValid ? Text(typeN) : "";
+
+                    YawaExpression def;
+                    if (fieldType.Contains("map"))
+                        def = new DictExpr();
+                    else if (fieldType.Contains("set") && !fieldType.Contains("bitset"))
+                        def = new SetLiteralExpr();
+                    else if (fieldType.Contains("vector") || fieldType.Contains("queue")
+                          || fieldType.Contains("stack") || fieldType.Contains("deque")
+                          || fieldType.Contains("list") || fieldType.Contains("array"))
+                        def = new ArrayExpr { Items = new List<YawaExpression>() };
+                    else if (fieldType == "bool")
+                        def = Lit(false);
+                    else if (fieldType == "float" || fieldType == "double")
+                        def = Lit(0.0);
+                    else if (fieldType == "string" || fieldType.EndsWith("string"))
+                        def = Lit("");
+                    else if (fieldType == "int" || fieldType == "long" || fieldType == "short"
+                          || fieldType == "char" || fieldType == "unsigned")
+                        def = Lit(0);
+                    else
+                        def = Lit(null);
+
+                    fieldInits.Add(new AssignStatement
+                    {
+                        Target = new FieldExpr
+                        {
+                            Target = new RefExpr { Name = "self" },
+                            FieldName = fieldName
+                        },
+                        Value = def
+                    });
+                }
+
+                // Вставляем в самое начало конструктора — до пользовательского кода.
+                ctor.Body.InsertRange(0, fieldInits);
+            }
+
         }
         finally
         {
@@ -530,6 +620,22 @@ public sealed class CppToYawa
                 {
                     initValue = ConvertExpr(value);
                 }
+                else if (value.Type == "argument_list")
+                {
+                    var ctorArgs = value.NamedChildren()
+                        .Where(a => a.Type != "comment")
+                        .Select(ConvertExpr)
+                        .ToList();
+
+                    var baseType = GetBaseTypeName(typeName);
+
+                    if (_classNamesCpp.Contains(baseType))
+                        initValue = new InstantiateExpr { ClassName = baseType, Args = ctorArgs };
+                    else if (ctorArgs.Count > 0)
+                        initValue = new CallExpr { Name = "make_vector", Args = ctorArgs };
+                    else
+                        initValue = new ArrayExpr { Items = new List<YawaExpression>() };
+                }
                 else
                 {
                     initValue = ConvertExpr(value);
@@ -566,6 +672,43 @@ public sealed class CppToYawa
                 {
                     Name = Text(child),
                     Value = initValue
+                });
+            }
+            else if (child.Type == "function_declarator")
+            {
+                var declName = FindChildByType(child, "identifier");
+                if (!declName.IsValid) continue;
+
+                var paramList = FindChildByType(child, "parameter_list");
+                var paramNodes = paramList.IsValid
+                    ? paramList.NamedChildren().Where(c => c.Type != "comment").ToList()
+                    : new List<TsNode>();
+
+
+                // Если все «параметры» — parameter_declaration с типом внутри —
+                // это настоящая forward-декларация функции (int foo(int x);).
+                bool looksLikeForwardDecl =
+                    !isContainer &&
+                    typeNode.IsValid && typeNode.Type != "template_type" &&
+                    !_classNamesCpp.Contains(GetBaseTypeName(typeName)) &&
+                    paramNodes.Count > 0;
+                if (looksLikeForwardDecl) continue;
+
+                var ctorArgs = paramNodes.Select(UnwrapFakeParameter).ToList();
+                var baseType = GetBaseTypeName(typeName);
+
+                YawaExpression initExpr;
+                if (_classNamesCpp.Contains(baseType))
+                    initExpr = new InstantiateExpr { ClassName = baseType, Args = ctorArgs };
+                else if (ctorArgs.Count > 0)
+                    initExpr = new CallExpr { Name = "make_vector", Args = ctorArgs };
+                else
+                    initExpr = new ArrayExpr { Items = new List<YawaExpression>() };
+
+                statements.Add(new DeclareStatement
+                {
+                    Name = Text(declName),
+                    Value = initExpr
                 });
             }
             else if (child.Type == "array_declarator")
@@ -619,12 +762,76 @@ public sealed class CppToYawa
     }
 
     /// <summary>
+    /// В "most vexing parse" tree-sitter оборачивает аргументы конструктора
+    /// в parameter_declaration. Разворачиваем обратно в выражения:
+    ///   parameter_declaration(type_identifier "rows")           → RefExpr("rows")
+    ///   parameter_declaration(template_type, abstract_function_declarator)
+    ///       — это вложенный вызов vector<bool>(cols, false)      → пустой ArrayExpr
+    ///   parameter_declaration(literal)                          → литерал
+    /// </summary>
+    private YawaExpression UnwrapFakeParameter(TsNode p)
+    {
+        var kids = p.NamedChildren().Where(c => c.Type != "comment").ToList();
+        if (kids.Count == 0) return Lit(null);
+
+        if (kids.Count == 1 && (kids[0].Type == "type_identifier" || kids[0].Type == "identifier"))
+        {
+            var txt = Text(kids[0]);
+            return txt switch
+            {
+                "true" => Lit(true),
+                "false" => Lit(false),
+                "nullptr" or "NULL" or "null" => Lit(null),
+                _ => new RefExpr { Name = txt }
+            };
+        }
+
+        if (kids.Count == 1 && kids[0].Type is "number_literal" or "string_literal"
+                            or "char_literal" or "true" or "false" or "nullptr" or "null")
+            return ConvertExpr(kids[0]);
+
+        if (kids.Count == 1 && kids[0].Type == "call_expression")
+            return ConvertExpr(kids[0]);
+
+        // Вложенный template-конструктор: vector<bool>(cols, false)
+        var abstractDecl = kids.FirstOrDefault(k => k.Type == "abstract_function_declarator");
+        if (abstractDecl.IsValid)
+        {
+            var paramList = FindChildByType(abstractDecl, "parameter_list");
+            var innerArgs = paramList.IsValid
+                ? paramList.NamedChildren().Where(c => c.Type != "comment")
+                    .Select(c => c.Type == "parameter_declaration"
+                        ? UnwrapFakeParameter(c)
+                        : ConvertExpr(c))
+                    .ToList()
+                : new List<YawaExpression>();
+            if (innerArgs.Count > 0)
+                return new CallExpr { Name = "make_vector", Args = innerArgs };
+            return new ArrayExpr { Items = new List<YawaExpression>() };
+        }
+
+        return Lit(null);
+    }
+
+    /// <summary>
     /// Проверяет, является ли тип "vector&lt;...&gt;" или "array&lt;...&gt;".
     /// </summary>
-    private bool IsVectorType(string typeName) =>
-        typeName.StartsWith("vector") || typeName.StartsWith("std::vector")
-        || typeName.StartsWith("array") || typeName.StartsWith("std::array")
-        || typeName.Contains("vector<") || typeName.Contains("array<");
+    private bool IsVectorType(string typeName)
+    {
+        if (string.IsNullOrEmpty(typeName)) return false;
+        var t = typeName;
+        return t.Contains("vector") || t.Contains("array")
+            || t.Contains("queue") || t.Contains("stack")
+            || t.Contains("deque") || t.Contains("set") || t.Contains("map")
+            || t.Contains("list");
+    }
+
+    private static string GetBaseTypeName(string typeName)
+    {
+        if (string.IsNullOrEmpty(typeName)) return typeName;
+        var lt = typeName.IndexOf('<');
+        return lt > 0 ? typeName.Substring(0, lt).Trim() : typeName;
+    }
 
     private string ExtractDeclaratorName(TsNode declarator)
     {
@@ -1269,6 +1476,8 @@ public sealed class CppToYawa
 
     private YawaExpression ConvertExpr(TsNode node)
     {
+        if (node.Type == "parameter_declaration")
+            return UnwrapFakeParameter(node);
         switch (node.Type)
         {
             case "number_literal":
@@ -1484,31 +1693,72 @@ public sealed class CppToYawa
 
         var callee = children[0];
         var argsList = children.FirstOrDefault(c => c.Type == "argument_list");
+        // vector<int>() / queue<pair<int,int>>() — конструктор шаблонного типа
+        if (callee.Type == "template_function")
+        {
+            var targs = argsList.IsValid
+                ? argsList.NamedChildren().Where(a => a.Type != "comment")
+                    .Select(ConvertExpr).ToList()
+                : new List<YawaExpression>();
+            if (targs.Count > 0)
+                return new CallExpr { Name = "make_vector", Args = targs };
+            return new ArrayExpr { Items = new List<YawaExpression>() };
+        }
 
         // X.erase(X.begin()) → erase_first(X)
+        // X.erase(X.begin() + i) → erase_at(X, i)
         if (callee.Type == "field_expression")
         {
-            var fc = callee.NamedChildren().ToList();
-            if (fc.Count >= 2 && fc[^1].Type == "field_identifier"
-                             && Text(fc[^1]) == "erase")
+            var fc0 = callee.NamedChildren().ToList();
+            if (fc0.Count >= 2 && fc0[^1].Type == "field_identifier" && Text(fc0[^1]) == "erase")
             {
-                var receiverText = Text(fc[0]);
+                var receiverText = Text(fc0[0]);
                 if (argsList.IsValid)
                 {
                     var argsRaw = argsList.NamedChildren().ToList();
+                    if (argsRaw.Count == 1 && argsRaw[0].Type == "binary_expression")
+                    {
+                        var binKids = argsRaw[0].NamedChildren().ToList();
+                        if (binKids.Count == 2 &&
+                            binKids[0].Type == "call_expression" &&
+                            binKids[1].Type == "identifier")
+                        {
+                            var innerCall = binKids[0].NamedChildren().ToList();
+                            if (innerCall.Count > 0 && innerCall[0].Type == "field_expression")
+                            {
+                                var innerFc = innerCall[0].NamedChildren().ToList();
+                                if (innerFc.Count >= 2 &&
+                                    Text(innerFc[^1]) == "begin" &&
+                                    Text(innerFc[0]) == receiverText)
+                                {
+                                    return new CallExpr
+                                    {
+                                        Name = "erase_at",
+                                        Args = new List<YawaExpression>
+                                {
+                                    ConvertExpr(fc0[0]),
+                                    ConvertExpr(binKids[1])
+                                }
+                                    };
+                                }
+                            }
+                        }
+                    }
+                    // X.erase(X.begin()) без смещения
                     if (argsRaw.Count == 1 && argsRaw[0].Type == "call_expression")
                     {
                         var innerCall = argsRaw[0].NamedChildren().ToList();
                         if (innerCall.Count > 0 && innerCall[0].Type == "field_expression")
                         {
                             var innerFc = innerCall[0].NamedChildren().ToList();
-                            if (innerFc.Count >= 2 && Text(innerFc[^1]) == "begin"
-                                                  && Text(innerFc[0]) == receiverText)
+                            if (innerFc.Count >= 2 &&
+                                Text(innerFc[^1]) == "begin" &&
+                                Text(innerFc[0]) == receiverText)
                             {
                                 return new CallExpr
                                 {
                                     Name = "erase_first",
-                                    Args = new List<YawaExpression> { ConvertExpr(fc[0]) }
+                                    Args = new List<YawaExpression> { ConvertExpr(fc0[0]) }
                                 };
                             }
                         }

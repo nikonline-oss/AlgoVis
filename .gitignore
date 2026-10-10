@@ -369,3 +369,11 @@ chapi-service/.idea/
 chapi-service/*.iml
 traces/
 _out/
+**/bin/
+**/obj/
+*.pdb
+
+# Test outputs
+tests/_out/
+report.txt
+*.bak

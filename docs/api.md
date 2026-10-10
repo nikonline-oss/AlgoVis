@@ -356,12 +356,91 @@ Response:
 
 ### POST `/run-python` — Python-код → Trace
 
-**Публичный** (для анонимных тоже). Rate limit: 10/мин анонимным, 30/мин авторизованным.
+**Публичный.** Rate limit: 10/мин анонимным, 30/мин авторизованным.
+
+Body: `text/plain` или `application/json`:
 
 ```json
-{ "code": "def main(): ..." }
+{ "code": "def main(): ...", "entry": "main", "language": "python" }
 ```
 
+- `entry` — имя entry-функции (по умолчанию ищется `main`, при единственной функции — она).
+- `language` — если указан, переопределяет дефолт (`python`). Полезно, если клиент шлёт всё через `run-python`.
+
+Response: Trace JSON (см. `docs/yawa-schema.md`).
+
+### POST `/run-cpp` — C++-код → Trace
+
+**Публичный.** Rate limit тот же.
+
+Body: `text/plain` или `application/json`:
+
+```json
+{ "code": "int main() { ... }", "language": "cpp" }
+```
+
+- `entry` игнорируется — в C++ всегда `main()`.
+
+Response: Trace JSON.
+
+### POST `/run-code` — универсальный запуск
+
+**Публичный.** Rate limit тот же.
+
+Принимает код на любом поддерживаемом языке. Язык выбирается в порядке приоритета:
+
+1. Поле `language` в JSON-теле (`"python"` | `"cpp"`; синонимы: `py`, `c++`, `cplusplus`).
+2. Query-параметр `?defaultLang=cpp`.
+3. Иначе — `python`.
+
+Body: `text/plain` или `application/json`:
+
+```json
+{ "code": "...", "language": "python", "entry": "main" }
+```
+
+Response: Trace JSON.
+
+**Пример:**
+```bash
+curl -X POST http://localhost:5000/api/yawa/run-code \
+  -H "Content-Type: application/json" \
+  -d '{"code":"int main() { int x = 5; }","language":"cpp"}'
+```
+
+### Ошибки транспиляции и runtime
+
+Ошибки транспиляции возвращаются с **HTTP 200**, но в теле — объект с полем `error` (без `steps`):
+
+```json
+{
+  "error": "Неподдерживаемое выражение: ...",
+  "kind": "transpiler",
+  "language": "cpp",
+  "line": 49,
+  "column": 18
+}
+```
+
+Ошибки runtime — тоже `200`, но с `kind: "runtime"`:
+
+```json
+{
+  "error": "Array index out of range: 0 (size 0)",
+  "kind": "runtime",
+  "language": "cpp"
+}
+```
+
+**Фронт обязан проверять поле `error` до того, как использовать `steps`.** Если `error` есть — показывать его пользователю; если нет — рендерить trace.
+
+Значения `kind`:
+
+| kind | Значение |
+|---|---|
+| `transpiler` | Ошибка парсинга/транспиляции исходного кода |
+| `runtime` | Ошибка во время исполнения (индексы, деление на ноль, лимиты) |
+| `validation` | Некорректный запрос (нет `code`, пустое тело, неверный JSON) |
 Response: Trace JSON (см. `docs/yawa-schema.md`).
 
 ### GET `/viewer` — HTML-страница визуализатора (dev)

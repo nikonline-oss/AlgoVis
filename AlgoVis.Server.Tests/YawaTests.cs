@@ -89,6 +89,61 @@ public sealed class YawaTests : TestBase
         Assert.True(r.IsSuccess);
     }
 
+    // ─────────── C++ (run-cpp / run-code) ───────────
+
+    [Fact]
+    public async Task RunCpp_ValidCode_ReturnsTrace()
+    {
+        var r = await Client.PostAsync<TraceDto>("/api/yawa/run-cpp",
+            new { code = "int main() { int x = 5; int y = x + 1; return 0; }" });
+
+        Assert.True(r.IsSuccess, $"Status={r.Status} Body={r.RawText}");
+        Assert.NotNull(r.Data);
+        Assert.NotNull(r.Data!.Steps);
+        Assert.True(r.Data.Steps!.Count > 0);
+        Assert.NotNull(r.Data.Statistics);
+    }
+
+    [Fact]
+    public async Task RunCpp_NoAuthRequired()
+    {
+        ClearAuth();
+        var r = await Client.PostAsync<TraceDto>("/api/yawa/run-cpp",
+            new { code = "int main() { int a = 1; return 0; }" });
+        Assert.True(r.IsSuccess, $"Status={r.Status} Body={r.RawText}");
+    }
+
+    [Fact]
+    public async Task RunCode_LanguageCpp_DispatchesToCpp()
+    {
+        var r = await Client.PostAsync<TraceDto>("/api/yawa/run-code",
+            new { code = "int main() { int a = 1; int b = a + 1; return 0; }", language = "cpp" });
+        Assert.True(r.IsSuccess, $"Status={r.Status} Body={r.RawText}");
+        Assert.NotNull(r.Data);
+        Assert.NotNull(r.Data!.Steps);
+        Assert.True(r.Data.Steps!.Count > 0);
+    }
+
+    [Fact]
+    public async Task RunCode_UnsupportedLanguage_Returns400()
+    {
+        var r = await Client.PostAsync<ErrorDto>("/api/yawa/run-code",
+            new { code = "def main(): pass", language = "rust" });
+        Assert.Equal(400, (int)r.Status);
+    }
+
+    [Fact]
+    public async Task RunCpp_TranspilerError_ReturnsKindTranspiler()
+    {
+        // Синтаксически невалидный C++ — транспайлер должен отдать kind=transpiler
+        var r = await Client.PostAsync<ErrorDto>("/api/yawa/run-cpp",
+            new { code = "int main( {" });
+        Assert.True(r.IsSuccess, $"Status={r.Status} Body={r.RawText}");
+        Assert.NotNull(r.Data);
+        Assert.NotNull(r.Data!.Error);
+        Assert.Equal("transpiler", r.Data.Kind);
+    }
+
     // ─────────── DTO ───────────
 
     public sealed class TraceDto

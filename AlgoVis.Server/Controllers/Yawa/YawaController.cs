@@ -226,15 +226,44 @@ public sealed class YawaController : ControllerBase
     }
 
     /// <summary>
-    /// Принимает Python-код в теле (text/plain или application/json с полем "code"),
-    /// транспайлит в YAWA, исполняет и возвращает trace.
+    /// Python-код → YAWA → Trace.
+    /// Body: text/plain или { "code": "...", "entry": "...", "language": "python" }
     /// </summary>
     [HttpPost("run-python")]
     [RequestSizeLimit(2 * 1024 * 1024)]
     [EnableRateLimiting("run")]
-    public async Task<IActionResult> RunPython(CancellationToken ct)
+    public Task<IActionResult> RunPython(CancellationToken ct)
+        => RunSourceCodeRequest("python", ct);
+
+    /// <summary>
+    /// C++-код → YAWA → Trace.
+    /// Body: text/plain или { "code": "...", "language": "cpp" }
+    /// entry не используется (в C++ всегда main).
+    /// </summary>
+    [HttpPost("run-cpp")]
+    [RequestSizeLimit(2 * 1024 * 1024)]
+    [EnableRateLimiting("run")]
+    public Task<IActionResult> RunCpp(CancellationToken ct)
+        => RunSourceCodeRequest("cpp", ct);
+
+    /// <summary>
+    /// Универсальный запуск: язык задаётся полем "language" в JSON
+    /// или через query-параметр ?defaultLang=python|cpp.
+    /// При отсутствии — python.
+    /// </summary>
+    [HttpPost("run-code")]
+    [RequestSizeLimit(2 * 1024 * 1024)]
+    [EnableRateLimiting("run")]
+    public Task<IActionResult> RunCode([FromQuery] string? defaultLang, CancellationToken ct)
+        => RunSourceCodeRequest(defaultLang, ct);
+
+    /// <summary>
+    /// Общее ядро: парсит body, транспилирует в YAWA (по языку),
+    /// исполняет, возвращает Trace. Поддерживает python и cpp.
+    /// </summary>
+    private async Task<IActionResult> RunSourceCodeRequest(string? defaultLanguage, CancellationToken ct)
     {
-        // Читаем тело как текст
+        // ── 1. Читаем тело ──
         string body;
         try
         {
@@ -249,20 +278,32 @@ public sealed class YawaController : ControllerBase
         if (string.IsNullOrWhiteSpace(body))
             return BadRequest(ApiError.Validation("Пустое тело запроса"));
 
-        // Если Content-Type: application/json — ожидаем { "code": "...", "entry": "..." }
-        string pythonCode;
+        // ── 2. Разбираем: source + language + entry ──
+        string source;
+        string language;
         string? entry = null;
+
         var ctHeader = Request.ContentType ?? "";
         if (ctHeader.Contains("application/json", StringComparison.OrdinalIgnoreCase))
         {
             try
             {
                 using var doc = JsonDocument.Parse(body);
-                if (!doc.RootElement.TryGetProperty("code", out var codeEl) ||
+                var root = doc.RootElement;
+
+                if (!root.TryGetProperty("code", out var codeEl) ||
                     codeEl.ValueKind != JsonValueKind.String)
                     return BadRequest(ApiError.Validation("JSON должен содержать поле 'code'"));
-                pythonCode = codeEl.GetString() ?? "";
-                if (doc.RootElement.TryGetProperty("entry", out var entryEl) &&
+
+                source = codeEl.GetString() ?? "";
+
+                if (root.TryGetProperty("language", out var langEl) &&
+                    langEl.ValueKind == JsonValueKind.String)
+                    language = (langEl.GetString() ?? "").Trim().ToLowerInvariant();
+                else
+                    language = defaultLanguage ?? "python";
+
+                if (root.TryGetProperty("entry", out var entryEl) &&
                     entryEl.ValueKind == JsonValueKind.String)
                     entry = entryEl.GetString();
             }
@@ -273,15 +314,28 @@ public sealed class YawaController : ControllerBase
         }
         else
         {
-            pythonCode = body;
+            source = body;
+            language = defaultLanguage ?? "python";
         }
 
-        // Транспайлим
+        // ── 3. Транспилируем ──
         YawaProgram program;
         try
         {
-            var transpiler = new Transpiler.PythonToYawa(pythonCode);
-            program = transpiler.Transpile(entry);
+            if (language is "python" or "py")
+            {
+                program = new Transpiler.PythonToYawa(source).Transpile(entry);
+            }
+            else if (language is "cpp" or "c++" or "cplusplus")
+            {
+                // entry для C++ игнорируется — всегда main()
+                program = new Transpiler.Cpp.CppToYawa(source).Transpile();
+            }
+            else
+            {
+                return BadRequest(ApiError.Validation(
+                    $"Неподдерживаемый язык: '{language}'. Допустимо: python, cpp."));
+            }
         }
         catch (Transpiler.UnsupportedFeatureException ex)
         {
@@ -289,17 +343,35 @@ public sealed class YawaController : ControllerBase
             {
                 error = ex.Message,
                 kind = "transpiler",
+                language,
+                line = ex.Line,
+                column = ex.Column
+            });
+        }
+        catch (Transpiler.Cpp.UnsupportedFeatureException ex)
+        {
+            return Ok(new
+            {
+                error = ex.Message,
+                kind = "transpiler",
+                language,
                 line = ex.Line,
                 column = ex.Column
             });
         }
         catch (Exception ex)
         {
-            _log.LogError(ex, "Transpiler unexpected error");
-            return Ok(new { error = ex.Message, kind = "transpiler", detail = ex.GetType().Name });
+            _log.LogError(ex, "Transpiler unexpected error (lang={Lang})", language);
+            return Ok(new
+            {
+                error = ex.Message,
+                kind = "transpiler",
+                language,
+                detail = ex.GetType().Name
+            });
         }
 
-        // Исполняем
+        // ── 4. Исполняем ──
         var opts = new InterpreterOptions
         {
             MaxSteps = Math.Min(program.Limits.MaxSteps, HardMaxSteps),
@@ -315,13 +387,13 @@ public sealed class YawaController : ControllerBase
         }
         catch (Exception ex)
         {
-            _log.LogError(ex, "Interpreter error");
-            return Ok(new { error = ex.Message, kind = "runtime" });
+            _log.LogError(ex, "Interpreter error (lang={Lang})", language);
+            return Ok(new { error = ex.Message, kind = "runtime", language });
         }
 
         _log.LogInformation(
-            "YAWA run-python: name={Name}, steps={Steps}, cmp={Cmp}, swaps={Swaps}",
-            program.Metadata.Name, session.Statistics.TotalSteps,
+            "YAWA run-{Lang}: name={Name}, steps={Steps}, cmp={Cmp}, swaps={Swaps}",
+            language, program.Metadata.Name, session.Statistics.TotalSteps,
             session.Statistics.Comparisons, session.Statistics.Swaps);
 
         return Ok(session);

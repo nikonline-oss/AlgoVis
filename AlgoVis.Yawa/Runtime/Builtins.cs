@@ -13,7 +13,7 @@ public static class Builtins
         "chr", "ord", "int", "str", "float", "bool", "sum", "any", "all",
         "enumerate", "zip", "list", "tuple", "sorted", "sorted_by_abs", "sorted_by_len",
         "sorted_with", "make_pair", "sort", "reverse", "min_element", "max_element", "accumulate",
-        "erase_first"
+        "erase_first","erase_at","begin", "end", "make_vector"
     };
 
     public static RuntimeValue Call(string name, List<RuntimeValue> args, TraceRecorder rec)
@@ -382,6 +382,29 @@ public static class Builtins
                     arr.Items.RemoveAt(0);
                     return NullValue.Instance;
                 }
+            case "erase_at":
+                {
+                    if (args[0] is not ArrayValue arr)
+                        throw new YawaRuntimeException("erase_at() needs array");
+                    var idx = (int)Evaluator.AsInt(args[1], "erase_at index");
+                    if (idx < 0 || idx >= arr.Count)
+                        throw new YawaRuntimeException($"erase_at: index {idx} out of range");
+                    arr.Items.RemoveAt(idx);
+                    return NullValue.Instance;
+                }
+            case "begin":
+            case "end":
+                return args[0];
+            case "make_vector":
+                {
+                    var n = Evaluator.AsInt(args[0], "make_vector size");
+                    if (n < 0) n = 0;
+                    var templateVal = args.Count > 1 ? args[1] : (RuntimeValue)new IntValue(0);
+                    var items = new List<RuntimeValue>((int)n);
+                    for (long i = 0; i < n; i++)
+                        items.Add(DeepClone(templateVal));
+                    return new ArrayValue(items);
+                }
 
             default:
                 throw new YawaRuntimeException($"Unknown builtin: {name}");
@@ -430,5 +453,27 @@ public static class Builtins
             return ba.Value.CompareTo(bb.Value);
         throw new YawaRuntimeException(
             $"Cannot compare {a.TypeName} and {b.TypeName}");
+    }
+    private static RuntimeValue DeepClone(RuntimeValue v) => v switch
+    {
+        ArrayValue a => new ArrayValue(a.Items.Select(DeepClone).ToList(), a.ElementType),
+        SetValue s => CloneSet(s),
+        ObjectValue o => CloneObject(o),
+        TupleValue t => new TupleValue(t.Items.Select(DeepClone).ToList()),
+        _ => v  // скаляры иммутабельны
+    };
+
+    private static SetValue CloneSet(SetValue s)
+    {
+        var n = new SetValue();
+        foreach (var item in s.Items) n.Add(DeepClone(item));
+        return n;
+    }
+
+    private static ObjectValue CloneObject(ObjectValue o)
+    {
+        var n = new ObjectValue();
+        foreach (var (k, val) in o.Fields) n.SetField(k, DeepClone(val));
+        return n;
     }
 }

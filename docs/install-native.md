@@ -4,11 +4,15 @@ AlgoVis использует tree-sitter через P/Invoke. Нужны две 
 
 - `libtree-sitter.so` — ядро
 - `libtree-sitter-python.so` — грамматика Python
+- `libtree-sitter-cpp.so` — грамматика C++
 
 **Версии важны.** Мы проверяли на паре:
 
-- `tree-sitter` **v0.22.6** (ABI 14)
-- `tree-sitter-python` **v0.21.0** (ABI 14)
+| Компонент | Версия | ABI |
+|---|---|---|
+| `tree-sitter` | v0.22.6 | 14 |
+| `tree-sitter-python` | v0.21.0 | 14 |
+| `tree-sitter-cpp` | v0.23.4 | 14 |
 
 Более новые версии грамматики используют ABI 15 и вызовут segfault.
 
@@ -126,12 +130,13 @@ FROM gitpod/openvscode-server:latest
 
 USER root
 
+# ── Утилиты и зависимости для сборки ──
 RUN apt-get update && apt-get install -y --no-install-recommends \
         curl wget unzip git ca-certificates \
         libicu70 libssl3 build-essential \
     && rm -rf /var/lib/apt/lists/*
 
-# .NET 8
+# ── .NET 8 SDK ──
 RUN curl -sSL https://dot.net/v1/dotnet-install.sh -o /tmp/dotnet-install.sh \
     && chmod +x /tmp/dotnet-install.sh \
     && /tmp/dotnet-install.sh --channel 8.0 --install-dir /usr/share/dotnet \
@@ -140,22 +145,35 @@ RUN curl -sSL https://dot.net/v1/dotnet-install.sh -o /tmp/dotnet-install.sh \
 
 ENV DOTNET_ROOT=/usr/share/dotnet
 ENV PATH="$PATH:/usr/share/dotnet"
+ENV DOTNET_CLI_TELEMETRY_OPTOUT=1
+ENV DOTNET_NOLOGO=1
 
-# tree-sitter core
+# ── tree-sitter core (ABI 14) ──
 RUN cd /tmp \
     && git clone --depth 1 --branch v0.22.6 https://github.com/tree-sitter/tree-sitter.git \
-    && cd tree-sitter && make && make install \
+    && cd tree-sitter \
+    && make \
+    && make install \
     && cd /tmp && rm -rf tree-sitter
 
-# tree-sitter-python
+# ── tree-sitter-python (ABI 14) ──
 RUN cd /tmp \
     && git clone --depth 1 --branch v0.21.0 https://github.com/tree-sitter/tree-sitter-python.git \
     && cd tree-sitter-python \
     && gcc -shared -fPIC -o libtree-sitter-python.so src/parser.c src/scanner.c -Isrc \
     && cp libtree-sitter-python.so /usr/local/lib/ \
-    && cd /tmp && rm -rf tree-sitter-python \
-    && echo "/usr/local/lib" > /etc/ld.so.conf.d/local.conf \
-    && ldconfig
+    && cd /tmp && rm -rf tree-sitter-python
+
+# ── tree-sitter-cpp (ABI 14) ──
+RUN cd /tmp \
+    && git clone --depth 1 --branch v0.23.4 https://github.com/tree-sitter/tree-sitter-cpp.git \
+    && cd tree-sitter-cpp \
+    && gcc -shared -fPIC -o libtree-sitter-cpp.so src/parser.c src/scanner.c -Isrc \
+    && cp libtree-sitter-cpp.so /usr/local/lib/ \
+    && cd /tmp && rm -rf tree-sitter-cpp
+
+# ── Регистрация .so ──
+RUN echo "/usr/local/lib" > /etc/ld.so.conf.d/local.conf && ldconfig
 
 USER 0
 ```

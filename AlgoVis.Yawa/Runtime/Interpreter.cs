@@ -384,6 +384,90 @@ public sealed class Interpreter
             }
         }
 
+        if (receiver is ArrayValue arrVal)
+        {
+            switch (name)
+            {
+                case "front":
+                    if (arrVal.Count == 0)
+                        throw new YawaRuntimeException("front() on empty container");
+                    return arrVal[0];
+
+                case "back":
+                case "top":
+                    if (arrVal.Count == 0)
+                        throw new YawaRuntimeException("back()/top() on empty container");
+                    return arrVal[arrVal.Count - 1];
+
+                case "empty":
+                    return arrVal.Count == 0 ? BoolValue.True : BoolValue.False;
+
+                case "size":
+                case "length":
+                    return new IntValue(arrVal.Count);
+
+                case "push":
+                    {
+                        if (argExprs.Count != 1)
+                            throw new YawaRuntimeException("push() needs 1 arg");
+                        var val = Eval.Eval(argExprs[0], frame);
+                        arrVal.Items.Add(val);
+                        return NullValue.Instance;
+                    }
+
+                case "push_front":
+                    {
+                        if (argExprs.Count != 1)
+                            throw new YawaRuntimeException("push_front() needs 1 arg");
+                        var val = Eval.Eval(argExprs[0], frame);
+                        arrVal.Items.Insert(0, val);
+                        return NullValue.Instance;
+                    }
+
+                case "push_back":
+                    {
+                        if (argExprs.Count != 1)
+                            throw new YawaRuntimeException("push_back() needs 1 arg");
+                        var val = Eval.Eval(argExprs[0], frame);
+                        arrVal.Items.Add(val);
+                        return NullValue.Instance;
+                    }
+
+                case "pop_front":
+                    {
+                        if (arrVal.Count == 0)
+                            throw new YawaRuntimeException("pop_front() on empty container");
+                        var first = arrVal[0];
+                        arrVal.Items.RemoveAt(0);
+                        return first;
+                    }
+                case "erase":
+                    {
+                        if (argExprs.Count != 1)
+                            throw new YawaRuntimeException("erase() needs 1 arg");
+                        var arg = Eval.Eval(argExprs[0], frame);
+                        if (arg is IntValue iv)
+                        {
+                            var idx = (int)iv.Value;
+                            if (idx < 0) idx += arrVal.Count;
+                            if (idx >= 0 && idx < arrVal.Count)
+                                arrVal.Items.RemoveAt(idx);
+                            return NullValue.Instance;
+                        }
+                        // Если это не int (итератор не свёлся) — молча no-op,
+                        // не роняем визуализацию.
+                        return NullValue.Instance;
+                    }
+                case "begin":
+                    // C++-итераторы не моделируем. Возвращаем 0, чтобы
+                    // паттерны вида `X.erase(X.begin() + i)` и `X.begin() + i`
+                    // вычислились как int и ушли в erase_at / erase(int).
+                    return new IntValue(0);
+                case "end":
+                    return new IntValue(arrVal.Count);
+            }
+        }
+
         // C++-специфичные методы
         if (receiver is SetValue)
         {

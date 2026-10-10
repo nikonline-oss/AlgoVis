@@ -26,6 +26,7 @@
     <ProjectReference Include="..\AlgoVis.Yawa\AlgoVis.Yawa.csproj" />
     <ProjectReference Include="..\AlgoVis.Transpiler\AlgoVis.Transpiler.csproj" />
     <ProjectReference Include="..\AlgoVis.Data\AlgoVis.Data.csproj" />
+    <ProjectReference Include="..\AlgoVis.Transpiler.Cpp\AlgoVis.Transpiler.Cpp.csproj" />
   </ItemGroup>
 
 </Project>

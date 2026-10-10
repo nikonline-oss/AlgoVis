@@ -1,0 +1,521 @@
+﻿{
+  "yawa_version": "1.0",
+  "metadata": {
+    "name": "Python \u2192 YAWA",
+    "description": null,
+    "generator": "algovis-transpiler@0.1"
+  },
+  "globals": {},
+  "functions": [
+    {
+      "name": "make_fib",
+      "params": [],
+      "returns": null,
+      "body": [
+        {
+          "op": "assign",
+          "target": {
+            "ref": "cache"
+          },
+          "value": {
+            "dict": []
+          }
+        },
+        {
+          "op": "return",
+          "value": {
+            "funcref": "make_fib__fib"
+          }
+        }
+      ]
+    },
+    {
+      "name": "make_fib__fib",
+      "params": [
+        {
+          "name": "n",
+          "type": null,
+          "default": null
+        }
+      ],
+      "returns": null,
+      "body": [
+        {
+          "op": "if",
+          "cond": {
+            "bin": "in",
+            "a": {
+              "ref": "n"
+            },
+            "b": {
+              "ref": "cache"
+            }
+          },
+          "then": [
+            {
+              "op": "return",
+              "value": {
+                "index": [
+                  {
+                    "ref": "cache"
+                  },
+                  {
+                    "ref": "n"
+                  }
+                ]
+              }
+            }
+          ],
+          "else": null
+        },
+        {
+          "op": "if",
+          "cond": {
+            "bin": "\u003C",
+            "a": {
+              "ref": "n"
+            },
+            "b": {
+              "lit": 2
+            }
+          },
+          "then": [
+            {
+              "op": "assign",
+              "target": {
+                "index": [
+                  {
+                    "ref": "cache"
+                  },
+                  {
+                    "ref": "n"
+                  }
+                ]
+              },
+              "value": {
+                "ref": "n"
+              }
+            },
+            {
+              "op": "return",
+              "value": {
+                "ref": "n"
+              }
+            }
+          ],
+          "else": null
+        },
+        {
+          "op": "assign",
+          "target": {
+            "ref": "result"
+          },
+          "value": {
+            "bin": "\u002B",
+            "a": {
+              "call": "make_fib__fib",
+              "args": [
+                {
+                  "bin": "-",
+                  "a": {
+                    "ref": "n"
+                  },
+                  "b": {
+                    "lit": 1
+                  }
+                }
+              ]
+            },
+            "b": {
+              "call": "make_fib__fib",
+              "args": [
+                {
+                  "bin": "-",
+                  "a": {
+                    "ref": "n"
+                  },
+                  "b": {
+                    "lit": 2
+                  }
+                }
+              ]
+            }
+          }
+        },
+        {
+          "op": "assign",
+          "target": {
+            "index": [
+              {
+                "ref": "cache"
+              },
+              {
+                "ref": "n"
+              }
+            ]
+          },
+          "value": {
+            "ref": "result"
+          }
+        },
+        {
+          "op": "return",
+          "value": {
+            "ref": "result"
+          }
+        }
+      ]
+    },
+    {
+      "name": "fib",
+      "params": [
+        {
+          "name": "n",
+          "type": null,
+          "default": null
+        }
+      ],
+      "returns": null,
+      "body": [
+        {
+          "op": "return",
+          "value": {
+            "call": "make_fib__fib",
+            "args": [
+              {
+                "ref": "n"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "count_coins",
+      "params": [
+        {
+          "name": "coins",
+          "type": null,
+          "default": null
+        },
+        {
+          "name": "amount",
+          "type": null,
+          "default": null
+        }
+      ],
+      "returns": null,
+      "body": [
+        {
+          "op": "assign",
+          "target": {
+            "ref": "dp"
+          },
+          "value": {
+            "bin": "*",
+            "a": {
+              "array": [
+                {
+                  "bin": "\u002B",
+                  "a": {
+                    "ref": "amount"
+                  },
+                  "b": {
+                    "lit": 1
+                  }
+                }
+              ]
+            },
+            "b": {
+              "bin": "\u002B",
+              "a": {
+                "ref": "amount"
+              },
+              "b": {
+                "lit": 1
+              }
+            }
+          }
+        },
+        {
+          "op": "assign",
+          "target": {
+            "index": [
+              {
+                "ref": "dp"
+              },
+              {
+                "lit": 0
+              }
+            ]
+          },
+          "value": {
+            "lit": 0
+          }
+        },
+        {
+          "op": "for",
+          "var": "i",
+          "from": {
+            "lit": 1
+          },
+          "to": {
+            "bin": "\u002B",
+            "a": {
+              "ref": "amount"
+            },
+            "b": {
+              "lit": 1
+            }
+          },
+          "step": null,
+          "body": [
+            {
+              "op": "foreach",
+              "var": "c",
+              "in": {
+                "ref": "coins"
+              },
+              "body": [
+                {
+                  "op": "if",
+                  "cond": {
+                    "bin": "\u003C=",
+                    "a": {
+                      "ref": "c"
+                    },
+                    "b": {
+                      "ref": "i"
+                    }
+                  },
+                  "then": [
+                    {
+                      "op": "if",
+                      "cond": {
+                        "bin": "\u003C",
+                        "a": {
+                          "bin": "\u002B",
+                          "a": {
+                            "index": [
+                              {
+                                "ref": "dp"
+                              },
+                              {
+                                "bin": "-",
+                                "a": {
+                                  "ref": "i"
+                                },
+                                "b": {
+                                  "ref": "c"
+                                }
+                              }
+                            ]
+                          },
+                          "b": {
+                            "lit": 1
+                          }
+                        },
+                        "b": {
+                          "index": [
+                            {
+                              "ref": "dp"
+                            },
+                            {
+                              "ref": "i"
+                            }
+                          ]
+                        }
+                      },
+                      "then": [
+                        {
+                          "op": "assign",
+                          "target": {
+                            "index": [
+                              {
+                                "ref": "dp"
+                              },
+                              {
+                                "ref": "i"
+                              }
+                            ]
+                          },
+                          "value": {
+                            "bin": "\u002B",
+                            "a": {
+                              "index": [
+                                {
+                                  "ref": "dp"
+                                },
+                                {
+                                  "bin": "-",
+                                  "a": {
+                                    "ref": "i"
+                                  },
+                                  "b": {
+                                    "ref": "c"
+                                  }
+                                }
+                              ]
+                            },
+                            "b": {
+                              "lit": 1
+                            }
+                          }
+                        }
+                      ],
+                      "else": null
+                    }
+                  ],
+                  "else": null
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "op": "if",
+          "cond": {
+            "bin": "==",
+            "a": {
+              "index": [
+                {
+                  "ref": "dp"
+                },
+                {
+                  "ref": "amount"
+                }
+              ]
+            },
+            "b": {
+              "bin": "\u002B",
+              "a": {
+                "ref": "amount"
+              },
+              "b": {
+                "lit": 1
+              }
+            }
+          },
+          "then": [
+            {
+              "op": "return",
+              "value": {
+                "un": "-",
+                "a": {
+                  "lit": 1
+                }
+              }
+            }
+          ],
+          "else": null
+        },
+        {
+          "op": "return",
+          "value": {
+            "index": [
+              {
+                "ref": "dp"
+              },
+              {
+                "ref": "amount"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "main",
+      "params": [],
+      "returns": null,
+      "body": [
+        {
+          "op": "assign",
+          "target": {
+            "ref": "fib"
+          },
+          "value": {
+            "call": "make_fib",
+            "args": []
+          }
+        },
+        {
+          "op": "assign",
+          "target": {
+            "ref": "f20"
+          },
+          "value": {
+            "call": "fib",
+            "args": [
+              {
+                "lit": 20
+              }
+            ]
+          }
+        },
+        {
+          "op": "assign",
+          "target": {
+            "ref": "f30"
+          },
+          "value": {
+            "call": "fib",
+            "args": [
+              {
+                "lit": 30
+              }
+            ]
+          }
+        },
+        {
+          "op": "annotate",
+          "text": "\u0022fib(30) = {f30}"
+        },
+        {
+          "op": "assign",
+          "target": {
+            "ref": "coins"
+          },
+          "value": {
+            "lit": [
+              1,
+              2,
+              5
+            ]
+          }
+        },
+        {
+          "op": "assign",
+          "target": {
+            "ref": "min_coins"
+          },
+          "value": {
+            "call": "count_coins",
+            "args": [
+              {
+                "ref": "coins"
+              },
+              {
+                "lit": 11
+              }
+            ]
+          }
+        },
+        {
+          "op": "annotate",
+          "text": "\u0022\u043C\u0438\u043D\u0438\u043C\u0443\u043C \u043C\u043E\u043D\u0435\u0442 \u0434\u043B\u044F 11: {min_coins}"
+        }
+      ]
+    }
+  ],
+  "entry": {
+    "function": "main",
+    "args": []
+  },
+  "limits": {
+    "max_steps": 1000000,
+    "max_depth": 500,
+    "max_seconds": 10,
+    "snapshot_every": 0
+  }
+}

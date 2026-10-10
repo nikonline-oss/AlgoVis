@@ -1,0 +1,115 @@
+﻿{
+  "yawa_version": "1.0",
+  "metadata": {
+    "name": "Python \u2192 YAWA",
+    "description": null,
+    "generator": "algovis-transpiler@0.1"
+  },
+  "globals": {},
+  "functions": [
+    {
+      "name": "products",
+      "params": [
+        {
+          "name": "A",
+          "type": null,
+          "default": null
+        },
+        {
+          "name": "B",
+          "type": null,
+          "default": null
+        }
+      ],
+      "returns": null,
+      "body": [
+        {
+          "op": "return",
+          "value": {
+            "comp_body": {
+              "bin": "*",
+              "a": {
+                "ref": "a"
+              },
+              "b": {
+                "ref": "b"
+              }
+            },
+            "comp_clauses": [
+              {
+                "var": "a",
+                "source": {
+                  "ref": "A"
+                }
+              },
+              {
+                "var": "b",
+                "source": {
+                  "ref": "B"
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "main",
+      "params": [],
+      "returns": null,
+      "body": [
+        {
+          "op": "assign",
+          "target": {
+            "ref": "A"
+          },
+          "value": {
+            "lit": [
+              1,
+              2
+            ]
+          }
+        },
+        {
+          "op": "assign",
+          "target": {
+            "ref": "B"
+          },
+          "value": {
+            "lit": [
+              10,
+              20
+            ]
+          }
+        },
+        {
+          "op": "assign",
+          "target": {
+            "ref": "p"
+          },
+          "value": {
+            "call": "products",
+            "args": [
+              {
+                "ref": "A"
+              },
+              {
+                "ref": "B"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "entry": {
+    "function": "main",
+    "args": []
+  },
+  "limits": {
+    "max_steps": 1000000,
+    "max_depth": 500,
+    "max_seconds": 10,
+    "snapshot_every": 0
+  }
+}

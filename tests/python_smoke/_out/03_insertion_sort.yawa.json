@@ -1,0 +1,230 @@
+﻿{
+  "yawa_version": "1.0",
+  "metadata": {
+    "name": "Python \u2192 YAWA",
+    "description": null,
+    "generator": "algovis-transpiler@0.1"
+  },
+  "globals": {},
+  "functions": [
+    {
+      "name": "insertion_sort",
+      "params": [
+        {
+          "name": "A",
+          "type": null,
+          "default": null
+        }
+      ],
+      "returns": null,
+      "body": [
+        {
+          "op": "assign",
+          "target": {
+            "ref": "n"
+          },
+          "value": {
+            "call": "length",
+            "args": [
+              {
+                "ref": "A"
+              }
+            ]
+          }
+        },
+        {
+          "op": "for",
+          "var": "i",
+          "from": {
+            "lit": 1
+          },
+          "to": {
+            "ref": "n"
+          },
+          "step": null,
+          "body": [
+            {
+              "op": "assign",
+              "target": {
+                "ref": "key"
+              },
+              "value": {
+                "index": [
+                  {
+                    "ref": "A"
+                  },
+                  {
+                    "ref": "i"
+                  }
+                ]
+              }
+            },
+            {
+              "op": "assign",
+              "target": {
+                "ref": "j"
+              },
+              "value": {
+                "bin": "-",
+                "a": {
+                  "ref": "i"
+                },
+                "b": {
+                  "lit": 1
+                }
+              }
+            },
+            {
+              "op": "while",
+              "cond": {
+                "bin": "and",
+                "a": {
+                  "bin": "\u003E=",
+                  "a": {
+                    "ref": "j"
+                  },
+                  "b": {
+                    "lit": 0
+                  }
+                },
+                "b": {
+                  "bin": "\u003E",
+                  "a": {
+                    "index": [
+                      {
+                        "ref": "A"
+                      },
+                      {
+                        "ref": "j"
+                      }
+                    ]
+                  },
+                  "b": {
+                    "ref": "key"
+                  }
+                }
+              },
+              "body": [
+                {
+                  "op": "assign",
+                  "target": {
+                    "index": [
+                      {
+                        "ref": "A"
+                      },
+                      {
+                        "bin": "\u002B",
+                        "a": {
+                          "ref": "j"
+                        },
+                        "b": {
+                          "lit": 1
+                        }
+                      }
+                    ]
+                  },
+                  "value": {
+                    "index": [
+                      {
+                        "ref": "A"
+                      },
+                      {
+                        "ref": "j"
+                      }
+                    ]
+                  }
+                },
+                {
+                  "op": "assign",
+                  "target": {
+                    "ref": "j"
+                  },
+                  "value": {
+                    "bin": "-",
+                    "a": {
+                      "ref": "j"
+                    },
+                    "b": {
+                      "lit": 1
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "op": "assign",
+              "target": {
+                "index": [
+                  {
+                    "ref": "A"
+                  },
+                  {
+                    "bin": "\u002B",
+                    "a": {
+                      "ref": "j"
+                    },
+                    "b": {
+                      "lit": 1
+                    }
+                  }
+                ]
+              },
+              "value": {
+                "ref": "key"
+              }
+            }
+          ]
+        },
+        {
+          "op": "return",
+          "value": {
+            "ref": "A"
+          }
+        }
+      ]
+    },
+    {
+      "name": "main",
+      "params": [],
+      "returns": null,
+      "body": [
+        {
+          "op": "assign",
+          "target": {
+            "ref": "A"
+          },
+          "value": {
+            "lit": [
+              5,
+              2,
+              8,
+              1,
+              9
+            ]
+          }
+        },
+        {
+          "op": "expr",
+          "value": {
+            "call": "insertion_sort",
+            "args": [
+              {
+                "ref": "A"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "entry": {
+    "function": "main",
+    "args": []
+  },
+  "limits": {
+    "max_steps": 1000000,
+    "max_depth": 500,
+    "max_seconds": 10,
+    "snapshot_every": 0
+  }
+}

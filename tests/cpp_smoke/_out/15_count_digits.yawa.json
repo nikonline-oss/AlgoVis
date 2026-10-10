@@ -1,0 +1,139 @@
+﻿{
+  "yawa_version": "1.0",
+  "metadata": {
+    "name": "C\u002B\u002B \u2192 YAWA",
+    "description": null,
+    "generator": "algovis-transpiler-cpp@0.1"
+  },
+  "globals": {},
+  "functions": [
+    {
+      "name": "countDigits",
+      "params": [
+        {
+          "name": "n",
+          "type": null,
+          "default": null
+        }
+      ],
+      "returns": null,
+      "body": [
+        {
+          "op": "if",
+          "cond": {
+            "bin": "==",
+            "a": {
+              "ref": "n"
+            },
+            "b": {
+              "lit": 0
+            }
+          },
+          "then": [
+            {
+              "op": "return",
+              "value": {
+                "lit": 0
+              }
+            }
+          ],
+          "else": null
+        },
+        {
+          "op": "declare",
+          "name": "count",
+          "type": null,
+          "value": {
+            "lit": 0
+          }
+        },
+        {
+          "op": "while",
+          "cond": {
+            "bin": "\u003E",
+            "a": {
+              "ref": "n"
+            },
+            "b": {
+              "lit": 0
+            }
+          },
+          "body": [
+            {
+              "op": "assign",
+              "target": {
+                "ref": "count"
+              },
+              "value": {
+                "bin": "\u002B",
+                "a": {
+                  "ref": "count"
+                },
+                "b": {
+                  "lit": 1
+                }
+              }
+            },
+            {
+              "op": "assign",
+              "target": {
+                "ref": "n"
+              },
+              "value": {
+                "bin": "/",
+                "a": {
+                  "ref": "n"
+                },
+                "b": {
+                  "lit": 10
+                }
+              }
+            }
+          ]
+        },
+        {
+          "op": "return",
+          "value": {
+            "ref": "count"
+          }
+        }
+      ]
+    },
+    {
+      "name": "main",
+      "params": [],
+      "returns": null,
+      "body": [
+        {
+          "op": "declare",
+          "name": "d",
+          "type": null,
+          "value": {
+            "call": "countDigits",
+            "args": [
+              {
+                "lit": 12345
+              }
+            ]
+          }
+        },
+        {
+          "op": "return",
+          "value": {
+            "lit": 0
+          }
+        }
+      ]
+    }
+  ],
+  "entry": {
+    "function": "main",
+    "args": []
+  },
+  "limits": {
+    "max_steps": 1000000,
+    "max_depth": 500,
+    "max_seconds": 10,
+    "snapshot_every": 0
+  }
+}

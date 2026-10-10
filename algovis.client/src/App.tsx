@@ -4,7 +4,9 @@ import { Header } from './components/Header';
 import { HomePage } from './pages/HomePage';
 import { VisualizerPage } from './pages/VisualizerPage';
 import { ProfilerPage } from './pages/ProfilerPage';
+import { CodeAnalyzerPage } from './pages/CodeAnalyzerPage';
 import { HelpPage } from './pages/HelpPage';
+import { Footer } from './components/ui/footer';
 
 export default function App() {
   const [currentPage, setCurrentPage] = useState('home');
@@ -16,7 +18,9 @@ export default function App() {
       case 'visualizer':
         return <VisualizerPage />;
       case 'profiler':
-        return <ProfilerPage />;
+        return <ProfilerPage onNavigate={setCurrentPage} />;
+      case 'analyzer':
+        return <CodeAnalyzerPage />;
       case 'help':
         return <HelpPage />;
       default:
@@ -31,6 +35,7 @@ export default function App() {
         <main className="container mx-auto px-4 py-8">
           {renderPage()}
         </main>
+        <Footer />
       </div>
     </AppProvider>
   );

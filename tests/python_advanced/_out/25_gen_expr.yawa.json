@@ -1,0 +1,204 @@
+﻿{
+  "yawa_version": "1.0",
+  "metadata": {
+    "name": "Python \u2192 YAWA",
+    "description": null,
+    "generator": "algovis-transpiler@0.1"
+  },
+  "globals": {},
+  "functions": [
+    {
+      "name": "sum_of_squares",
+      "params": [
+        {
+          "name": "A",
+          "type": null,
+          "default": null
+        }
+      ],
+      "returns": null,
+      "body": [
+        {
+          "op": "return",
+          "value": {
+            "call": "sum",
+            "args": [
+              {
+                "comp_body": {
+                  "bin": "*",
+                  "a": {
+                    "ref": "x"
+                  },
+                  "b": {
+                    "ref": "x"
+                  }
+                },
+                "comp_clauses": [
+                  {
+                    "var": "x",
+                    "source": {
+                      "ref": "A"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "has_negative",
+      "params": [
+        {
+          "name": "A",
+          "type": null,
+          "default": null
+        }
+      ],
+      "returns": null,
+      "body": [
+        {
+          "op": "return",
+          "value": {
+            "call": "any",
+            "args": [
+              {
+                "comp_body": {
+                  "bin": "\u003C",
+                  "a": {
+                    "ref": "x"
+                  },
+                  "b": {
+                    "lit": 0
+                  }
+                },
+                "comp_clauses": [
+                  {
+                    "var": "x",
+                    "source": {
+                      "ref": "A"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "all_positive",
+      "params": [
+        {
+          "name": "A",
+          "type": null,
+          "default": null
+        }
+      ],
+      "returns": null,
+      "body": [
+        {
+          "op": "return",
+          "value": {
+            "call": "all",
+            "args": [
+              {
+                "comp_body": {
+                  "bin": "\u003E",
+                  "a": {
+                    "ref": "x"
+                  },
+                  "b": {
+                    "lit": 0
+                  }
+                },
+                "comp_clauses": [
+                  {
+                    "var": "x",
+                    "source": {
+                      "ref": "A"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "main",
+      "params": [],
+      "returns": null,
+      "body": [
+        {
+          "op": "assign",
+          "target": {
+            "ref": "A"
+          },
+          "value": {
+            "lit": [
+              1,
+              2,
+              3,
+              4
+            ]
+          }
+        },
+        {
+          "op": "assign",
+          "target": {
+            "ref": "s"
+          },
+          "value": {
+            "call": "sum_of_squares",
+            "args": [
+              {
+                "ref": "A"
+              }
+            ]
+          }
+        },
+        {
+          "op": "assign",
+          "target": {
+            "ref": "n"
+          },
+          "value": {
+            "call": "has_negative",
+            "args": [
+              {
+                "ref": "A"
+              }
+            ]
+          }
+        },
+        {
+          "op": "assign",
+          "target": {
+            "ref": "p"
+          },
+          "value": {
+            "call": "all_positive",
+            "args": [
+              {
+                "ref": "A"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "entry": {
+    "function": "main",
+    "args": []
+  },
+  "limits": {
+    "max_steps": 1000000,
+    "max_depth": 500,
+    "max_seconds": 10,
+    "snapshot_every": 0
+  }
+}

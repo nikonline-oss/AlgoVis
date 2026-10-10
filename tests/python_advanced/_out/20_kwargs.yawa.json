@@ -1,0 +1,119 @@
+﻿{
+  "yawa_version": "1.0",
+  "metadata": {
+    "name": "Python \u2192 YAWA",
+    "description": null,
+    "generator": "algovis-transpiler@0.1"
+  },
+  "globals": {},
+  "functions": [
+    {
+      "name": "describe",
+      "params": [
+        {
+          "name": "info",
+          "type": null,
+          "default": null,
+          "kwvariadic": true
+        }
+      ],
+      "returns": null,
+      "body": [
+        {
+          "op": "assign",
+          "target": {
+            "ref": "keys"
+          },
+          "value": {
+            "lit": []
+          }
+        },
+        {
+          "op": "foreach",
+          "var": "k",
+          "in": {
+            "ref": "info"
+          },
+          "body": [
+            {
+              "op": "expr",
+              "value": {
+                "call_method": {
+                  "ref": "keys"
+                },
+                "name": "append",
+                "args": [
+                  {
+                    "ref": "k"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "op": "return",
+          "value": {
+            "ref": "keys"
+          }
+        }
+      ]
+    },
+    {
+      "name": "main",
+      "params": [],
+      "returns": null,
+      "body": [
+        {
+          "op": "assign",
+          "target": {
+            "ref": "result"
+          },
+          "value": {
+            "call": "describe",
+            "args": [
+              {
+                "dict": [
+                  {
+                    "k": {
+                      "lit": "name"
+                    },
+                    "v": {
+                      "lit": "Alice"
+                    }
+                  },
+                  {
+                    "k": {
+                      "lit": "age"
+                    },
+                    "v": {
+                      "lit": 30
+                    }
+                  },
+                  {
+                    "k": {
+                      "lit": "city"
+                    },
+                    "v": {
+                      "lit": "NYC"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "entry": {
+    "function": "main",
+    "args": []
+  },
+  "limits": {
+    "max_steps": 1000000,
+    "max_depth": 500,
+    "max_seconds": 10,
+    "snapshot_every": 0
+  }
+}

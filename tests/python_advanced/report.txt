@@ -1,0 +1,42 @@
+══════════════════════════════════════════════════════════
+  Advanced Python → YAWA tests
+══════════════════════════════════════════════════════════
+
+✅ 01_assert  (steps=16)
+✅ 02_try_except  (steps=15)
+✅ 03_multi_assign  (steps=15)
+✅ 04_for_unpack  (steps=22)
+✅ 05_dict_comp  (steps=9)
+✅ 06_set_comp  (steps=9)
+✅ 07_nested_comp  (steps=10)
+✅ 08_slice_step  (steps=12)
+✅ 09_str_methods  (steps=15)
+✅ 10_sorted_key  (steps=13)
+✅ 11_range_neg  (steps=14)
+✅ 12_inheritance  (steps=12)
+✅ 13_static_method  (steps=11)
+✅ 14_conversions  (steps=17)
+✅ 15_global  (steps=14)
+✅ 16_while_control  (steps=31)
+✅ 17_multi_return  (steps=39)
+✅ 18_lambda  (steps=36)
+✅ 19_args  (steps=13)
+✅ 20_kwargs  (steps=12)
+✅ 21_tuple_destr  (steps=13)
+✅ 22_fstring_expr  (steps=9)
+✅ 23_enumerate_zip  (steps=28)
+✅ 24_ternary  (steps=12)
+✅ 25_gen_expr  (steps=15)
+✅ 26_assert_pure  (steps=18)
+✅ 27_class_complex  (steps=24)
+✅ 28_imports  (steps=8)
+✅ 29_higher_order  (steps=19)
+✅ 30_string_chars  (steps=49)
+
+══════════════════════════════════════════════════════════
+  Итого:
+    Всего:              30
+    Прошло полностью:   30
+    Упало транспайлер:  0
+    Упало исполнение:   0
+══════════════════════════════════════════════════════════

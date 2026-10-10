@@ -1,0 +1,124 @@
+﻿{
+  "yawa_version": "1.0",
+  "metadata": {
+    "name": "Python \u2192 YAWA",
+    "description": null,
+    "generator": "algovis-transpiler@0.1"
+  },
+  "globals": {},
+  "functions": [
+    {
+      "name": "total",
+      "params": [
+        {
+          "name": "nums",
+          "type": null,
+          "default": null,
+          "kwvariadic": true
+        }
+      ],
+      "returns": null,
+      "body": [
+        {
+          "op": "assign",
+          "target": {
+            "ref": "s"
+          },
+          "value": {
+            "lit": 0
+          }
+        },
+        {
+          "op": "foreach",
+          "var": "n",
+          "in": {
+            "ref": "nums"
+          },
+          "body": [
+            {
+              "op": "assign",
+              "target": {
+                "ref": "s"
+              },
+              "value": {
+                "bin": "\u002B",
+                "a": {
+                  "ref": "s"
+                },
+                "b": {
+                  "ref": "n"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "op": "return",
+          "value": {
+            "ref": "s"
+          }
+        }
+      ]
+    },
+    {
+      "name": "main",
+      "params": [],
+      "returns": null,
+      "body": [
+        {
+          "op": "assign",
+          "target": {
+            "ref": "a"
+          },
+          "value": {
+            "call": "total",
+            "args": [
+              {
+                "lit": 1
+              },
+              {
+                "lit": 2
+              },
+              {
+                "lit": 3
+              }
+            ]
+          }
+        },
+        {
+          "op": "assign",
+          "target": {
+            "ref": "b"
+          },
+          "value": {
+            "call": "total",
+            "args": [
+              {
+                "lit": 10
+              },
+              {
+                "lit": 20
+              },
+              {
+                "lit": 30
+              },
+              {
+                "lit": 40
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "entry": {
+    "function": "main",
+    "args": []
+  },
+  "limits": {
+    "max_steps": 1000000,
+    "max_depth": 500,
+    "max_seconds": 10,
+    "snapshot_every": 0
+  }
+}

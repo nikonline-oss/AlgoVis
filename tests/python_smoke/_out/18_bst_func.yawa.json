@@ -1,0 +1,243 @@
+﻿{
+  "yawa_version": "1.0",
+  "metadata": {
+    "name": "Python \u2192 YAWA",
+    "description": null,
+    "generator": "algovis-transpiler@0.1"
+  },
+  "globals": {},
+  "functions": [
+    {
+      "name": "insert",
+      "params": [
+        {
+          "name": "node",
+          "type": null,
+          "default": null
+        },
+        {
+          "name": "value",
+          "type": null,
+          "default": null
+        }
+      ],
+      "returns": null,
+      "body": [
+        {
+          "op": "if",
+          "cond": {
+            "bin": "==",
+            "a": {
+              "ref": "node"
+            },
+            "b": {
+              "lit": null
+            }
+          },
+          "then": [
+            {
+              "op": "return",
+              "value": {
+                "dict": [
+                  {
+                    "k": {
+                      "lit": "value"
+                    },
+                    "v": {
+                      "ref": "value"
+                    }
+                  },
+                  {
+                    "k": {
+                      "lit": "left"
+                    },
+                    "v": {
+                      "lit": null
+                    }
+                  },
+                  {
+                    "k": {
+                      "lit": "right"
+                    },
+                    "v": {
+                      "lit": null
+                    }
+                  }
+                ]
+              }
+            }
+          ],
+          "else": null
+        },
+        {
+          "op": "if",
+          "cond": {
+            "bin": "\u003C",
+            "a": {
+              "ref": "value"
+            },
+            "b": {
+              "index": [
+                {
+                  "ref": "node"
+                },
+                {
+                  "lit": "value"
+                }
+              ]
+            }
+          },
+          "then": [
+            {
+              "op": "assign",
+              "target": {
+                "index": [
+                  {
+                    "ref": "node"
+                  },
+                  {
+                    "lit": "left"
+                  }
+                ]
+              },
+              "value": {
+                "call": "insert",
+                "args": [
+                  {
+                    "index": [
+                      {
+                        "ref": "node"
+                      },
+                      {
+                        "lit": "left"
+                      }
+                    ]
+                  },
+                  {
+                    "ref": "value"
+                  }
+                ]
+              }
+            }
+          ],
+          "else": [
+            {
+              "op": "assign",
+              "target": {
+                "index": [
+                  {
+                    "ref": "node"
+                  },
+                  {
+                    "lit": "right"
+                  }
+                ]
+              },
+              "value": {
+                "call": "insert",
+                "args": [
+                  {
+                    "index": [
+                      {
+                        "ref": "node"
+                      },
+                      {
+                        "lit": "right"
+                      }
+                    ]
+                  },
+                  {
+                    "ref": "value"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "op": "return",
+          "value": {
+            "ref": "node"
+          }
+        }
+      ]
+    },
+    {
+      "name": "main",
+      "params": [],
+      "returns": null,
+      "body": [
+        {
+          "op": "assign",
+          "target": {
+            "ref": "root"
+          },
+          "value": {
+            "lit": null
+          }
+        },
+        {
+          "op": "assign",
+          "target": {
+            "ref": "root"
+          },
+          "value": {
+            "call": "insert",
+            "args": [
+              {
+                "ref": "root"
+              },
+              {
+                "lit": 50
+              }
+            ]
+          }
+        },
+        {
+          "op": "assign",
+          "target": {
+            "ref": "root"
+          },
+          "value": {
+            "call": "insert",
+            "args": [
+              {
+                "ref": "root"
+              },
+              {
+                "lit": 30
+              }
+            ]
+          }
+        },
+        {
+          "op": "assign",
+          "target": {
+            "ref": "root"
+          },
+          "value": {
+            "call": "insert",
+            "args": [
+              {
+                "ref": "root"
+              },
+              {
+                "lit": 70
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "entry": {
+    "function": "main",
+    "args": []
+  },
+  "limits": {
+    "max_steps": 1000000,
+    "max_depth": 500,
+    "max_seconds": 10,
+    "snapshot_every": 0
+  }
+}

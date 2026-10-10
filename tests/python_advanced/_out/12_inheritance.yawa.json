@@ -1,0 +1,157 @@
+﻿{
+  "yawa_version": "1.0",
+  "metadata": {
+    "name": "Python \u2192 YAWA",
+    "description": null,
+    "generator": "algovis-transpiler@0.1"
+  },
+  "globals": {},
+  "functions": [
+    {
+      "name": "Animal.__init__",
+      "params": [
+        {
+          "name": "self",
+          "type": null,
+          "default": null
+        },
+        {
+          "name": "name",
+          "type": null,
+          "default": null
+        }
+      ],
+      "returns": null,
+      "body": [
+        {
+          "op": "assign",
+          "target": {
+            "field": [
+              {
+                "ref": "self"
+              },
+              "name"
+            ]
+          },
+          "value": {
+            "ref": "name"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Animal.speak",
+      "params": [
+        {
+          "name": "self",
+          "type": null,
+          "default": null
+        }
+      ],
+      "returns": null,
+      "body": [
+        {
+          "op": "return",
+          "value": {
+            "lit": "..."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Dog.speak",
+      "params": [
+        {
+          "name": "self",
+          "type": null,
+          "default": null
+        }
+      ],
+      "returns": null,
+      "body": [
+        {
+          "op": "return",
+          "value": {
+            "lit": "Woof"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Dog.__init__",
+      "params": [
+        {
+          "name": "self",
+          "type": null,
+          "default": null
+        },
+        {
+          "name": "name",
+          "type": null,
+          "default": null
+        }
+      ],
+      "returns": null,
+      "body": [
+        {
+          "op": "assign",
+          "target": {
+            "field": [
+              {
+                "ref": "self"
+              },
+              "name"
+            ]
+          },
+          "value": {
+            "ref": "name"
+          }
+        }
+      ]
+    },
+    {
+      "name": "main",
+      "params": [],
+      "returns": null,
+      "body": [
+        {
+          "op": "assign",
+          "target": {
+            "ref": "d"
+          },
+          "value": {
+            "instantiate": "Dog",
+            "args": [
+              {
+                "lit": "Rex"
+              }
+            ]
+          }
+        },
+        {
+          "op": "assign",
+          "target": {
+            "ref": "s"
+          },
+          "value": {
+            "call_method": {
+              "ref": "d"
+            },
+            "name": "speak",
+            "args": []
+          }
+        }
+      ]
+    }
+  ],
+  "entry": {
+    "function": "main",
+    "args": []
+  },
+  "limits": {
+    "max_steps": 1000000,
+    "max_depth": 500,
+    "max_seconds": 10,
+    "snapshot_every": 0
+  }
+}

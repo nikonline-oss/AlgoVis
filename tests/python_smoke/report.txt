@@ -1,0 +1,21 @@
+═══════════════════════════════════════════════════════════════
+  Smoke test: Python → YAWA → Trace
+  Root:    /home/workspace/projects/AlgoVis
+  Project: /home/workspace/projects/AlgoVis/AlgoVis.Yawa.Cli/AlgoVis.Yawa.Cli.csproj
+═══════════════════════════════════════════════════════════════
+
+✅ 01_bubble_sort  (steps=86, cmp=28, swaps=13)
+✅ 02_selection_sort  (steps=65, cmp=21, swaps=3)
+✅ 03_insertion_sort  (steps=47, cmp=14, swaps=0)
+✅ 04_binary_search  (steps=23, cmp=8, swaps=0)
+✅ 05_linear_search  (steps=14, cmp=3, swaps=0)
+✅ 06_factorial  (steps=20, cmp=5, swaps=0)
+✅ 07_fibonacci  (steps=80, cmp=25, swaps=0)
+✅ 08_gcd  (steps=20, cmp=4, swaps=0)
+✅ 09_quicksort  (steps=52, cmp=15, swaps=0)
+✅ 10_mergesort  (steps=215, cmp=99, swaps=0)
+✅ 11_tuple_assign  (steps=28, cmp=10, swaps=0)
+✅ 12_chained_cmp  (steps=9, cmp=2, swaps=0)
+✅ 13_fstrings  (steps=8, cmp=0, swaps=0)
+✅ 14_nested_func  (steps=9, cmp=0, swaps=0)
+✅ 15_class  (steps=15, cmp=0, swaps=0)

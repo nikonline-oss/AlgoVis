@@ -1,0 +1,32 @@
+══════════════════════════════════════════════════════════
+  C++ → YAWA tests
+══════════════════════════════════════════════════════════
+
+✅ 01_bubble_sort  (steps=65)
+✅ 02_selection_sort  (steps=68)
+✅ 03_insertion_sort  (steps=47)
+✅ 04_linear_search  (steps=16)
+✅ 05_binary_search  (steps=25)
+✅ 06_factorial  (steps=21)
+✅ 07_fibonacci  (steps=81)
+✅ 08_gcd  (steps=21)
+✅ 09_sum_array  (steps=21)
+✅ 10_reverse_array  (steps=30)
+✅ 11_min_max  (steps=30)
+✅ 12_count_positive  (steps=26)
+✅ 13_is_prime  (steps=30)
+✅ 14_power  (steps=39)
+✅ 15_count_digits  (steps=26)
+✅ 16_sum_digits  (steps=22)
+✅ 17_print_array  (steps=20)
+✅ 18_matrix_transpose  (steps=30)
+✅ 19_swap  (steps=12)
+✅ 20_divisible_count  (steps=55)
+
+══════════════════════════════════════════════════════════
+  Итого:
+    Всего:              20
+    Прошло полностью:   20
+    Упало транспайлер:  0
+    Упало исполнение:   0
+══════════════════════════════════════════════════════════

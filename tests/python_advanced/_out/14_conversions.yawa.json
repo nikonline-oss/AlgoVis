@@ -1,0 +1,180 @@
+﻿{
+  "yawa_version": "1.0",
+  "metadata": {
+    "name": "Python \u2192 YAWA",
+    "description": null,
+    "generator": "algovis-transpiler@0.1"
+  },
+  "globals": {},
+  "functions": [
+    {
+      "name": "to_char",
+      "params": [
+        {
+          "name": "code",
+          "type": null,
+          "default": null
+        }
+      ],
+      "returns": null,
+      "body": [
+        {
+          "op": "return",
+          "value": {
+            "call": "chr",
+            "args": [
+              {
+                "ref": "code"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "to_code",
+      "params": [
+        {
+          "name": "ch",
+          "type": null,
+          "default": null
+        }
+      ],
+      "returns": null,
+      "body": [
+        {
+          "op": "return",
+          "value": {
+            "call": "ord",
+            "args": [
+              {
+                "ref": "ch"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "to_int",
+      "params": [
+        {
+          "name": "s",
+          "type": null,
+          "default": null
+        }
+      ],
+      "returns": null,
+      "body": [
+        {
+          "op": "return",
+          "value": {
+            "call": "int",
+            "args": [
+              {
+                "ref": "s"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "to_str",
+      "params": [
+        {
+          "name": "n",
+          "type": null,
+          "default": null
+        }
+      ],
+      "returns": null,
+      "body": [
+        {
+          "op": "return",
+          "value": {
+            "call": "str",
+            "args": [
+              {
+                "ref": "n"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "main",
+      "params": [],
+      "returns": null,
+      "body": [
+        {
+          "op": "assign",
+          "target": {
+            "ref": "c"
+          },
+          "value": {
+            "call": "to_char",
+            "args": [
+              {
+                "lit": 65
+              }
+            ]
+          }
+        },
+        {
+          "op": "assign",
+          "target": {
+            "ref": "o"
+          },
+          "value": {
+            "call": "to_code",
+            "args": [
+              {
+                "lit": "A"
+              }
+            ]
+          }
+        },
+        {
+          "op": "assign",
+          "target": {
+            "ref": "i"
+          },
+          "value": {
+            "call": "to_int",
+            "args": [
+              {
+                "lit": "42"
+              }
+            ]
+          }
+        },
+        {
+          "op": "assign",
+          "target": {
+            "ref": "s"
+          },
+          "value": {
+            "call": "to_str",
+            "args": [
+              {
+                "lit": 123
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "entry": {
+    "function": "main",
+    "args": []
+  },
+  "limits": {
+    "max_steps": 1000000,
+    "max_depth": 500,
+    "max_seconds": 10,
+    "snapshot_every": 0
+  }
+}

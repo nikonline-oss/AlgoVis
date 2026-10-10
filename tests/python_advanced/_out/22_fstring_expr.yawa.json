@@ -1,0 +1,73 @@
+﻿{
+  "yawa_version": "1.0",
+  "metadata": {
+    "name": "Python \u2192 YAWA",
+    "description": null,
+    "generator": "algovis-transpiler@0.1"
+  },
+  "globals": {},
+  "functions": [
+    {
+      "name": "greet",
+      "params": [
+        {
+          "name": "name",
+          "type": null,
+          "default": null
+        },
+        {
+          "name": "count",
+          "type": null,
+          "default": null
+        }
+      ],
+      "returns": null,
+      "body": [
+        {
+          "op": "return",
+          "value": {
+            "lit": "\u0022Hello, {name}! You have {count * 2} items"
+          }
+        }
+      ]
+    },
+    {
+      "name": "main",
+      "params": [],
+      "returns": null,
+      "body": [
+        {
+          "op": "assign",
+          "target": {
+            "ref": "msg"
+          },
+          "value": {
+            "call": "greet",
+            "args": [
+              {
+                "lit": "Alice"
+              },
+              {
+                "lit": 5
+              }
+            ]
+          }
+        },
+        {
+          "op": "annotate",
+          "text": "\u0022len = {len(msg)}"
+        }
+      ]
+    }
+  ],
+  "entry": {
+    "function": "main",
+    "args": []
+  },
+  "limits": {
+    "max_steps": 1000000,
+    "max_depth": 500,
+    "max_seconds": 10,
+    "snapshot_every": 0
+  }
+}

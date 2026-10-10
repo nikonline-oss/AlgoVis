@@ -1,0 +1,240 @@
+﻿{
+  "yawa_version": "1.0",
+  "metadata": {
+    "name": "Python \u2192 YAWA",
+    "description": null,
+    "generator": "algovis-transpiler@0.1"
+  },
+  "globals": {},
+  "functions": [
+    {
+      "name": "evens",
+      "params": [
+        {
+          "name": "A",
+          "type": null,
+          "default": null
+        }
+      ],
+      "returns": null,
+      "body": [
+        {
+          "op": "return",
+          "value": {
+            "call": "list",
+            "args": [
+              {
+                "call": "filter",
+                "args": [
+                  {
+                    "funcref": "__lambda_1"
+                  },
+                  {
+                    "ref": "A"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "__lambda_1",
+      "params": [
+        {
+          "name": "x",
+          "type": null,
+          "default": null
+        }
+      ],
+      "returns": null,
+      "body": [
+        {
+          "op": "return",
+          "value": {
+            "bin": "==",
+            "a": {
+              "bin": "%",
+              "a": {
+                "ref": "x"
+              },
+              "b": {
+                "lit": 2
+              }
+            },
+            "b": {
+              "lit": 0
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "lambda_1",
+      "params": [
+        {
+          "name": "x",
+          "type": null,
+          "default": null
+        }
+      ],
+      "returns": null,
+      "body": [
+        {
+          "op": "return",
+          "value": {
+            "call": "__lambda_1",
+            "args": [
+              {
+                "ref": "x"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "doubled",
+      "params": [
+        {
+          "name": "A",
+          "type": null,
+          "default": null
+        }
+      ],
+      "returns": null,
+      "body": [
+        {
+          "op": "return",
+          "value": {
+            "call": "list",
+            "args": [
+              {
+                "call": "map",
+                "args": [
+                  {
+                    "funcref": "__lambda_2"
+                  },
+                  {
+                    "ref": "A"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "__lambda_2",
+      "params": [
+        {
+          "name": "x",
+          "type": null,
+          "default": null
+        }
+      ],
+      "returns": null,
+      "body": [
+        {
+          "op": "return",
+          "value": {
+            "bin": "*",
+            "a": {
+              "ref": "x"
+            },
+            "b": {
+              "lit": 2
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "lambda_2",
+      "params": [
+        {
+          "name": "x",
+          "type": null,
+          "default": null
+        }
+      ],
+      "returns": null,
+      "body": [
+        {
+          "op": "return",
+          "value": {
+            "call": "__lambda_2",
+            "args": [
+              {
+                "ref": "x"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "main",
+      "params": [],
+      "returns": null,
+      "body": [
+        {
+          "op": "assign",
+          "target": {
+            "ref": "A"
+          },
+          "value": {
+            "lit": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6
+            ]
+          }
+        },
+        {
+          "op": "assign",
+          "target": {
+            "ref": "e"
+          },
+          "value": {
+            "call": "evens",
+            "args": [
+              {
+                "ref": "A"
+              }
+            ]
+          }
+        },
+        {
+          "op": "assign",
+          "target": {
+            "ref": "d"
+          },
+          "value": {
+            "call": "doubled",
+            "args": [
+              {
+                "ref": "A"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "entry": {
+    "function": "main",
+    "args": []
+  },
+  "limits": {
+    "max_steps": 1000000,
+    "max_depth": 500,
+    "max_seconds": 10,
+    "snapshot_every": 0
+  }
+}

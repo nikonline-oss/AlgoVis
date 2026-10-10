@@ -21,6 +21,7 @@ export function Header({ currentPage, onPageChange }: HeaderProps) {
     { id: 'home', label: translations['nav.home'] },
     { id: 'visualizer', label: translations['nav.visualizer'] },
     { id: 'profiler', label: translations['nav.profiler'] },
+    { id: 'analyzer', label: translations['nav.analyzer'] },
     { id: 'help', label: translations['nav.help'] },
   ];
 

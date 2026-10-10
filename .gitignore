@@ -361,3 +361,11 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+chapi-service/.gradle/
+chapi-service/build/
+chapi-service/.kotlin/
+chapi-service/.idea/
+chapi-service/*.iml
+traces/
+_out/

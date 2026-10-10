@@ -1,0 +1,131 @@
+﻿{
+  "yawa_version": "1.0",
+  "metadata": {
+    "name": "Python \u2192 YAWA",
+    "description": null,
+    "generator": "algovis-transpiler@0.1"
+  },
+  "globals": {},
+  "functions": [
+    {
+      "name": "evens",
+      "params": [
+        {
+          "name": "A",
+          "type": null,
+          "default": null
+        }
+      ],
+      "returns": null,
+      "body": [
+        {
+          "op": "return",
+          "value": {
+            "slice": [
+              {
+                "ref": "A"
+              },
+              null,
+              null,
+              {
+                "lit": 2
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "reversed_copy",
+      "params": [
+        {
+          "name": "A",
+          "type": null,
+          "default": null
+        }
+      ],
+      "returns": null,
+      "body": [
+        {
+          "op": "return",
+          "value": {
+            "slice": [
+              {
+                "ref": "A"
+              },
+              null,
+              null,
+              {
+                "un": "-",
+                "a": {
+                  "lit": 1
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "main",
+      "params": [],
+      "returns": null,
+      "body": [
+        {
+          "op": "assign",
+          "target": {
+            "ref": "A"
+          },
+          "value": {
+            "lit": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6
+            ]
+          }
+        },
+        {
+          "op": "assign",
+          "target": {
+            "ref": "e"
+          },
+          "value": {
+            "call": "evens",
+            "args": [
+              {
+                "ref": "A"
+              }
+            ]
+          }
+        },
+        {
+          "op": "assign",
+          "target": {
+            "ref": "r"
+          },
+          "value": {
+            "call": "reversed_copy",
+            "args": [
+              {
+                "ref": "A"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "entry": {
+    "function": "main",
+    "args": []
+  },
+  "limits": {
+    "max_steps": 1000000,
+    "max_depth": 500,
+    "max_seconds": 10,
+    "snapshot_every": 0
+  }
+}

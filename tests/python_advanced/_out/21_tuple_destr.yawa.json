@@ -1,0 +1,126 @@
+﻿{
+  "yawa_version": "1.0",
+  "metadata": {
+    "name": "Python \u2192 YAWA",
+    "description": null,
+    "generator": "algovis-transpiler@0.1"
+  },
+  "globals": {},
+  "functions": [
+    {
+      "name": "swap",
+      "params": [
+        {
+          "name": "a",
+          "type": null,
+          "default": null
+        },
+        {
+          "name": "b",
+          "type": null,
+          "default": null
+        }
+      ],
+      "returns": null,
+      "body": [
+        {
+          "op": "return",
+          "value": {
+            "tuple": [
+              {
+                "ref": "b"
+              },
+              {
+                "ref": "a"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "main",
+      "params": [],
+      "returns": null,
+      "body": [
+        {
+          "op": "tuple_assign",
+          "Targets": [
+            {
+              "ref": "x"
+            },
+            {
+              "ref": "y"
+            }
+          ],
+          "Values": [
+            {
+              "lit": 1
+            },
+            {
+              "lit": 2
+            }
+          ],
+          "SplatIndex": -1
+        },
+        {
+          "op": "tuple_assign",
+          "Targets": [
+            {
+              "ref": "x"
+            },
+            {
+              "ref": "y"
+            }
+          ],
+          "Values": [
+            {
+              "call": "swap",
+              "args": [
+                {
+                  "ref": "x"
+                },
+                {
+                  "ref": "y"
+                }
+              ]
+            }
+          ],
+          "SplatIndex": -1
+        },
+        {
+          "op": "tuple_assign",
+          "Targets": [
+            {
+              "ref": "head"
+            },
+            {
+              "ref": "rest"
+            }
+          ],
+          "Values": [
+            {
+              "lit": [
+                1,
+                2,
+                3,
+                4
+              ]
+            }
+          ],
+          "SplatIndex": 1
+        }
+      ]
+    }
+  ],
+  "entry": {
+    "function": "main",
+    "args": []
+  },
+  "limits": {
+    "max_steps": 1000000,
+    "max_depth": 500,
+    "max_seconds": 10,
+    "snapshot_every": 0
+  }
+}

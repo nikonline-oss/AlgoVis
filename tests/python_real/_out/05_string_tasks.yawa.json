@@ -1,0 +1,608 @@
+﻿{
+  "yawa_version": "1.0",
+  "metadata": {
+    "name": "Python \u2192 YAWA",
+    "description": null,
+    "generator": "algovis-transpiler@0.1"
+  },
+  "globals": {},
+  "functions": [
+    {
+      "name": "is_palindrome",
+      "params": [
+        {
+          "name": "s",
+          "type": null,
+          "default": null
+        }
+      ],
+      "returns": null,
+      "body": [
+        {
+          "op": "assign",
+          "target": {
+            "ref": "cleaned"
+          },
+          "value": {
+            "lit": ""
+          }
+        },
+        {
+          "op": "foreach",
+          "var": "c",
+          "in": {
+            "ref": "s"
+          },
+          "body": [
+            {
+              "op": "if",
+              "cond": {
+                "call_method": {
+                  "ref": "c"
+                },
+                "name": "isalpha",
+                "args": []
+              },
+              "then": [
+                {
+                  "op": "assign",
+                  "target": {
+                    "ref": "cleaned"
+                  },
+                  "value": {
+                    "bin": "\u002B",
+                    "a": {
+                      "ref": "cleaned"
+                    },
+                    "b": {
+                      "call_method": {
+                        "ref": "c"
+                      },
+                      "name": "lower",
+                      "args": []
+                    }
+                  }
+                }
+              ],
+              "else": null
+            }
+          ]
+        },
+        {
+          "op": "assign",
+          "target": {
+            "ref": "i"
+          },
+          "value": {
+            "lit": 0
+          }
+        },
+        {
+          "op": "assign",
+          "target": {
+            "ref": "j"
+          },
+          "value": {
+            "bin": "-",
+            "a": {
+              "call": "length",
+              "args": [
+                {
+                  "ref": "cleaned"
+                }
+              ]
+            },
+            "b": {
+              "lit": 1
+            }
+          }
+        },
+        {
+          "op": "while",
+          "cond": {
+            "bin": "\u003C",
+            "a": {
+              "ref": "i"
+            },
+            "b": {
+              "ref": "j"
+            }
+          },
+          "body": [
+            {
+              "op": "if",
+              "cond": {
+                "bin": "!=",
+                "a": {
+                  "index": [
+                    {
+                      "ref": "cleaned"
+                    },
+                    {
+                      "ref": "i"
+                    }
+                  ]
+                },
+                "b": {
+                  "index": [
+                    {
+                      "ref": "cleaned"
+                    },
+                    {
+                      "ref": "j"
+                    }
+                  ]
+                }
+              },
+              "then": [
+                {
+                  "op": "return",
+                  "value": {
+                    "lit": false
+                  }
+                }
+              ],
+              "else": null
+            },
+            {
+              "op": "assign",
+              "target": {
+                "ref": "i"
+              },
+              "value": {
+                "bin": "\u002B",
+                "a": {
+                  "ref": "i"
+                },
+                "b": {
+                  "lit": 1
+                }
+              }
+            },
+            {
+              "op": "assign",
+              "target": {
+                "ref": "j"
+              },
+              "value": {
+                "bin": "-",
+                "a": {
+                  "ref": "j"
+                },
+                "b": {
+                  "lit": 1
+                }
+              }
+            }
+          ]
+        },
+        {
+          "op": "return",
+          "value": {
+            "lit": true
+          }
+        }
+      ]
+    },
+    {
+      "name": "are_anagrams",
+      "params": [
+        {
+          "name": "a",
+          "type": null,
+          "default": null
+        },
+        {
+          "name": "b",
+          "type": null,
+          "default": null
+        }
+      ],
+      "returns": null,
+      "body": [
+        {
+          "op": "if",
+          "cond": {
+            "bin": "!=",
+            "a": {
+              "call": "length",
+              "args": [
+                {
+                  "ref": "a"
+                }
+              ]
+            },
+            "b": {
+              "call": "length",
+              "args": [
+                {
+                  "ref": "b"
+                }
+              ]
+            }
+          },
+          "then": [
+            {
+              "op": "return",
+              "value": {
+                "lit": false
+              }
+            }
+          ],
+          "else": null
+        },
+        {
+          "op": "assign",
+          "target": {
+            "ref": "count_a"
+          },
+          "value": {
+            "dict": []
+          }
+        },
+        {
+          "op": "foreach",
+          "var": "c",
+          "in": {
+            "ref": "a"
+          },
+          "body": [
+            {
+              "op": "if",
+              "cond": {
+                "bin": "in",
+                "a": {
+                  "ref": "c"
+                },
+                "b": {
+                  "ref": "count_a"
+                }
+              },
+              "then": [
+                {
+                  "op": "assign",
+                  "target": {
+                    "index": [
+                      {
+                        "ref": "count_a"
+                      },
+                      {
+                        "ref": "c"
+                      }
+                    ]
+                  },
+                  "value": {
+                    "bin": "\u002B",
+                    "a": {
+                      "index": [
+                        {
+                          "ref": "count_a"
+                        },
+                        {
+                          "ref": "c"
+                        }
+                      ]
+                    },
+                    "b": {
+                      "lit": 1
+                    }
+                  }
+                }
+              ],
+              "else": [
+                {
+                  "op": "assign",
+                  "target": {
+                    "index": [
+                      {
+                        "ref": "count_a"
+                      },
+                      {
+                        "ref": "c"
+                      }
+                    ]
+                  },
+                  "value": {
+                    "lit": 1
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "op": "foreach",
+          "var": "c",
+          "in": {
+            "ref": "b"
+          },
+          "body": [
+            {
+              "op": "if",
+              "cond": {
+                "bin": "not_in",
+                "a": {
+                  "ref": "c"
+                },
+                "b": {
+                  "ref": "count_a"
+                }
+              },
+              "then": [
+                {
+                  "op": "return",
+                  "value": {
+                    "lit": false
+                  }
+                }
+              ],
+              "else": null
+            },
+            {
+              "op": "assign",
+              "target": {
+                "index": [
+                  {
+                    "ref": "count_a"
+                  },
+                  {
+                    "ref": "c"
+                  }
+                ]
+              },
+              "value": {
+                "bin": "-",
+                "a": {
+                  "index": [
+                    {
+                      "ref": "count_a"
+                    },
+                    {
+                      "ref": "c"
+                    }
+                  ]
+                },
+                "b": {
+                  "lit": 1
+                }
+              }
+            },
+            {
+              "op": "if",
+              "cond": {
+                "bin": "\u003C",
+                "a": {
+                  "index": [
+                    {
+                      "ref": "count_a"
+                    },
+                    {
+                      "ref": "c"
+                    }
+                  ]
+                },
+                "b": {
+                  "lit": 0
+                }
+              },
+              "then": [
+                {
+                  "op": "return",
+                  "value": {
+                    "lit": false
+                  }
+                }
+              ],
+              "else": null
+            }
+          ]
+        },
+        {
+          "op": "return",
+          "value": {
+            "lit": true
+          }
+        }
+      ]
+    },
+    {
+      "name": "word_count",
+      "params": [
+        {
+          "name": "text",
+          "type": null,
+          "default": null
+        }
+      ],
+      "returns": null,
+      "body": [
+        {
+          "op": "assign",
+          "target": {
+            "ref": "words"
+          },
+          "value": {
+            "call_method": {
+              "call_method": {
+                "ref": "text"
+              },
+              "name": "lower",
+              "args": []
+            },
+            "name": "split",
+            "args": []
+          }
+        },
+        {
+          "op": "assign",
+          "target": {
+            "ref": "counts"
+          },
+          "value": {
+            "dict": []
+          }
+        },
+        {
+          "op": "foreach",
+          "var": "w",
+          "in": {
+            "ref": "words"
+          },
+          "body": [
+            {
+              "op": "if",
+              "cond": {
+                "bin": "in",
+                "a": {
+                  "ref": "w"
+                },
+                "b": {
+                  "ref": "counts"
+                }
+              },
+              "then": [
+                {
+                  "op": "assign",
+                  "target": {
+                    "index": [
+                      {
+                        "ref": "counts"
+                      },
+                      {
+                        "ref": "w"
+                      }
+                    ]
+                  },
+                  "value": {
+                    "bin": "\u002B",
+                    "a": {
+                      "index": [
+                        {
+                          "ref": "counts"
+                        },
+                        {
+                          "ref": "w"
+                        }
+                      ]
+                    },
+                    "b": {
+                      "lit": 1
+                    }
+                  }
+                }
+              ],
+              "else": [
+                {
+                  "op": "assign",
+                  "target": {
+                    "index": [
+                      {
+                        "ref": "counts"
+                      },
+                      {
+                        "ref": "w"
+                      }
+                    ]
+                  },
+                  "value": {
+                    "lit": 1
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "op": "return",
+          "value": {
+            "ref": "counts"
+          }
+        }
+      ]
+    },
+    {
+      "name": "main",
+      "params": [],
+      "returns": null,
+      "body": [
+        {
+          "op": "assign",
+          "target": {
+            "ref": "p1"
+          },
+          "value": {
+            "call": "is_palindrome",
+            "args": [
+              {
+                "lit": "A man a plan a canal Panama"
+              }
+            ]
+          }
+        },
+        {
+          "op": "assign",
+          "target": {
+            "ref": "p2"
+          },
+          "value": {
+            "call": "is_palindrome",
+            "args": [
+              {
+                "lit": "hello"
+              }
+            ]
+          }
+        },
+        {
+          "op": "assign",
+          "target": {
+            "ref": "a"
+          },
+          "value": {
+            "call": "are_anagrams",
+            "args": [
+              {
+                "lit": "listen"
+              },
+              {
+                "lit": "silent"
+              }
+            ]
+          }
+        },
+        {
+          "op": "assign",
+          "target": {
+            "ref": "wc"
+          },
+          "value": {
+            "call": "word_count",
+            "args": [
+              {
+                "lit": "the cat and the dog and the bird"
+              }
+            ]
+          }
+        },
+        {
+          "op": "annotate",
+          "text": "\u0022palindrome: {p1}, {p2}"
+        },
+        {
+          "op": "annotate",
+          "text": "\u0022anagrams: {a}"
+        }
+      ]
+    }
+  ],
+  "entry": {
+    "function": "main",
+    "args": []
+  },
+  "limits": {
+    "max_steps": 1000000,
+    "max_depth": 500,
+    "max_seconds": 10,
+    "snapshot_every": 0
+  }
+}

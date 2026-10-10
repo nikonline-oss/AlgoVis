@@ -1,0 +1,94 @@
+﻿{
+  "yawa_version": "1.0",
+  "metadata": {
+    "name": "Python \u2192 YAWA",
+    "description": null,
+    "generator": "algovis-transpiler@0.1"
+  },
+  "globals": {},
+  "functions": [
+    {
+      "name": "index_by_square",
+      "params": [
+        {
+          "name": "A",
+          "type": null,
+          "default": null
+        }
+      ],
+      "returns": null,
+      "body": [
+        {
+          "op": "return",
+          "value": {
+            "dictk_key": {
+              "ref": "x"
+            },
+            "dictk_value": {
+              "bin": "*",
+              "a": {
+                "ref": "x"
+              },
+              "b": {
+                "ref": "x"
+              }
+            },
+            "dictk_clauses": [
+              {
+                "var": "x",
+                "source": {
+                  "ref": "A"
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "main",
+      "params": [],
+      "returns": null,
+      "body": [
+        {
+          "op": "assign",
+          "target": {
+            "ref": "A"
+          },
+          "value": {
+            "lit": [
+              1,
+              2,
+              3,
+              4
+            ]
+          }
+        },
+        {
+          "op": "assign",
+          "target": {
+            "ref": "d"
+          },
+          "value": {
+            "call": "index_by_square",
+            "args": [
+              {
+                "ref": "A"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "entry": {
+    "function": "main",
+    "args": []
+  },
+  "limits": {
+    "max_steps": 1000000,
+    "max_depth": 500,
+    "max_seconds": 10,
+    "snapshot_every": 0
+  }
+}

@@ -1,0 +1,531 @@
+﻿{
+  "yawa_version": "1.0",
+  "metadata": {
+    "name": "Python \u2192 YAWA",
+    "description": null,
+    "generator": "algovis-transpiler@0.1"
+  },
+  "globals": {},
+  "functions": [
+    {
+      "name": "dijkstra",
+      "params": [
+        {
+          "name": "graph",
+          "type": null,
+          "default": null
+        },
+        {
+          "name": "start",
+          "type": null,
+          "default": null
+        }
+      ],
+      "returns": null,
+      "body": [
+        {
+          "op": "assign",
+          "target": {
+            "ref": "distances"
+          },
+          "value": {
+            "dict": []
+          }
+        },
+        {
+          "op": "foreach",
+          "var": "node",
+          "in": {
+            "ref": "graph"
+          },
+          "body": [
+            {
+              "op": "assign",
+              "target": {
+                "index": [
+                  {
+                    "ref": "distances"
+                  },
+                  {
+                    "ref": "node"
+                  }
+                ]
+              },
+              "value": {
+                "bin": "**",
+                "a": {
+                  "lit": 10
+                },
+                "b": {
+                  "lit": 9
+                }
+              }
+            }
+          ]
+        },
+        {
+          "op": "assign",
+          "target": {
+            "index": [
+              {
+                "ref": "distances"
+              },
+              {
+                "ref": "start"
+              }
+            ]
+          },
+          "value": {
+            "lit": 0
+          }
+        },
+        {
+          "op": "assign",
+          "target": {
+            "ref": "visited"
+          },
+          "value": {
+            "call": "set",
+            "args": []
+          }
+        },
+        {
+          "op": "while",
+          "cond": {
+            "bin": "\u003C",
+            "a": {
+              "call": "length",
+              "args": [
+                {
+                  "ref": "visited"
+                }
+              ]
+            },
+            "b": {
+              "call": "length",
+              "args": [
+                {
+                  "ref": "graph"
+                }
+              ]
+            }
+          },
+          "body": [
+            {
+              "op": "assign",
+              "target": {
+                "ref": "current"
+              },
+              "value": {
+                "lit": null
+              }
+            },
+            {
+              "op": "assign",
+              "target": {
+                "ref": "best"
+              },
+              "value": {
+                "bin": "**",
+                "a": {
+                  "lit": 10
+                },
+                "b": {
+                  "lit": 9
+                }
+              }
+            },
+            {
+              "op": "foreach",
+              "var": "node",
+              "in": {
+                "ref": "graph"
+              },
+              "body": [
+                {
+                  "op": "if",
+                  "cond": {
+                    "bin": "not_in",
+                    "a": {
+                      "ref": "node"
+                    },
+                    "b": {
+                      "ref": "visited"
+                    }
+                  },
+                  "then": [
+                    {
+                      "op": "if",
+                      "cond": {
+                        "bin": "\u003C",
+                        "a": {
+                          "index": [
+                            {
+                              "ref": "distances"
+                            },
+                            {
+                              "ref": "node"
+                            }
+                          ]
+                        },
+                        "b": {
+                          "ref": "best"
+                        }
+                      },
+                      "then": [
+                        {
+                          "op": "assign",
+                          "target": {
+                            "ref": "best"
+                          },
+                          "value": {
+                            "index": [
+                              {
+                                "ref": "distances"
+                              },
+                              {
+                                "ref": "node"
+                              }
+                            ]
+                          }
+                        },
+                        {
+                          "op": "assign",
+                          "target": {
+                            "ref": "current"
+                          },
+                          "value": {
+                            "ref": "node"
+                          }
+                        }
+                      ],
+                      "else": null
+                    }
+                  ],
+                  "else": null
+                }
+              ]
+            },
+            {
+              "op": "if",
+              "cond": {
+                "bin": "==",
+                "a": {
+                  "ref": "current"
+                },
+                "b": {
+                  "lit": null
+                }
+              },
+              "then": [
+                {
+                  "op": "break"
+                }
+              ],
+              "else": null
+            },
+            {
+              "op": "expr",
+              "value": {
+                "call_method": {
+                  "ref": "visited"
+                },
+                "name": "add",
+                "args": [
+                  {
+                    "ref": "current"
+                  }
+                ]
+              }
+            },
+            {
+              "op": "foreach",
+              "var": "__tup_1",
+              "in": {
+                "index": [
+                  {
+                    "ref": "graph"
+                  },
+                  {
+                    "ref": "current"
+                  }
+                ]
+              },
+              "body": [
+                {
+                  "op": "assign",
+                  "target": {
+                    "ref": "neighbor"
+                  },
+                  "value": {
+                    "index": [
+                      {
+                        "ref": "__tup_1"
+                      },
+                      {
+                        "lit": 0
+                      }
+                    ]
+                  }
+                },
+                {
+                  "op": "assign",
+                  "target": {
+                    "ref": "weight"
+                  },
+                  "value": {
+                    "index": [
+                      {
+                        "ref": "__tup_1"
+                      },
+                      {
+                        "lit": 1
+                      }
+                    ]
+                  }
+                },
+                {
+                  "op": "assign",
+                  "target": {
+                    "ref": "new_dist"
+                  },
+                  "value": {
+                    "bin": "\u002B",
+                    "a": {
+                      "index": [
+                        {
+                          "ref": "distances"
+                        },
+                        {
+                          "ref": "current"
+                        }
+                      ]
+                    },
+                    "b": {
+                      "ref": "weight"
+                    }
+                  }
+                },
+                {
+                  "op": "if",
+                  "cond": {
+                    "bin": "\u003C",
+                    "a": {
+                      "ref": "new_dist"
+                    },
+                    "b": {
+                      "index": [
+                        {
+                          "ref": "distances"
+                        },
+                        {
+                          "ref": "neighbor"
+                        }
+                      ]
+                    }
+                  },
+                  "then": [
+                    {
+                      "op": "assign",
+                      "target": {
+                        "index": [
+                          {
+                            "ref": "distances"
+                          },
+                          {
+                            "ref": "neighbor"
+                          }
+                        ]
+                      },
+                      "value": {
+                        "ref": "new_dist"
+                      }
+                    }
+                  ],
+                  "else": null
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "op": "return",
+          "value": {
+            "ref": "distances"
+          }
+        }
+      ]
+    },
+    {
+      "name": "main",
+      "params": [],
+      "returns": null,
+      "body": [
+        {
+          "op": "assign",
+          "target": {
+            "ref": "graph"
+          },
+          "value": {
+            "dict": [
+              {
+                "k": {
+                  "lit": "A"
+                },
+                "v": {
+                  "array": [
+                    {
+                      "tuple": [
+                        {
+                          "lit": "B"
+                        },
+                        {
+                          "lit": 4
+                        }
+                      ]
+                    },
+                    {
+                      "tuple": [
+                        {
+                          "lit": "C"
+                        },
+                        {
+                          "lit": 2
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              {
+                "k": {
+                  "lit": "B"
+                },
+                "v": {
+                  "array": [
+                    {
+                      "tuple": [
+                        {
+                          "lit": "C"
+                        },
+                        {
+                          "lit": 5
+                        }
+                      ]
+                    },
+                    {
+                      "tuple": [
+                        {
+                          "lit": "D"
+                        },
+                        {
+                          "lit": 10
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              {
+                "k": {
+                  "lit": "C"
+                },
+                "v": {
+                  "array": [
+                    {
+                      "tuple": [
+                        {
+                          "lit": "E"
+                        },
+                        {
+                          "lit": 3
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              {
+                "k": {
+                  "lit": "D"
+                },
+                "v": {
+                  "array": [
+                    {
+                      "tuple": [
+                        {
+                          "lit": "F"
+                        },
+                        {
+                          "lit": 11
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              {
+                "k": {
+                  "lit": "E"
+                },
+                "v": {
+                  "array": [
+                    {
+                      "tuple": [
+                        {
+                          "lit": "D"
+                        },
+                        {
+                          "lit": 4
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              {
+                "k": {
+                  "lit": "F"
+                },
+                "v": {
+                  "lit": []
+                }
+              }
+            ]
+          }
+        },
+        {
+          "op": "assign",
+          "target": {
+            "ref": "dist"
+          },
+          "value": {
+            "call": "dijkstra",
+            "args": [
+              {
+                "ref": "graph"
+              },
+              {
+                "lit": "A"
+              }
+            ]
+          }
+        },
+        {
+          "op": "annotate",
+          "text": "\u0022\u0440\u0430\u0441\u0441\u0442\u043E\u044F\u043D\u0438\u0435 \u0434\u043E F: {dist[\u0027F\u0027]}"
+        }
+      ]
+    }
+  ],
+  "entry": {
+    "function": "main",
+    "args": []
+  },
+  "limits": {
+    "max_steps": 1000000,
+    "max_depth": 500,
+    "max_seconds": 10,
+    "snapshot_every": 0
+  }
+}

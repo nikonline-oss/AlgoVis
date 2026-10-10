@@ -1,0 +1,106 @@
+﻿{
+  "yawa_version": "1.0",
+  "metadata": {
+    "name": "Python \u2192 YAWA",
+    "description": null,
+    "generator": "algovis-transpiler@0.1"
+  },
+  "globals": {},
+  "functions": [
+    {
+      "name": "MathHelper.double",
+      "params": [
+        {
+          "name": "x",
+          "type": null,
+          "default": null
+        }
+      ],
+      "returns": null,
+      "body": [
+        {
+          "op": "return",
+          "value": {
+            "bin": "*",
+            "a": {
+              "ref": "x"
+            },
+            "b": {
+              "lit": 2
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "MathHelper.triple",
+      "params": [
+        {
+          "name": "x",
+          "type": null,
+          "default": null
+        }
+      ],
+      "returns": null,
+      "body": [
+        {
+          "op": "return",
+          "value": {
+            "bin": "*",
+            "a": {
+              "ref": "x"
+            },
+            "b": {
+              "lit": 3
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "main",
+      "params": [],
+      "returns": null,
+      "body": [
+        {
+          "op": "assign",
+          "target": {
+            "ref": "a"
+          },
+          "value": {
+            "call": "MathHelper.double",
+            "args": [
+              {
+                "lit": 5
+              }
+            ]
+          }
+        },
+        {
+          "op": "assign",
+          "target": {
+            "ref": "b"
+          },
+          "value": {
+            "call": "MathHelper.triple",
+            "args": [
+              {
+                "lit": 5
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "entry": {
+    "function": "main",
+    "args": []
+  },
+  "limits": {
+    "max_steps": 1000000,
+    "max_depth": 500,
+    "max_seconds": 10,
+    "snapshot_every": 0
+  }
+}

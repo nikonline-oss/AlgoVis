@@ -1,0 +1,190 @@
+﻿{
+  "yawa_version": "1.0",
+  "metadata": {
+    "name": "Python \u2192 YAWA",
+    "description": null,
+    "generator": "algovis-transpiler@0.1"
+  },
+  "globals": {},
+  "functions": [
+    {
+      "name": "dfs",
+      "params": [
+        {
+          "name": "graph",
+          "type": null,
+          "default": null
+        },
+        {
+          "name": "node",
+          "type": null,
+          "default": null
+        },
+        {
+          "name": "visited",
+          "type": null,
+          "default": null
+        }
+      ],
+      "returns": null,
+      "body": [
+        {
+          "op": "if",
+          "cond": {
+            "bin": "in",
+            "a": {
+              "ref": "node"
+            },
+            "b": {
+              "ref": "visited"
+            }
+          },
+          "then": [
+            {
+              "op": "return",
+              "value": null
+            }
+          ],
+          "else": null
+        },
+        {
+          "op": "expr",
+          "value": {
+            "call_method": {
+              "ref": "visited"
+            },
+            "name": "append",
+            "args": [
+              {
+                "ref": "node"
+              }
+            ]
+          }
+        },
+        {
+          "op": "foreach",
+          "var": "neighbor",
+          "in": {
+            "index": [
+              {
+                "ref": "graph"
+              },
+              {
+                "ref": "node"
+              }
+            ]
+          },
+          "body": [
+            {
+              "op": "expr",
+              "value": {
+                "call": "dfs",
+                "args": [
+                  {
+                    "ref": "graph"
+                  },
+                  {
+                    "ref": "neighbor"
+                  },
+                  {
+                    "ref": "visited"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "main",
+      "params": [],
+      "returns": null,
+      "body": [
+        {
+          "op": "assign",
+          "target": {
+            "ref": "g"
+          },
+          "value": {
+            "dict": [
+              {
+                "k": {
+                  "lit": "A"
+                },
+                "v": {
+                  "lit": [
+                    "B",
+                    "C"
+                  ]
+                }
+              },
+              {
+                "k": {
+                  "lit": "B"
+                },
+                "v": {
+                  "lit": [
+                    "D"
+                  ]
+                }
+              },
+              {
+                "k": {
+                  "lit": "C"
+                },
+                "v": {
+                  "lit": []
+                }
+              },
+              {
+                "k": {
+                  "lit": "D"
+                },
+                "v": {
+                  "lit": []
+                }
+              }
+            ]
+          }
+        },
+        {
+          "op": "assign",
+          "target": {
+            "ref": "visited"
+          },
+          "value": {
+            "lit": []
+          }
+        },
+        {
+          "op": "expr",
+          "value": {
+            "call": "dfs",
+            "args": [
+              {
+                "ref": "g"
+              },
+              {
+                "lit": "A"
+              },
+              {
+                "ref": "visited"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "entry": {
+    "function": "main",
+    "args": []
+  },
+  "limits": {
+    "max_steps": 1000000,
+    "max_depth": 500,
+    "max_seconds": 10,
+    "snapshot_every": 0
+  }
+}

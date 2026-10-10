@@ -1,0 +1,135 @@
+﻿{
+  "yawa_version": "1.0",
+  "metadata": {
+    "name": "Python \u2192 YAWA",
+    "description": null,
+    "generator": "algovis-transpiler@0.1"
+  },
+  "globals": {},
+  "functions": [
+    {
+      "name": "safe_div",
+      "params": [
+        {
+          "name": "a",
+          "type": null,
+          "default": null
+        },
+        {
+          "name": "b",
+          "type": null,
+          "default": null
+        }
+      ],
+      "returns": null,
+      "body": [
+        {
+          "op": "assign",
+          "target": {
+            "ref": "result"
+          },
+          "value": {
+            "lit": 0
+          }
+        },
+        {
+          "op": "try",
+          "body": [
+            {
+              "op": "assign",
+              "target": {
+                "ref": "result"
+              },
+              "value": {
+                "bin": "//",
+                "a": {
+                  "ref": "a"
+                },
+                "b": {
+                  "ref": "b"
+                }
+              }
+            }
+          ],
+          "handlers": [
+            {
+              "var": null,
+              "body": [
+                {
+                  "op": "assign",
+                  "target": {
+                    "ref": "result"
+                  },
+                  "value": {
+                    "un": "-",
+                    "a": {
+                      "lit": 1
+                    }
+                  }
+                }
+              ]
+            }
+          ],
+          "finally": []
+        },
+        {
+          "op": "return",
+          "value": {
+            "ref": "result"
+          }
+        }
+      ]
+    },
+    {
+      "name": "main",
+      "params": [],
+      "returns": null,
+      "body": [
+        {
+          "op": "assign",
+          "target": {
+            "ref": "x"
+          },
+          "value": {
+            "call": "safe_div",
+            "args": [
+              {
+                "lit": 10
+              },
+              {
+                "lit": 2
+              }
+            ]
+          }
+        },
+        {
+          "op": "assign",
+          "target": {
+            "ref": "y"
+          },
+          "value": {
+            "call": "safe_div",
+            "args": [
+              {
+                "lit": 10
+              },
+              {
+                "lit": 0
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "entry": {
+    "function": "main",
+    "args": []
+  },
+  "limits": {
+    "max_steps": 1000000,
+    "max_depth": 500,
+    "max_seconds": 10,
+    "snapshot_every": 0
+  }
+}

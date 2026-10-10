@@ -1,0 +1,168 @@
+﻿{
+  "yawa_version": "1.0",
+  "metadata": {
+    "name": "Python \u2192 YAWA",
+    "description": null,
+    "generator": "algovis-transpiler@0.1"
+  },
+  "globals": {},
+  "functions": [
+    {
+      "name": "match_brackets",
+      "params": [
+        {
+          "name": "s",
+          "type": null,
+          "default": null
+        }
+      ],
+      "returns": null,
+      "body": [
+        {
+          "op": "assign",
+          "target": {
+            "ref": "stack"
+          },
+          "value": {
+            "lit": []
+          }
+        },
+        {
+          "op": "foreach",
+          "var": "ch",
+          "in": {
+            "ref": "s"
+          },
+          "body": [
+            {
+              "op": "if",
+              "cond": {
+                "bin": "==",
+                "a": {
+                  "ref": "ch"
+                },
+                "b": {
+                  "lit": "("
+                }
+              },
+              "then": [
+                {
+                  "op": "expr",
+                  "value": {
+                    "call_method": {
+                      "ref": "stack"
+                    },
+                    "name": "append",
+                    "args": [
+                      {
+                        "ref": "ch"
+                      }
+                    ]
+                  }
+                }
+              ],
+              "else": [
+                {
+                  "op": "if",
+                  "cond": {
+                    "bin": "==",
+                    "a": {
+                      "ref": "ch"
+                    },
+                    "b": {
+                      "lit": ")"
+                    }
+                  },
+                  "then": [
+                    {
+                      "op": "if",
+                      "cond": {
+                        "bin": "==",
+                        "a": {
+                          "call": "length",
+                          "args": [
+                            {
+                              "ref": "stack"
+                            }
+                          ]
+                        },
+                        "b": {
+                          "lit": 0
+                        }
+                      },
+                      "then": [
+                        {
+                          "op": "return",
+                          "value": {
+                            "lit": false
+                          }
+                        }
+                      ],
+                      "else": null
+                    },
+                    {
+                      "op": "expr",
+                      "value": {
+                        "call_method": {
+                          "ref": "stack"
+                        },
+                        "name": "pop",
+                        "args": []
+                      }
+                    }
+                  ],
+                  "else": null
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "op": "return",
+          "value": {
+            "bin": "==",
+            "a": {
+              "call": "length",
+              "args": [
+                {
+                  "ref": "stack"
+                }
+              ]
+            },
+            "b": {
+              "lit": 0
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "main",
+      "params": [],
+      "returns": null,
+      "body": [
+        {
+          "op": "expr",
+          "value": {
+            "call": "match_brackets",
+            "args": [
+              {
+                "lit": "(())"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "entry": {
+    "function": "main",
+    "args": []
+  },
+  "limits": {
+    "max_steps": 1000000,
+    "max_depth": 500,
+    "max_seconds": 10,
+    "snapshot_every": 0
+  }
+}

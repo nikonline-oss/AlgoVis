@@ -1,0 +1,389 @@
+﻿{
+  "yawa_version": "1.0",
+  "metadata": {
+    "name": "Python \u2192 YAWA",
+    "description": null,
+    "generator": "algovis-transpiler@0.1"
+  },
+  "globals": {},
+  "functions": [
+    {
+      "name": "hanoi",
+      "params": [
+        {
+          "name": "n",
+          "type": null,
+          "default": null
+        },
+        {
+          "name": "from_p",
+          "type": null,
+          "default": null
+        },
+        {
+          "name": "to_p",
+          "type": null,
+          "default": null
+        },
+        {
+          "name": "aux_p",
+          "type": null,
+          "default": null
+        },
+        {
+          "name": "moves",
+          "type": null,
+          "default": null
+        }
+      ],
+      "returns": null,
+      "body": [
+        {
+          "op": "if",
+          "cond": {
+            "bin": "==",
+            "a": {
+              "ref": "n"
+            },
+            "b": {
+              "lit": 0
+            }
+          },
+          "then": [
+            {
+              "op": "return",
+              "value": null
+            }
+          ],
+          "else": null
+        },
+        {
+          "op": "expr",
+          "value": {
+            "call": "hanoi",
+            "args": [
+              {
+                "bin": "-",
+                "a": {
+                  "ref": "n"
+                },
+                "b": {
+                  "lit": 1
+                }
+              },
+              {
+                "ref": "from_p"
+              },
+              {
+                "ref": "aux_p"
+              },
+              {
+                "ref": "to_p"
+              },
+              {
+                "ref": "moves"
+              }
+            ]
+          }
+        },
+        {
+          "op": "expr",
+          "value": {
+            "call_method": {
+              "ref": "moves"
+            },
+            "name": "append",
+            "args": [
+              {
+                "tuple": [
+                  {
+                    "ref": "n"
+                  },
+                  {
+                    "ref": "from_p"
+                  },
+                  {
+                    "ref": "to_p"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "op": "expr",
+          "value": {
+            "call": "hanoi",
+            "args": [
+              {
+                "bin": "-",
+                "a": {
+                  "ref": "n"
+                },
+                "b": {
+                  "lit": 1
+                }
+              },
+              {
+                "ref": "aux_p"
+              },
+              {
+                "ref": "to_p"
+              },
+              {
+                "ref": "from_p"
+              },
+              {
+                "ref": "moves"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "permutations",
+      "params": [
+        {
+          "name": "A",
+          "type": null,
+          "default": null
+        }
+      ],
+      "returns": null,
+      "body": [
+        {
+          "op": "if",
+          "cond": {
+            "bin": "\u003C=",
+            "a": {
+              "call": "length",
+              "args": [
+                {
+                  "ref": "A"
+                }
+              ]
+            },
+            "b": {
+              "lit": 1
+            }
+          },
+          "then": [
+            {
+              "op": "return",
+              "value": {
+                "array": [
+                  {
+                    "ref": "A"
+                  }
+                ]
+              }
+            }
+          ],
+          "else": null
+        },
+        {
+          "op": "assign",
+          "target": {
+            "ref": "result"
+          },
+          "value": {
+            "lit": []
+          }
+        },
+        {
+          "op": "for",
+          "var": "i",
+          "from": {
+            "lit": 0
+          },
+          "to": {
+            "call": "length",
+            "args": [
+              {
+                "ref": "A"
+              }
+            ]
+          },
+          "step": null,
+          "body": [
+            {
+              "op": "assign",
+              "target": {
+                "ref": "first"
+              },
+              "value": {
+                "index": [
+                  {
+                    "ref": "A"
+                  },
+                  {
+                    "ref": "i"
+                  }
+                ]
+              }
+            },
+            {
+              "op": "assign",
+              "target": {
+                "ref": "rest"
+              },
+              "value": {
+                "bin": "\u002B",
+                "a": {
+                  "slice": [
+                    {
+                      "ref": "A"
+                    },
+                    null,
+                    {
+                      "ref": "i"
+                    },
+                    null
+                  ]
+                },
+                "b": {
+                  "slice": [
+                    {
+                      "ref": "A"
+                    },
+                    {
+                      "bin": "\u002B",
+                      "a": {
+                        "ref": "i"
+                      },
+                      "b": {
+                        "lit": 1
+                      }
+                    },
+                    null,
+                    null
+                  ]
+                }
+              }
+            },
+            {
+              "op": "foreach",
+              "var": "perm",
+              "in": {
+                "call": "permutations",
+                "args": [
+                  {
+                    "ref": "rest"
+                  }
+                ]
+              },
+              "body": [
+                {
+                  "op": "expr",
+                  "value": {
+                    "call_method": {
+                      "ref": "result"
+                    },
+                    "name": "append",
+                    "args": [
+                      {
+                        "bin": "\u002B",
+                        "a": {
+                          "array": [
+                            {
+                              "ref": "first"
+                            }
+                          ]
+                        },
+                        "b": {
+                          "ref": "perm"
+                        }
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "op": "return",
+          "value": {
+            "ref": "result"
+          }
+        }
+      ]
+    },
+    {
+      "name": "main",
+      "params": [],
+      "returns": null,
+      "body": [
+        {
+          "op": "assign",
+          "target": {
+            "ref": "moves"
+          },
+          "value": {
+            "lit": []
+          }
+        },
+        {
+          "op": "expr",
+          "value": {
+            "call": "hanoi",
+            "args": [
+              {
+                "lit": 3
+              },
+              {
+                "lit": "A"
+              },
+              {
+                "lit": "C"
+              },
+              {
+                "lit": "B"
+              },
+              {
+                "ref": "moves"
+              }
+            ]
+          }
+        },
+        {
+          "op": "annotate",
+          "text": "\u0022\u043F\u0435\u0440\u0435\u043C\u0435\u0449\u0435\u043D\u0438\u0439: {len(moves)}"
+        },
+        {
+          "op": "assign",
+          "target": {
+            "ref": "perms"
+          },
+          "value": {
+            "call": "permutations",
+            "args": [
+              {
+                "lit": [
+                  1,
+                  2,
+                  3
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "op": "annotate",
+          "text": "\u0022\u043F\u0435\u0440\u0435\u0441\u0442\u0430\u043D\u043E\u0432\u043E\u043A: {len(perms)}"
+        }
+      ]
+    }
+  ],
+  "entry": {
+    "function": "main",
+    "args": []
+  },
+  "limits": {
+    "max_steps": 1000000,
+    "max_depth": 500,
+    "max_seconds": 10,
+    "snapshot_every": 0
+  }
+}

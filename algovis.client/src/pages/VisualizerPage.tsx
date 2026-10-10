@@ -3,317 +3,2327 @@ import { Button } from '../components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { Slider } from '../components/ui/slider';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
+import { Input } from '../components/ui/input';
 import { AnimationControls } from '../components/AnimationControls';
 import { ArrayVisualization } from '../components/ArrayVisualization';
+import { TreeVisualization, type TreeNode } from '../components/TreeVisualization';
+import { GraphVisualization, type GraphNode, type GraphEdge } from '../components/GraphVisualization';
+import { ListVisualization, type ListNode } from '../components/ListVisualization';
+import { StackVisualization } from '../components/StackVisualization';
+import { QueueVisualization } from '../components/QueueVisualization';
+import { StatsPanel } from '../components/StatsPanel';
 import { useApp } from '../contexts/AppContext';
+import { TheoryPanel } from '../components/TheoryPanel';
+import { AlgorithmComparison } from '../components/AlgorithmComparison';
 
-interface ApiStep {
-    stepNumber: number;
-    operation: string;
-    description: string;
-    metadata: {
-        current_array: number[];
-    };
-    visualizationData: {
-        structureType: string;
-        elements: Record<string, { value: number; index: number; label: string }>;
-        highlights: Array<{
-            elementId: string;
-            highlightType: string;
-            color: string;
-            label: string;
-        }>;
-        connections: any[];
-    };
+interface SortingStep {
+  array: number[];
+  comparing?: number[];
+  swapping?: number[];
+  sorted?: number[];
+  pivotIndex?: number;
 }
 
-interface ApiStatistics {
-    comparisons: number;
-    swaps: number;
-    steps: number;
-    recursiveCalls: number;
-    memoryOperations: number;
-    timeComplexity: number;
-    spaceComplexity: number;
-    customMetrics: Record<string, number>;
+interface TreeStep {
+  tree: TreeNode | null;
+  currentNode?: number;
+  highlightedNodes?: number[];
+  visitedNodes?: number[];
 }
 
-interface ApiResult {
-    algorithmName: string;
-    sessionId: string;
-    structureType: string;
-    steps: ApiStep[];
-    statistics: ApiStatistics;
-    executionTime: string;
-    outputData: {
-        origin_array: number[];
-        sorted_array: number[];
-        is_sorted: boolean;
-    };
+interface GraphStep {
+  nodes: GraphNode[];
+  edges: GraphEdge[];
+  currentNode?: number;
+  highlightedNodes?: number[];
+  visitedNodes?: number[];
+  highlightedEdges?: Array<[number, number]>;
 }
 
-interface ApiResponse {
-    success: boolean;
-    result: ApiResult;
-    message: string;
+interface ListStep {
+  nodes: ListNode[];
+  head?: number | null;
+  tail?: number | null;
+  currentIndex?: number;
+  highlightedIndices?: number[];
+  comparedIndices?: number[];
+  type?: 'singly' | 'doubly';
 }
+
+interface StackStep {
+  items: number[];
+  top?: number;
+  highlightedIndex?: number;
+  operation?: 'push' | 'pop' | null;
+}
+
+interface QueueStep {
+  items: number[];
+  front?: number;
+  rear?: number;
+  highlightedIndex?: number;
+  operation?: 'enqueue' | 'dequeue' | null;
+}
+
+type VisualizationStep = SortingStep | TreeStep | GraphStep | ListStep | StackStep | QueueStep;
 
 export function VisualizerPage() {
-    const { translations } = useApp();
-    const [algorithm, setAlgorithm] = useState('BubbleSort');
-    const [arraySize, setArraySize] = useState(20);
-    const [originalArray, setOriginalArray] = useState<number[]>([]);
-    const [isPlaying, setIsPlaying] = useState(false);
-    const [speed, setSpeed] = useState(1);
-    const [currentStep, setCurrentStep] = useState(0);
-    const [apiSteps, setApiSteps] = useState<ApiStep[]>([]);
-    const [stats, setStats] = useState({ comparisons: 0, swaps: 0, steps: 0 });
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+  const { translations, sharedData, setSharedData } = useApp();
+  const [dataStructure, setDataStructure] = useState<'array' | 'tree' | 'graph' | 'list' | 'stack' | 'queue'>('array');
+  const [algorithm, setAlgorithm] = useState('bubblesort');
 
-    const generateRandomArray = useCallback(() => {
-        const newArray = Array.from({ length: arraySize }, () =>
-            Math.floor(Math.random() * 100) + 1
-        );
-        setOriginalArray([...newArray]);
-        setCurrentStep(0);
-        setApiSteps([]);
-        setStats({ comparisons: 0, swaps: 0, steps: 0 });
-        setIsPlaying(false);
-        setError(null);
-    }, [arraySize]);
+  // Array state
+  const [arraySize, setArraySize] = useState(20);
+  const [array, setArray] = useState<number[]>([]);
+  const [originalArray, setOriginalArray] = useState<number[]>([]);
 
-    useEffect(() => {
-        generateRandomArray();
-    }, [generateRandomArray]);
+  // Tree state
+  const [tree, setTree] = useState<TreeNode | null>(null);
+  const [originalTree, setOriginalTree] = useState<TreeNode | null>(null);
+  const [insertValue, setInsertValue] = useState('');
+  const [treeNodeCount, setTreeNodeCount] = useState(10);
+  
+  // Graph state
+  const [graphNodes, setGraphNodes] = useState<GraphNode[]>([]);
+  const [graphEdges, setGraphEdges] = useState<GraphEdge[]>([]);
+  const [originalGraphNodes, setOriginalGraphNodes] = useState<GraphNode[]>([]);
+  const [originalGraphEdges, setOriginalGraphEdges] = useState<GraphEdge[]>([]);
+  const [nodeCount, setNodeCount] = useState(6);
+  const [graphType, setGraphType] = useState<'circular' | 'grid' | 'complete' | 'random'>('circular');
+  const [directedGraph, setDirectedGraph] = useState(false);
 
-    const transformApiStepToVisualization = (apiStep: ApiStep) => {
-        const array = apiStep.metadata.current_array;
-        const highlights = apiStep.visualizationData.highlights;
+  // List state
+  const [listNodes, setListNodes] = useState<ListNode[]>([]);
+  const [originalListNodes, setOriginalListNodes] = useState<ListNode[]>([]);
+  const [listType, setListType] = useState<'singly' | 'doubly'>('singly');
+  const [listSize, setListSize] = useState(5);
+  const [listValue, setListValue] = useState('');
+  const [listPosition, setListPosition] = useState('');
 
-        const comparing: number[] = [];
-        const swapping: number[] = [];
-        const sorted: number[] = [];
+  // Stack state
+  const [stackItems, setStackItems] = useState<number[]>([]);
+  const [originalStackItems, setOriginalStackItems] = useState<number[]>([]);
+  const [stackSize, setStackSize] = useState(5);
+  const [stackValue, setStackValue] = useState('');
 
-        highlights.forEach(highlight => {
-            const index = parseInt(highlight.elementId);
-            if (highlight.highlightType === 'comparing') {
-                comparing.push(index);
-            } else if (highlight.highlightType === 'swapping') {
-                swapping.push(index);
-            } else if (highlight.highlightType === 'sorted') {
-                sorted.push(index);
+  // Queue state
+  const [queueItems, setQueueItems] = useState<number[]>([]);
+  const [originalQueueItems, setOriginalQueueItems] = useState<number[]>([]);
+  const [queueSize, setQueueSize] = useState(5);
+  const [queueValue, setQueueValue] = useState('');
+
+  // Animation state
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [speed, setSpeed] = useState(1);
+  const [currentStep, setCurrentStep] = useState(0);
+  const [steps, setSteps] = useState<VisualizationStep[]>([]);
+  const [stats, setStats] = useState({ comparisons: 0, swaps: 0, operations: 0 });
+
+  // Educational state
+  const [showTheory, setShowTheory] = useState(true);
+  const [showComparison, setShowComparison] = useState(true);
+
+  // Load shared data from profiler
+  useEffect(() => {
+    if (sharedData) {
+      setDataStructure(sharedData.type);
+      if (sharedData.algorithm) {
+        setAlgorithm(sharedData.algorithm);
+      }
+      if (sharedData.data) {
+        if (sharedData.type === 'array' && Array.isArray(sharedData.data)) {
+          setArray(sharedData.data);
+          setOriginalArray([...sharedData.data]);
+        }
+      }
+      setSharedData(null);
+    }
+  }, [sharedData, setSharedData]);
+
+  const generateRandomArray = useCallback(() => {
+    const newArray = Array.from({ length: arraySize }, () =>
+      Math.floor(Math.random() * 100) + 1
+    );
+    setArray(newArray);
+    setOriginalArray([...newArray]);
+    setCurrentStep(0);
+    setSteps([]);
+    setStats({ comparisons: 0, swaps: 0, operations: 0 });
+    setIsPlaying(false);
+  }, [arraySize]);
+
+  const generateRandomTree = useCallback((count: number = 10) => {
+    let root: TreeNode | null = null;
+    
+    const generateUniqueValues = (count: number): number[] => {
+      const values = new Set<number>();
+      const min = 1;
+      const max = 100;
+      
+      while (values.size < count) {
+        const value = Math.floor(Math.random() * (max - min + 1)) + min;
+        values.add(value);
+      }
+      
+      return Array.from(values);
+    };
+
+    const values = generateUniqueValues(count);
+    
+    const insertNode = (node: TreeNode | null, value: number): TreeNode => {
+      if (!node) {
+        return { value };
+      }
+      
+      if (value < node.value) {
+        node.left = insertNode(node.left || null, value);
+      } else {
+        node.right = insertNode(node.right || null, value);
+      }
+      
+      return node;
+    };
+
+    const shuffledValues = [...values].sort(() => Math.random() - 0.5);
+    
+    shuffledValues.forEach(value => {
+      root = insertNode(root, value);
+    });
+    
+    setTree(root);
+    setOriginalTree(JSON.parse(JSON.stringify(root)));
+    setCurrentStep(0);
+    setSteps([]);
+    setStats({ comparisons: 0, swaps: 0, operations: 0 });
+    setIsPlaying(false);
+  }, []);
+
+  const generateRandomGraph = useCallback((type: 'circular' | 'grid' | 'complete' | 'random' = graphType) => {
+    const nodes: GraphNode[] = [];
+    const edges: GraphEdge[] = [];
+
+    const centerX = 400;
+    const centerY = 250;
+    const radius = 150;
+
+    if (type === 'circular') {
+      for (let i = 0; i < nodeCount; i++) {
+        const angle = (i * 2 * Math.PI) / nodeCount;
+        nodes.push({
+          id: i,
+          x: centerX + radius * Math.cos(angle),
+          y: centerY + radius * Math.sin(angle),
+          label: String(i)
+        });
+      }
+
+      for (let i = 0; i < nodeCount; i++) {
+        const next = (i + 1) % nodeCount;
+        edges.push({
+          from: i,
+          to: next,
+          weight: Math.floor(Math.random() * 5) + 1,
+        });
+      }
+    } else if (type === 'grid') {
+      const cols = Math.ceil(Math.sqrt(nodeCount));
+      const rows = Math.ceil(nodeCount / cols);
+      const cellWidth = 250 / Math.max(cols - 1, 1);
+      const cellHeight = 250 / Math.max(rows - 1, 1);
+
+      for (let i = 0; i < nodeCount; i++) {
+        const row = Math.floor(i / cols);
+        const col = i % cols;
+        nodes.push({
+          id: i,
+          x: 200 + col * cellWidth,
+          y: 150 + row * cellHeight,
+          label: String(i)
+        });
+      }
+
+      for (let i = 0; i < nodeCount; i++) {
+        const row = Math.floor(i / cols);
+        const col = i % cols;
+
+        if (col < cols - 1 && i + 1 < nodeCount) {
+          edges.push({
+            from: i,
+            to: i + 1,
+            weight: Math.floor(Math.random() * 5) + 1,
+          });
+        }
+      }
+
+      for (let i = 0; i < nodeCount; i++) {
+        const row = Math.floor(i / cols);
+        const col = i % cols;
+
+        if (row < rows - 1 && i + cols < nodeCount) {
+          edges.push({
+            from: i,
+            to: i + cols,
+            weight: Math.floor(Math.random() * 5) + 1,
+          });
+        }
+      }
+    } else if (type === 'complete') {
+      for (let i = 0; i < nodeCount; i++) {
+        const angle = (i * 2 * Math.PI) / nodeCount;
+        nodes.push({
+          id: i,
+          x: centerX + radius * Math.cos(angle),
+          y: centerY + radius * Math.sin(angle),
+          label: String(i)
+        });
+      }
+
+      for (let i = 0; i < nodeCount; i++) {
+        for (let j = i + 1; j < nodeCount; j++) {
+          edges.push({
+            from: i,
+            to: j,
+            weight: Math.floor(Math.random() * 5) + 1,
+          });
+        }
+      }
+    } else if (type === 'random') {
+      const padding = 60;
+      const minDistance = 70;
+
+      const hasCollision = (x: number, y: number, existingNodes: GraphNode[]) => {
+        for (const node of existingNodes) {
+          const distance = Math.sqrt(Math.pow(x - node.x, 2) + Math.pow(y - node.y, 2));
+          if (distance < minDistance) {
+            return true;
+          }
+        }
+        return false;
+      };
+
+      for (let i = 0; i < nodeCount; i++) {
+        let attempts = 0;
+        let x, y;
+
+        do {
+          x = padding + Math.random() * (800 - 2 * padding);
+          y = padding + Math.random() * (500 - 2 * padding);
+          attempts++;
+
+          if (attempts > 50) {
+            x = 200 + Math.random() * 400;
+            y = 150 + Math.random() * 200;
+          }
+
+          if (attempts > 100) {
+            break;
+          }
+        } while (hasCollision(x, y, nodes));
+
+        nodes.push({
+          id: i,
+          x: x,
+          y: y,
+          label: String(i)
+        });
+      }
+
+      const iterations = 30;
+      const repulsionForce = 80;
+
+      for (let iter = 0; iter < iterations; iter++) {
+        for (let i = 0; i < nodeCount; i++) {
+          let forceX = 0;
+          let forceY = 0;
+
+          for (let j = 0; j < nodeCount; j++) {
+            if (i !== j) {
+              const dx = nodes[i].x - nodes[j].x;
+              const dy = nodes[i].y - nodes[j].y;
+              const distance = Math.sqrt(dx * dx + dy * dy);
+
+              if (distance > 0 && distance < 150) {
+                const force = repulsionForce / distance;
+                forceX += (dx / distance) * force;
+                forceY += (dy / distance) * force;
+              }
             }
+          }
+
+          const centerX = 400;
+          const centerY = 250;
+          const toCenterX = centerX - nodes[i].x;
+          const toCenterY = centerY - nodes[i].y;
+          const toCenterDist = Math.sqrt(toCenterX * toCenterX + toCenterY * toCenterY);
+
+          if (toCenterDist > 200) {
+            forceX += toCenterX * 0.1;
+            forceY += toCenterY * 0.1;
+          }
+
+          const forceMagnitude = Math.sqrt(forceX * forceX + forceY * forceY);
+          if (forceMagnitude > 15) {
+            forceX = (forceX / forceMagnitude) * 15;
+            forceY = (forceY / forceMagnitude) * 15;
+          }
+
+          nodes[i].x += forceX;
+          nodes[i].y += forceY;
+
+          nodes[i].x = Math.max(padding, Math.min(800 - padding, nodes[i].x));
+          nodes[i].y = Math.max(padding, Math.min(500 - padding, nodes[i].y));
+        }
+      }
+
+      const addedEdges = new Set<string>();
+      const connectedNodes = new Set<number>([0]);
+
+      while (connectedNodes.size < nodeCount) {
+        let bestEdge: { from: number, to: number, distance: number } | null = null;
+
+        for (const connectedNode of connectedNodes) {
+          for (let i = 0; i < nodeCount; i++) {
+            if (!connectedNodes.has(i)) {
+              const dx = nodes[connectedNode].x - nodes[i].x;
+              const dy = nodes[connectedNode].y - nodes[i].y;
+              const distance = Math.sqrt(dx * dx + dy * dy);
+
+              if (!bestEdge || distance < bestEdge.distance) {
+                bestEdge = { from: connectedNode, to: i, distance };
+              }
+            }
+          }
+        }
+
+        if (bestEdge) {
+          const edgeKey = `${Math.min(bestEdge.from, bestEdge.to)}-${Math.max(bestEdge.from, bestEdge.to)}`;
+          addedEdges.add(edgeKey);
+          edges.push({
+            from: bestEdge.from,
+            to: bestEdge.to,
+            weight: Math.floor(bestEdge.distance / 25) + 1,
+          });
+          connectedNodes.add(bestEdge.to);
+        } else {
+          break;
+        }
+      }
+
+      const shortEdges: { from: number, to: number, distance: number }[] = [];
+
+      for (let i = 0; i < nodeCount; i++) {
+        for (let j = i + 1; j < nodeCount; j++) {
+          const edgeKey = `${i}-${j}`;
+          if (!addedEdges.has(edgeKey)) {
+            const dx = nodes[i].x - nodes[j].x;
+            const dy = nodes[i].y - nodes[j].y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+
+            if (distance < 120) {
+              shortEdges.push({ from: i, to: j, distance });
+            }
+          }
+        }
+      }
+
+      shortEdges.sort((a, b) => a.distance - b.distance);
+      const maxExtraEdges = Math.min(shortEdges.length, Math.max(2, Math.floor(nodeCount * 0.4)));
+
+      for (let i = 0; i < maxExtraEdges; i++) {
+        const edge = shortEdges[i];
+        const edgeKey = `${edge.from}-${edge.to}`;
+        addedEdges.add(edgeKey);
+        edges.push({
+          from: edge.from,
+          to: edge.to,
+          weight: Math.floor(edge.distance / 25) + 1,
+        });
+      }
+    }
+
+    setGraphNodes(nodes);
+    setGraphEdges(edges);
+    setOriginalGraphNodes([...nodes]);
+    setOriginalGraphEdges([...edges]);
+    setCurrentStep(0);
+    setSteps([]);
+    setStats({ comparisons: 0, swaps: 0, operations: 0 });
+    setIsPlaying(false);
+  }, [nodeCount, graphType]);
+
+  const generateRandomList = useCallback(() => {
+    const nodes: ListNode[] = [];
+
+    for (let i = 0; i < listSize; i++) {
+      nodes.push({
+        value: Math.floor(Math.random() * 100) + 1,
+        next: i < listSize - 1 ? i + 1 : null,
+        prev: listType === 'doubly' ? (i > 0 ? i - 1 : null) : undefined,
+      });
+    }
+
+    setListNodes(nodes);
+    setOriginalListNodes(JSON.parse(JSON.stringify(nodes)));
+    setCurrentStep(0);
+    setSteps([]);
+    setStats({ comparisons: 0, swaps: 0, operations: 0 });
+    setIsPlaying(false);
+  }, [listType, listSize]);
+
+  const generateRandomStack = useCallback(() => {
+    const items = Array.from({ length: stackSize }, () => Math.floor(Math.random() * 100) + 1);
+    setStackItems(items);
+    setOriginalStackItems([...items]);
+    setCurrentStep(0);
+    setSteps([]);
+    setStats({ comparisons: 0, swaps: 0, operations: 0 });
+    setIsPlaying(false);
+  }, [stackSize]);
+
+  const generateRandomQueue = useCallback(() => {
+    const items = Array.from({ length: queueSize }, () => Math.floor(Math.random() * 100) + 1);
+    setQueueItems(items);
+    setOriginalQueueItems([...items]);
+    setCurrentStep(0);
+    setSteps([]);
+    setStats({ comparisons: 0, swaps: 0, operations: 0 });
+    setIsPlaying(false);
+  }, [queueSize]);
+
+  useEffect(() => {
+    if (dataStructure === 'array') {
+      generateRandomArray();
+      setAlgorithm('bubblesort');
+    } else if (dataStructure === 'tree') {
+      generateRandomTree(10);
+      setAlgorithm('bst.inorder');
+    } else if (dataStructure === 'graph') {
+      generateRandomGraph();
+      setAlgorithm('bfs');
+    } else if (dataStructure === 'list') {
+      generateRandomList();
+      setAlgorithm('');
+    } else if (dataStructure === 'stack') {
+      generateRandomStack();
+      setAlgorithm('');
+    } else if (dataStructure === 'queue') {
+      generateRandomQueue();
+      setAlgorithm('');
+    }
+  }, [dataStructure, generateRandomArray, generateRandomTree, generateRandomGraph,
+    generateRandomList, generateRandomStack, generateRandomQueue]);
+
+  useEffect(() => {
+    if (dataStructure === 'list') {
+      generateRandomList();
+    }
+  }, [listType, dataStructure, generateRandomList]);
+
+  // Sorting algorithms
+  const bubbleSort = (arr: number[]): SortingStep[] => {
+    const steps: SortingStep[] = [];
+    const array = [...arr];
+    let comparisons = 0;
+    let swaps = 0;
+
+    steps.push({ array: [...array] });
+
+    for (let i = 0; i < array.length - 1; i++) {
+      for (let j = 0; j < array.length - i - 1; j++) {
+        comparisons++;
+        steps.push({
+          array: [...array],
+          comparing: [j, j + 1],
         });
 
-        return {
-            array,
-            comparing,
-            swapping,
-            sorted
-        };
-    };
+        if (array[j] > array[j + 1]) {
+          [array[j], array[j + 1]] = [array[j + 1], array[j]];
+          swaps++;
+          steps.push({
+            array: [...array],
+            swapping: [j, j + 1],
+          });
+        }
+      }
+      steps.push({
+        array: [...array],
+        sorted: Array.from({ length: i + 1 }, (_, k) => array.length - 1 - k),
+      });
+    }
 
-    const executeAlgorithm = async () => {
-        if (originalArray.length === 0) return;
+    steps.push({
+      array: [...array],
+      sorted: Array.from({ length: array.length }, (_, i) => i),
+    });
 
-        setLoading(true);
-        setError(null);
+    setStats({ comparisons, swaps, operations: comparisons + swaps });
+    return steps;
+  };
 
-        try {
-            const response = await fetch('http://localhost:5266/api/Algorithms/execute', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    algorithmName: algorithm,
-                    data: originalArray,
-                    parameters: {
-                        Detailed: false
-                    }
-                }),
+  const quickSort = (arr: number[]): SortingStep[] => {
+    const steps: SortingStep[] = [];
+    const array = [...arr];
+    let comparisons = 0;
+    let swaps = 0;
+
+    const partition = (low: number, high: number): number => {
+      const pivot = array[high];
+      let i = low - 1;
+
+      steps.push({
+        array: [...array],
+        pivotIndex: high,
+      });
+
+      for (let j = low; j < high; j++) {
+        comparisons++;
+        steps.push({
+          array: [...array],
+          comparing: [j, high],
+          pivotIndex: high,
+        });
+
+        if (array[j] < pivot) {
+          i++;
+          if (i !== j) {
+            [array[i], array[j]] = [array[j], array[i]];
+            swaps++;
+            steps.push({
+              array: [...array],
+              swapping: [i, j],
+              pivotIndex: high,
             });
-
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-
-            const result: ApiResponse = await response.json();
-            console.log(result);
-
-            if (result.success) {
-                setApiSteps(result.result.steps);
-                setStats({
-                    comparisons: result.result.statistics.comparisons,
-                    swaps: result.result.statistics.swaps,
-                    steps: result.result.statistics.steps
-                });
-                setCurrentStep(0);
-            } else {
-                throw new Error(result.message);
-            }
-        } catch (err) {
-            setError(err instanceof Error ? err.message : 'An error occurred');
-            console.error('Error executing algorithm:', err);
-        } finally {
-            setLoading(false);
+          }
         }
+      }
+
+      [array[i + 1], array[high]] = [array[high], array[i + 1]];
+      swaps++;
+      steps.push({
+        array: [...array],
+        swapping: [i + 1, high],
+      });
+
+      return i + 1;
     };
 
-    useEffect(() => {
-        if (isPlaying && apiSteps.length > 0) {
-            const timer = setTimeout(() => {
-                if (currentStep < apiSteps.length - 1) {
-                    setCurrentStep(currentStep + 1);
-                } else {
-                    setIsPlaying(false);
-                }
-            }, 1000 / speed);
-
-            return () => clearTimeout(timer);
-        }
-    }, [isPlaying, currentStep, apiSteps.length, speed]);
-
-    const handlePlay = async () => {
-        if (apiSteps.length === 0) {
-            await executeAlgorithm();
-        }
-        setIsPlaying(true);
+    const quickSortHelper = (low: number, high: number) => {
+      if (low < high) {
+        const pi = partition(low, high);
+        quickSortHelper(low, pi - 1);
+        quickSortHelper(pi + 1, high);
+      }
     };
 
-    const handlePause = () => {
-        setIsPlaying(false);
-    };
+    steps.push({ array: [...array] });
+    quickSortHelper(0, array.length - 1);
+    steps.push({
+      array: [...array],
+      sorted: Array.from({ length: array.length }, (_, i) => i),
+    });
 
-    const handleStepForward = () => {
-        if (apiSteps.length === 0) {
-            executeAlgorithm();
-            return;
+    setStats({ comparisons, swaps, operations: comparisons + swaps });
+    return steps;
+  };
+
+  const insertionSort = (arr: number[]): SortingStep[] => {
+    const steps: SortingStep[] = [];
+    const array = [...arr];
+    let comparisons = 0;
+    let swaps = 0;
+
+    steps.push({ array: [...array] });
+
+    for (let i = 1; i < array.length; i++) {
+      const key = array[i];
+      let j = i - 1;
+
+      steps.push({
+        array: [...array],
+        comparing: [i],
+      });
+
+      while (j >= 0 && array[j] > key) {
+        comparisons++;
+        steps.push({
+          array: [...array],
+          comparing: [j, j + 1],
+        });
+
+        array[j + 1] = array[j];
+        swaps++;
+        steps.push({
+          array: [...array],
+          swapping: [j, j + 1],
+        });
+        j--;
+      }
+
+      if (j >= 0) {
+        comparisons++;
+      }
+
+      array[j + 1] = key;
+      steps.push({
+        array: [...array],
+        sorted: Array.from({ length: i + 1 }, (_, k) => k),
+      });
+    }
+
+    steps.push({
+      array: [...array],
+      sorted: Array.from({ length: array.length }, (_, i) => i),
+    });
+
+    setStats({ comparisons, swaps, operations: comparisons + swaps });
+    return steps;
+  };
+
+  const selectionSort = (arr: number[]): SortingStep[] => {
+    const steps: SortingStep[] = [];
+    const array = [...arr];
+    let comparisons = 0;
+    let swaps = 0;
+
+    steps.push({ array: [...array] });
+
+    for (let i = 0; i < array.length - 1; i++) {
+      let minIndex = i;
+
+      steps.push({
+        array: [...array],
+        comparing: [i],
+      });
+
+      for (let j = i + 1; j < array.length; j++) {
+        comparisons++;
+        steps.push({
+          array: [...array],
+          comparing: [minIndex, j],
+        });
+
+        if (array[j] < array[minIndex]) {
+          minIndex = j;
         }
-        if (currentStep < apiSteps.length - 1) {
-            setCurrentStep(currentStep + 1);
+      }
+
+      if (minIndex !== i) {
+        [array[i], array[minIndex]] = [array[minIndex], array[i]];
+        swaps++;
+        steps.push({
+          array: [...array],
+          swapping: [i, minIndex],
+        });
+      }
+
+      steps.push({
+        array: [...array],
+        sorted: Array.from({ length: i + 1 }, (_, k) => k),
+      });
+    }
+
+    steps.push({
+      array: [...array],
+      sorted: Array.from({ length: array.length }, (_, i) => i),
+    });
+
+    setStats({ comparisons, swaps, operations: comparisons + swaps });
+    return steps;
+  };
+
+  // Tree algorithms
+  const deepCopyTree = (node: TreeNode | null): TreeNode | null => {
+    if (!node) return null;
+    const copy: TreeNode = {
+      value: node.value,
+      x: node.x,
+      y: node.y
+    };
+    if (node.left) copy.left = deepCopyTree(node.left);
+    if (node.right) copy.right = deepCopyTree(node.right);
+    return copy;
+  };
+
+  const bstInsert = (root: TreeNode | null, value: number): TreeStep[] => {
+    const steps: TreeStep[] = [];
+    let operations = 0;
+
+    if (value < 1 || value > 100) {
+      steps.push({
+        tree: deepCopyTree(root),
+        currentNode: value,
+        highlightedNodes: [],
+        visitedNodes: [],
+      });
+      
+      setStats({ comparisons: 0, swaps: 0, operations: 1 });
+      return steps;
+    }
+
+    const workingTree = deepCopyTree(root);
+    
+    steps.push({ tree: deepCopyTree(workingTree) });
+
+    const insert = (node: TreeNode | null, val: number, path: number[] = []): TreeNode => {
+      operations++;
+
+      if (!node) {
+        const newNode = { value: val };
+        steps.push({
+          tree: deepCopyTree(workingTree),
+          highlightedNodes: [val],
+          visitedNodes: path,
+        });
+        return newNode;
+      }
+
+      steps.push({
+        tree: deepCopyTree(workingTree),
+        currentNode: node.value,
+        visitedNodes: path,
+      });
+
+      if (val === node.value) {
+        steps.push({
+          tree: deepCopyTree(workingTree),
+          currentNode: node.value,
+          highlightedNodes: [val],
+          visitedNodes: [...path, node.value],
+        });
+        return node;
+      }
+
+      if (val < node.value) {
+        node.left = insert(node.left || null, val, [...path, node.value]);
+      } else {
+        node.right = insert(node.right || null, val, [...path, node.value]);
+      }
+
+      return node;
+    };
+
+    let newRoot;
+    if (workingTree) {
+      newRoot = insert(workingTree, value);
+    } else {
+      newRoot = { value };
+    }
+
+    steps.push({ 
+      tree: deepCopyTree(newRoot), 
+      visitedNodes: [], 
+      highlightedNodes: [value] 
+    });
+
+    setTree(deepCopyTree(newRoot));
+    setOriginalTree(deepCopyTree(newRoot));
+    
+    setStats({ comparisons: 0, swaps: 0, operations });
+    return steps;
+  };
+
+  const bstInorder = (root: TreeNode | null): TreeStep[] => {
+    const steps: TreeStep[] = [];
+    const visited: number[] = [];
+    let operations = 0;
+
+    if (!root) {
+      return steps;
+    }
+
+    steps.push({ tree: deepCopyTree(root), visitedNodes: [] });
+
+    const traverse = (node: TreeNode | null) => {
+      if (!node) return;
+
+      operations++;
+      steps.push({
+        tree: deepCopyTree(root),
+        currentNode: node.value,
+        visitedNodes: [...visited],
+      });
+
+      traverse(node.left || null);
+
+      steps.push({
+        tree: deepCopyTree(root),
+        highlightedNodes: [node.value],
+        visitedNodes: [...visited],
+      });
+
+      visited.push(node.value);
+      steps.push({
+        tree: deepCopyTree(root),
+        visitedNodes: [...visited],
+      });
+
+      traverse(node.right || null);
+    };
+
+    traverse(root);
+    steps.push({ tree: deepCopyTree(root), visitedNodes: [...visited] });
+
+    setStats({ comparisons: 0, swaps: 0, operations });
+    return steps;
+  };
+
+  const bstPreorder = (root: TreeNode | null): TreeStep[] => {
+    const steps: TreeStep[] = [];
+    const visited: number[] = [];
+    let operations = 0;
+
+    if (!root) {
+      return steps;
+    }
+
+    steps.push({ tree: deepCopyTree(root), visitedNodes: [] });
+
+    const traverse = (node: TreeNode | null) => {
+      if (!node) return;
+
+      operations++;
+      steps.push({
+        tree: deepCopyTree(root),
+        currentNode: node.value,
+        visitedNodes: [...visited],
+      });
+
+      steps.push({
+        tree: deepCopyTree(root),
+        highlightedNodes: [node.value],
+        visitedNodes: [...visited],
+      });
+
+      visited.push(node.value);
+      steps.push({
+        tree: deepCopyTree(root),
+        visitedNodes: [...visited],
+      });
+
+      traverse(node.left || null);
+      traverse(node.right || null);
+    };
+
+    traverse(root);
+    steps.push({ tree: deepCopyTree(root), visitedNodes: [...visited] });
+
+    setStats({ comparisons: 0, swaps: 0, operations });
+    return steps;
+  };
+
+  const bstPostorder = (root: TreeNode | null): TreeStep[] => {
+    const steps: TreeStep[] = [];
+    const visited: number[] = [];
+    let operations = 0;
+
+    if (!root) {
+      return steps;
+    }
+
+    steps.push({ tree: deepCopyTree(root), visitedNodes: [] });
+
+    const traverse = (node: TreeNode | null) => {
+      if (!node) return;
+
+      operations++;
+      steps.push({
+        tree: deepCopyTree(root),
+        currentNode: node.value,
+        visitedNodes: [...visited],
+      });
+
+      traverse(node.left || null);
+      traverse(node.right || null);
+
+      steps.push({
+        tree: deepCopyTree(root),
+        highlightedNodes: [node.value],
+        visitedNodes: [...visited],
+      });
+
+      visited.push(node.value);
+      steps.push({
+        tree: deepCopyTree(root),
+        visitedNodes: [...visited],
+      });
+    };
+
+    traverse(root);
+    steps.push({ tree: deepCopyTree(root), visitedNodes: [...visited] });
+
+    setStats({ comparisons: 0, swaps: 0, operations });
+    return steps;
+  };
+
+  const bstLevelorder = (root: TreeNode | null): TreeStep[] => {
+    const steps: TreeStep[] = [];
+    const visited: number[] = [];
+    let operations = 0;
+
+    if (!root) {
+      return steps;
+    }
+
+    steps.push({ tree: deepCopyTree(root), visitedNodes: [] });
+
+    const queue: TreeNode[] = [root];
+
+    while (queue.length > 0) {
+      const node = queue.shift()!;
+      operations++;
+
+      steps.push({
+        tree: deepCopyTree(root),
+        currentNode: node.value,
+        visitedNodes: [...visited],
+      });
+
+      steps.push({
+        tree: deepCopyTree(root),
+        highlightedNodes: [node.value],
+        visitedNodes: [...visited],
+      });
+
+      visited.push(node.value);
+      steps.push({
+        tree: deepCopyTree(root),
+        visitedNodes: [...visited],
+      });
+
+      if (node.left) {
+        queue.push(node.left);
+      }
+      if (node.right) {
+        queue.push(node.right);
+      }
+    }
+
+    steps.push({ tree: deepCopyTree(root), visitedNodes: [...visited] });
+
+    setStats({ comparisons: 0, swaps: 0, operations });
+    return steps;
+  };
+
+  // Graph algorithms
+  const graphBFS = (nodes: GraphNode[], edges: GraphEdge[], startNode: number = 0): GraphStep[] => {
+    const steps: GraphStep[] = [];
+    const visited = new Set<number>();
+    const queue: number[] = [startNode];
+    let operations = 0;
+
+    steps.push({ nodes, edges });
+
+    while (queue.length > 0) {
+      const current = queue.shift()!;
+
+      if (visited.has(current)) continue;
+
+      operations++;
+      visited.add(current);
+
+      steps.push({
+        nodes,
+        edges,
+        currentNode: current,
+        visitedNodes: Array.from(visited),
+      });
+
+      const neighbors = edges
+        .filter(e => e.from === current || e.to === current)
+        .map(e => e.from === current ? e.to : e.from)
+        .filter(n => !visited.has(n));
+
+      neighbors.forEach(neighbor => {
+        if (!queue.includes(neighbor)) {
+          queue.push(neighbor);
+          steps.push({
+            nodes,
+            edges,
+            currentNode: current,
+            highlightedNodes: [neighbor],
+            visitedNodes: Array.from(visited),
+            highlightedEdges: [[current, neighbor]],
+          });
         }
-    };
+      });
+    }
 
-    const handleStepBackward = () => {
-        if (currentStep > 0) {
-            setCurrentStep(currentStep - 1);
+    steps.push({ nodes, edges, visitedNodes: Array.from(visited) });
+    setStats({ comparisons: 0, swaps: 0, operations });
+    return steps;
+  };
+
+  const graphDFS = (nodes: GraphNode[], edges: GraphEdge[], startNode: number = 0): GraphStep[] => {
+    const steps: GraphStep[] = [];
+    const visited = new Set<number>();
+    let operations = 0;
+
+    steps.push({ nodes, edges });
+
+    const dfs = (current: number) => {
+      operations++;
+      visited.add(current);
+
+      steps.push({
+        nodes,
+        edges,
+        currentNode: current,
+        visitedNodes: Array.from(visited),
+      });
+
+      const neighbors = edges
+        .filter(e => e.from === current || e.to === current)
+        .map(e => e.from === current ? e.to : e.from)
+        .filter(n => !visited.has(n));
+
+      neighbors.forEach(neighbor => {
+        if (!visited.has(neighbor)) {
+          steps.push({
+            nodes,
+            edges,
+            currentNode: current,
+            highlightedNodes: [neighbor],
+            visitedNodes: Array.from(visited),
+            highlightedEdges: [[current, neighbor]],
+          });
+          dfs(neighbor);
         }
+      });
     };
 
-    const handleReset = () => {
-        setCurrentStep(0);
-        setIsPlaying(false);
+    dfs(startNode);
+    steps.push({ nodes, edges, visitedNodes: Array.from(visited) });
+    setStats({ comparisons: 0, swaps: 0, operations });
+    return steps;
+  };
+
+  const graphDijkstra = (nodes: GraphNode[], edges: GraphEdge[], startNode: number = 0): GraphStep[] => {
+    const steps: GraphStep[] = [];
+    const distances: number[] = new Array(nodes.length).fill(Infinity);
+    const visited = new Set<number>();
+    let operations = 0;
+
+    distances[startNode] = 0;
+    steps.push({ nodes, edges, currentNode: startNode });
+
+    const priorityQueue: [number, number][] = [[0, startNode]];
+
+    while (priorityQueue.length > 0) {
+      priorityQueue.sort((a, b) => a[0] - b[0]);
+      const [currentDistance, current] = priorityQueue.shift()!;
+
+      if (visited.has(current)) continue;
+
+      operations++;
+      visited.add(current);
+
+      steps.push({
+        nodes,
+        edges,
+        currentNode: current,
+        visitedNodes: Array.from(visited),
+      });
+
+      const neighbors = edges
+        .filter(e => e.from === current || (!directedGraph && e.to === current))
+        .map(e => {
+          const neighbor = e.from === current ? e.to : e.from;
+          const weight = e.weight || 1;
+          return { neighbor, weight };
+        });
+
+      for (const { neighbor, weight } of neighbors) {
+        if (!visited.has(neighbor)) {
+          const newDistance = currentDistance + weight;
+
+          steps.push({
+            nodes,
+            edges,
+            currentNode: current,
+            highlightedNodes: [neighbor],
+            visitedNodes: Array.from(visited),
+            highlightedEdges: [[current, neighbor]],
+          });
+
+          if (newDistance < distances[neighbor]) {
+            distances[neighbor] = newDistance;
+            priorityQueue.push([newDistance, neighbor]);
+          }
+        }
+      }
+    }
+
+    steps.push({
+      nodes,
+      edges,
+      visitedNodes: Array.from(visited),
+    });
+
+    setStats({ comparisons: 0, swaps: 0, operations });
+    return steps;
+  };
+
+  // List algorithms
+  const listInsert = (nodes: ListNode[], value: number, position: number): ListStep[] => {
+    const steps: ListStep[] = [];
+    const newNodes = JSON.parse(JSON.stringify(nodes));
+    let operations = 0;
+
+    steps.push({ nodes: newNodes, type: listType });
+
+    const newNode: ListNode = {
+      value,
+      next: null,
+      prev: listType === 'doubly' ? null : undefined
     };
 
-    // Получаем текущие данные для визуализации
-    const currentStepData = apiSteps.length > 0
-        ? transformApiStepToVisualization(apiSteps[currentStep])
-        : { array: originalArray, comparing: [], swapping: [], sorted: [] };
+    if (position === 0) {
+      operations++;
+      newNode.next = 0;
+      if (listType === 'doubly' && newNodes.length > 0) {
+        newNodes[0].prev = newNodes.length;
+      }
+      newNodes.push(newNode);
+      steps.push({
+        nodes: newNodes,
+        highlightedIndices: [newNodes.length - 1],
+        head: newNodes.length - 1,
+        type: listType
+      });
+    } else if (position >= newNodes.length) {
+      operations++;
+      if (newNodes.length > 0) {
+        newNodes[newNodes.length - 1].next = newNodes.length;
+        if (listType === 'doubly') {
+          newNode.prev = newNodes.length - 1;
+        }
+      }
+      newNodes.push(newNode);
+      steps.push({
+        nodes: newNodes,
+        highlightedIndices: [newNodes.length - 1],
+        tail: newNodes.length - 1,
+        type: listType
+      });
+    } else {
+      operations++;
+      newNode.next = position;
+      if (listType === 'doubly') {
+        newNode.prev = position - 1;
+        newNodes[position].prev = newNodes.length;
+      }
+      if (position > 0) {
+        newNodes[position - 1].next = newNodes.length;
+      }
+      newNodes.push(newNode);
+      steps.push({
+        nodes: newNodes,
+        highlightedIndices: [newNodes.length - 1],
+        comparedIndices: [position - 1, position],
+        type: listType
+      });
+    }
 
-    return (
-        <div className="space-y-6">
-            <div className="grid lg:grid-cols-4 gap-6">
-                <Card className="lg:col-span-1">
-                    <CardHeader>
-                        <CardTitle>{translations['algorithm.select']}</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <Select value={algorithm} onValueChange={setAlgorithm}>
-                            <SelectTrigger>
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="BubbleSort">
-                                    {translations['algorithm.bubblesort']}
-                                </SelectItem>
-                                <SelectItem value="QuickSort">
-                                    {translations['algorithm.quicksort']}
-                                </SelectItem>
-                                {/* Добавьте другие алгоритмы по мере их реализации на бэкенде */}
-                            </SelectContent>
-                        </Select>
+    setListNodes(newNodes);
+    setOriginalListNodes(JSON.parse(JSON.stringify(newNodes)));
+    setStats({ comparisons: 0, swaps: 0, operations });
+    return steps;
+  };
 
-                        <div className="space-y-2">
-                            <label className="text-sm">{translations['data.size']}: {arraySize}</label>
-                            <Slider
-                                value={[arraySize]}
-                                onValueChange={(value) => setArraySize(value[0])}
-                                max={50}
-                                min={5}
-                                step={1}
-                            />
-                        </div>
+  const listDelete = (nodes: ListNode[], position: number): ListStep[] => {
+    const steps: ListStep[] = [];
+    let operations = 0;
 
-                        <Button
-                            onClick={generateRandomArray}
-                            variant="outline"
-                            className="w-full"
-                        >
-                            {translations['data.generate']}
-                        </Button>
+    if (nodes.length === 0 || position >= nodes.length) {
+      return steps;
+    }
 
-                        <Button
-                            onClick={executeAlgorithm}
-                            disabled={loading || originalArray.length === 0}
-                            className="w-full"
-                        >
-                            {loading ? 'Executing...' : 'Run Algorithm'}
-                        </Button>
+    steps.push({ nodes: JSON.parse(JSON.stringify(nodes)), type: listType });
 
-                        {error && (
-                            <div className="text-sm text-red-500 p-2 bg-red-50 rounded">
-                                Error: {error}
-                            </div>
-                        )}
+    steps.push({
+      nodes: JSON.parse(JSON.stringify(nodes)),
+      highlightedIndices: [position],
+      type: listType
+    });
 
-                        <div className="space-y-2 pt-4 border-t">
-                            <div className="text-sm">
-                                <div className="flex justify-between">
-                                    <span>{translations['profiler.comparisons']}:</span>
-                                    <span className="text-primary">{stats.comparisons}</span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span>{translations['profiler.swaps']}:</span>
-                                    <span className="text-primary">{stats.swaps}</span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span>Total Steps:</span>
-                                    <span className="text-primary">{stats.steps}</span>
-                                </div>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
+    operations++;
+    const newNodes: ListNode[] = [];
 
-                <div className="lg:col-span-3 space-y-6">
-                    <ArrayVisualization {...currentStepData} />
+    for (let i = 0; i < nodes.length; i++) {
+      if (i !== position) {
+        const node: ListNode = {
+          value: nodes[i].value,
+          next: null,
+          prev: listType === 'doubly' ? null : undefined
+        };
+        newNodes.push(node);
+      }
+    }
 
-                    <AnimationControls
-                        isPlaying={isPlaying}
-                        onPlay={handlePlay}
-                        onPause={handlePause}
-                        onStepForward={handleStepForward}
-                        onStepBackward={handleStepBackward}
-                        onReset={handleReset}
-                        speed={speed}
-                        onSpeedChange={setSpeed}
-                        disabled={apiSteps.length === 0}
-                    />
+    for (let i = 0; i < newNodes.length; i++) {
+      if (i < newNodes.length - 1) {
+        newNodes[i].next = i + 1;
+      }
+      if (listType === 'doubly' && i > 0) {
+        newNodes[i].prev = i - 1;
+      }
+    }
 
-                    {apiSteps.length > 0 && (
-                        <div className="text-center text-sm text-muted-foreground">
-                            Step {currentStep + 1} of {apiSteps.length}
-                            {apiSteps[currentStep] && (
-                                <div className="mt-1">
-                                    {apiSteps[currentStep].description}
-                                </div>
-                            )}
-                        </div>
-                    )}
+    steps.push({
+      nodes: JSON.parse(JSON.stringify(newNodes)),
+      type: listType
+    });
+
+    setListNodes(newNodes);
+    setOriginalListNodes(JSON.parse(JSON.stringify(newNodes)));
+    setStats({ comparisons: 0, swaps: 0, operations });
+    return steps;
+  };
+
+  // Stack algorithms
+  const stackPush = (items: number[], value: number): StackStep[] => {
+    const steps: StackStep[] = [];
+    const newItems = [...items, value];
+    let operations = 1;
+
+    steps.push({ items: [...items], top: items.length - 1 });
+    steps.push({
+      items: newItems,
+      top: newItems.length - 1,
+      highlightedIndex: newItems.length - 1,
+      operation: 'push'
+    });
+
+    setStackItems(newItems);
+    setOriginalStackItems([...newItems]);
+    setStats({ comparisons: 0, swaps: 0, operations });
+    return steps;
+  };
+
+  const stackPop = (items: number[]): StackStep[] => {
+    const steps: StackStep[] = [];
+    let operations = 1;
+
+    if (items.length === 0) return steps;
+
+    steps.push({ items: [...items], top: items.length - 1 });
+    steps.push({
+      items: [...items],
+      top: items.length - 1,
+      highlightedIndex: items.length - 1,
+      operation: 'pop'
+    });
+
+    const newItems = items.slice(0, -1);
+    steps.push({ items: newItems, top: newItems.length - 1 });
+
+    setStackItems(newItems);
+    setOriginalStackItems([...newItems]);
+    setStats({ comparisons: 0, swaps: 0, operations });
+    return steps;
+  };
+
+  // Queue algorithms
+  const queueEnqueue = (items: number[], value: number): QueueStep[] => {
+    const steps: QueueStep[] = [];
+    const newItems = [...items, value];
+    let operations = 1;
+
+    steps.push({ items: [...items], front: 0, rear: items.length - 1 });
+    steps.push({
+      items: newItems,
+      front: 0,
+      rear: newItems.length - 1,
+      highlightedIndex: newItems.length - 1,
+      operation: 'enqueue'
+    });
+
+    setQueueItems(newItems);
+    setOriginalQueueItems([...newItems]);
+    setStats({ comparisons: 0, swaps: 0, operations });
+    return steps;
+  };
+
+  const queueDequeue = (items: number[]): QueueStep[] => {
+    const steps: QueueStep[] = [];
+    let operations = 1;
+
+    if (items.length === 0) return steps;
+
+    steps.push({ items: [...items], front: 0, rear: items.length - 1 });
+    steps.push({
+      items: [...items],
+      front: 0,
+      rear: items.length - 1,
+      highlightedIndex: 0,
+      operation: 'dequeue'
+    });
+
+    const newItems = items.slice(1);
+    steps.push({ items: newItems, front: 0, rear: newItems.length - 1 });
+
+    setQueueItems(newItems);
+    setOriginalQueueItems([...newItems]);
+    setStats({ comparisons: 0, swaps: 0, operations });
+    return steps;
+  };
+
+  const runAlgorithm = () => {
+    let algorithmSteps: VisualizationStep[] = [];
+
+    if (dataStructure === 'array') {
+      switch (algorithm) {
+        case 'bubblesort':
+          algorithmSteps = bubbleSort(originalArray);
+          break;
+        case 'quicksort':
+          algorithmSteps = quickSort(originalArray);
+          break;
+        case 'insertionsort':
+          algorithmSteps = insertionSort(originalArray);
+          break;
+        case 'selectionsort':
+          algorithmSteps = selectionSort(originalArray);
+          break;
+        default:
+          algorithmSteps = bubbleSort(originalArray);
+      }
+    } else if (dataStructure === 'tree') {
+      switch (algorithm) {
+        case 'bst.inorder':
+          algorithmSteps = bstInorder(originalTree);
+          break;
+        case 'bst.preorder':
+          algorithmSteps = bstPreorder(originalTree);
+          break;
+        case 'bst.postorder':
+          algorithmSteps = bstPostorder(originalTree);
+          break;
+        case 'bst.levelorder':
+          algorithmSteps = bstLevelorder(originalTree);
+          break;
+        default:
+          algorithmSteps = bstInorder(originalTree);
+      }
+    } else if (dataStructure === 'graph') {
+      switch (algorithm) {
+        case 'bfs':
+          algorithmSteps = graphBFS(originalGraphNodes, originalGraphEdges);
+          break;
+        case 'dfs':
+          algorithmSteps = graphDFS(originalGraphNodes, originalGraphEdges);
+          break;
+        case 'dijkstra':
+          algorithmSteps = graphDijkstra(originalGraphNodes, originalGraphEdges);
+          break;
+        default:
+          algorithmSteps = graphBFS(originalGraphNodes, originalGraphEdges);
+      }
+    }
+
+    setSteps(algorithmSteps);
+    setCurrentStep(0);
+    if (algorithmSteps.length > 0) {
+      setIsPlaying(true);
+    }
+  };
+
+  const handleInsertValue = () => {
+    const value = parseInt(insertValue);
+    if (!isNaN(value)) {
+      if (value < 1 || value > 100) {
+        alert('Пожалуйста, введите значение от 1 до 100');
+        return;
+      }
+      
+      const insertSteps = bstInsert(tree, value);
+      setSteps(insertSteps);
+      setCurrentStep(0);
+      setInsertValue('');
+      setIsPlaying(true);
+    } else {
+      alert('Пожалуйста, введите корректное число');
+    }
+  };
+
+  const handleListInsert = () => {
+    const value = parseInt(listValue);
+    const position = listPosition === '' ? listNodes.length : parseInt(listPosition);
+
+    if (!isNaN(value) && !isNaN(position) && position >= 0) {
+      const insertSteps = listInsert(listNodes, value, position);
+      setSteps(insertSteps);
+      setCurrentStep(0);
+      setListValue('');
+      setListPosition('');
+      setIsPlaying(true);
+    }
+  };
+
+  const handleListDelete = () => {
+    const position = listPosition === '' ? (listNodes.length > 0 ? listNodes.length - 1 : 0) : parseInt(listPosition);
+
+    if (!isNaN(position) && position >= 0 && position < listNodes.length) {
+      const deleteSteps = listDelete(listNodes, position);
+      setSteps(deleteSteps);
+      setCurrentStep(0);
+      setListPosition('');
+      setIsPlaying(true);
+    }
+  };
+
+  const handleStackPush = () => {
+    const value = parseInt(stackValue);
+    if (!isNaN(value)) {
+      const pushSteps = stackPush(stackItems, value);
+      setSteps(pushSteps);
+      setCurrentStep(0);
+      setStackValue('');
+      setIsPlaying(true);
+    }
+  };
+
+  const handleStackPop = () => {
+    if (stackItems.length > 0) {
+      const popSteps = stackPop(stackItems);
+      setSteps(popSteps);
+      setCurrentStep(0);
+      setIsPlaying(true);
+    }
+  };
+
+  const handleQueueEnqueue = () => {
+    const value = parseInt(queueValue);
+    if (!isNaN(value)) {
+      const enqueueSteps = queueEnqueue(queueItems, value);
+      setSteps(enqueueSteps);
+      setCurrentStep(0);
+      setQueueValue('');
+      setIsPlaying(true);
+    }
+  };
+
+  const handleQueueDequeue = () => {
+    if (queueItems.length > 0) {
+      const dequeueSteps = queueDequeue(queueItems);
+      setSteps(dequeueSteps);
+      setCurrentStep(0);
+      setIsPlaying(true);
+    }
+  };
+
+  useEffect(() => {
+    if (isPlaying && steps.length > 0) {
+      const timer = setTimeout(() => {
+        if (currentStep < steps.length - 1) {
+          setCurrentStep(currentStep + 1);
+        } else {
+          setIsPlaying(false);
+        }
+      }, 1000 / speed);
+
+      return () => clearTimeout(timer);
+    }
+  }, [isPlaying, currentStep, steps.length, speed]);
+
+  const handlePlay = () => {
+    if (steps.length === 0) {
+      runAlgorithm();
+    } else {
+      setIsPlaying(true);
+    }
+  };
+
+  const handlePause = () => {
+    setIsPlaying(false);
+  };
+
+  const handleStepForward = () => {
+    if (steps.length === 0) {
+      runAlgorithm();
+      return;
+    }
+    if (currentStep < steps.length - 1) {
+      setCurrentStep(currentStep + 1);
+    }
+  };
+
+  const handleStepBackward = () => {
+    if (currentStep > 0) {
+      setCurrentStep(currentStep - 1);
+    }
+  };
+
+  const handleReset = () => {
+    setCurrentStep(0);
+    setIsPlaying(false);
+
+    if (dataStructure === 'array') {
+      setArray([...originalArray]);
+    } else if (dataStructure === 'tree') {
+      setTree(deepCopyTree(originalTree));
+    } else if (dataStructure === 'graph') {
+      setGraphNodes([...originalGraphNodes]);
+      setGraphEdges([...originalGraphEdges]);
+    } else if (dataStructure === 'list') {
+      setListNodes(JSON.parse(JSON.stringify(originalListNodes)));
+    } else if (dataStructure === 'stack') {
+      setStackItems([...originalStackItems]);
+    } else if (dataStructure === 'queue') {
+      setQueueItems([...originalQueueItems]);
+    }
+
+    setSteps([]);
+    setStats({ comparisons: 0, swaps: 0, operations: 0 });
+  };
+
+  const renderVisualization = () => {
+    const currentStepData = steps[currentStep];
+
+    if (dataStructure === 'array') {
+      const stepData = (currentStepData as SortingStep) || {
+        array,
+        comparing: [],
+        swapping: [],
+        sorted: []
+      };
+      return <ArrayVisualization {...stepData} />;
+    } else if (dataStructure === 'tree') {
+      const stepData = (currentStepData as TreeStep) || {
+        tree,
+        currentNode: undefined,
+        highlightedNodes: [],
+        visitedNodes: [],
+      };
+      return (
+        <div className="space-y-4">
+          <TreeVisualization {...stepData} />
+          {stepData.visitedNodes && stepData.visitedNodes.length > 0 && (
+            <Card className="bg-card/50">
+              <CardContent className="pt-4">
+                <div className="text-sm">
+                  <span className="text-muted-foreground">Порядок обхода: </span>
+                  <span className="font-mono">
+                    {stepData.visitedNodes.map((value, index) => (
+                      <span
+                        key={index}
+                        className={
+                          stepData.currentNode === value ? 'text-red-500 font-bold' :
+                            stepData.highlightedNodes?.includes(value) ? 'text-green-500 font-bold' :
+                              'text-green-400'
+                        }
+                      >
+                        {value}{index < stepData.visitedNodes!.length - 1 ? ' → ' : ''}
+                      </span>
+                    ))}
+                  </span>
                 </div>
-            </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
-    );
+      );
+    } else if (dataStructure === 'graph') {
+      let stepData: GraphStep;
+
+      if (currentStepData) {
+        stepData = currentStepData as GraphStep;
+      } else {
+        stepData = {
+          nodes: graphNodes,
+          edges: graphEdges,
+          currentNode: undefined,
+          highlightedNodes: [],
+          visitedNodes: [],
+          highlightedEdges: [],
+        };
+      }
+
+      return (
+        <GraphVisualization
+          {...stepData}
+          directed={directedGraph}
+          graphType={graphType}
+        />
+      );
+    } else if (dataStructure === 'list') {
+      const stepData = (currentStepData as ListStep) || {
+        nodes: listNodes,
+        head: 0,
+        tail: listNodes.length > 0 ? listNodes.length - 1 : null,
+        type: listType,
+      };
+      return <ListVisualization {...stepData} />;
+    } else if (dataStructure === 'stack') {
+      const stepData = (currentStepData as StackStep) || {
+        items: stackItems,
+        top: stackItems.length > 0 ? stackItems.length - 1 : undefined,
+      };
+      return <StackVisualization {...stepData} />;
+    } else if (dataStructure === 'queue') {
+      const stepData = (currentStepData as QueueStep) || {
+        items: queueItems,
+        front: 0,
+        rear: queueItems.length > 0 ? queueItems.length - 1 : undefined,
+      };
+      return <QueueVisualization {...stepData} />;
+    }
+  };
+
+  const getAlgorithmOptions = () => {
+    if (dataStructure === 'array') {
+      return (
+        <>
+          <SelectItem value="bubblesort">{translations['algorithm.bubblesort']}</SelectItem>
+          <SelectItem value="quicksort">{translations['algorithm.quicksort']}</SelectItem>
+          <SelectItem value="insertionsort">{translations['algorithm.insertionsort']}</SelectItem>
+          <SelectItem value="selectionsort">{translations['algorithm.selectionsort']}</SelectItem>
+        </>
+      );
+    } else if (dataStructure === 'tree') {
+      return (
+        <>
+          <SelectItem value="bst.inorder">{translations['algorithm.bst.inorder']}</SelectItem>
+          <SelectItem value="bst.preorder">{translations['algorithm.bst.preorder']}</SelectItem>
+          <SelectItem value="bst.postorder">{translations['algorithm.bst.postorder']}</SelectItem>
+          <SelectItem value="bst.levelorder">{translations['algorithm.bst.levelorder']}</SelectItem>
+        </>
+      );
+    } else if (dataStructure === 'graph') {
+      return (
+        <>
+          <SelectItem value="bfs">{translations['algorithm.bfs']}</SelectItem>
+          <SelectItem value="dfs">{translations['algorithm.dfs']}</SelectItem>
+          <SelectItem value="dijkstra">{translations['algorithm.dijkstra']}</SelectItem>
+        </>
+      );
+    }
+    return null;
+  };
+
+  const getDataSize = () => {
+    if (dataStructure === 'array') return arraySize;
+    if (dataStructure === 'graph') return nodeCount;
+    return undefined;
+  };
+
+     // Добавьте новое состояние для переключения между статистикой и теорией
+  const [rightPanelMode, setRightPanelMode] = useState<'stats' | 'theory'>('stats');
+
+   return (
+    <div className="space-y-6">
+      <div className="grid lg:grid-cols-5 gap-6">
+        {/* Левая панель настроек */}
+        <Card className="lg:col-span-1  self-start">
+          <CardHeader>
+            <CardTitle>{translations['structure.select']}</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm">{translations['structure.select']}</label>
+              <Select value={dataStructure} onValueChange={(v) => setDataStructure(v as any)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="array">{translations['structure.array']}</SelectItem>
+                  <SelectItem value="tree">{translations['structure.tree']}</SelectItem>
+                  <SelectItem value="graph">{translations['structure.graph']}</SelectItem>
+                  <SelectItem value="list">{translations['structure.list']}</SelectItem>
+                  <SelectItem value="stack">{translations['structure.stack']}</SelectItem>
+                  <SelectItem value="queue">{translations['structure.queue']}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {(dataStructure === 'array' || dataStructure === 'tree' || dataStructure === 'graph') && (
+              <div className="space-y-2">
+                <label className="text-sm">{translations['algorithm.select']}</label>
+                <Select value={algorithm} onValueChange={setAlgorithm}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {getAlgorithmOptions()}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {dataStructure === 'array' && (
+              <>
+                <div className="space-y-2">
+                  <label className="text-sm">{translations['data.size']}: {arraySize}</label>
+                  <Slider
+                    value={[arraySize]}
+                    onValueChange={(value) => setArraySize(value[0])}
+                    max={35}
+                    min={5}
+                    step={1}
+                  />
+                </div>
+                <Button onClick={generateRandomArray} variant="outline" className="w-full">
+                  {translations['data.generate']}
+                </Button>
+              </>
+            )}
+
+            {dataStructure === 'tree' && (
+              <>
+                <div className="space-y-2">
+                  <label className="text-sm">Количество вершин: {treeNodeCount}</label>
+                  <Slider
+                    value={[treeNodeCount]}
+                    onValueChange={(value) => {
+                      setTreeNodeCount(value[0]);
+                      generateRandomTree(value[0]);
+                    }}
+                    max={20}
+                    min={3}
+                    step={1}
+                  />
+                </div>
+                
+                <Button onClick={() => generateRandomTree(treeNodeCount)} variant="outline" className="w-full">
+                  {translations['data.generate']}
+                </Button>
+                
+                <div className="flex space-x-2">
+                  <Input
+                    type="number"
+                    placeholder={translations['data.value']}
+                    value={insertValue}
+                    onChange={(e) => setInsertValue(e.target.value)}
+                    min="1"
+                    max="100"
+                  />
+                  <Button onClick={handleInsertValue}>
+                    {translations['data.insert']}
+                  </Button>
+                </div>
+              </>
+            )}
+
+            {dataStructure === 'graph' && (
+              <>
+                <div className="space-y-2">
+                  <label className="text-sm">Тип графа</label>
+                  <Select value={graphType} onValueChange={(v: 'circular' | 'grid' | 'complete' | 'random') => {
+                    setGraphType(v);
+                    generateRandomGraph(v);
+                  }}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="circular">Круговой (замкнутый)</SelectItem>
+                      <SelectItem value="grid">Сетка</SelectItem>
+                      <SelectItem value="complete">Полный граф</SelectItem>
+                      <SelectItem value="random">Случайный граф</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm">Направление</label>
+                  <Select value={directedGraph ? 'directed' : 'undirected'}
+                    onValueChange={(v) => setDirectedGraph(v === 'directed')}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="undirected">Неориентированный</SelectItem>
+                      <SelectItem value="directed">Ориентированный</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm">{translations['data.size']}: {nodeCount}</label>
+                  <Slider
+                    value={[nodeCount]}
+                    onValueChange={(value) => setNodeCount(value[0])}
+                    max={8}
+                    min={3}
+                    step={1}
+                  />
+                </div>
+
+                <Button onClick={() => generateRandomGraph()} variant="outline" className="w-full">
+                  {translations['data.generate']}
+                </Button>
+              </>
+            )}
+
+            {dataStructure === 'list' && (
+              <>
+                <div className="space-y-2">
+                  <label className="text-sm">{translations['list.type']}</label>
+                  <Select value={listType} onValueChange={(v) => setListType(v as 'singly' | 'doubly')}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="singly">{translations['list.singly']}</SelectItem>
+                      <SelectItem value="doubly">{translations['list.doubly']}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm">{translations['data.size']}: {listSize}</label>
+                  <Slider
+                    value={[listSize]}
+                    onValueChange={(value) => setListSize(value[0])}
+                    max={10}
+                    min={1}
+                    step={1}
+                  />
+                </div>
+                <Button onClick={generateRandomList} variant="outline" className="w-full">
+                  {translations['data.generate']}
+                </Button>
+                <div className="space-y-2">
+                  <Input
+                    type="number"
+                    placeholder={translations['data.value']}
+                    value={listValue}
+                    onChange={(e) => setListValue(e.target.value)}
+                  />
+                  <Input
+                    type="number"
+                    placeholder={translations['list.position']}
+                    value={listPosition}
+                    onChange={(e) => setListPosition(e.target.value)}
+                  />
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button onClick={handleListInsert} variant="outline" className="w-full">
+                      {translations['data.insert']}
+                    </Button>
+                    <Button onClick={handleListDelete} variant="outline" className="w-full">
+                      {translations['data.delete']}
+                    </Button>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {dataStructure === 'stack' && (
+              <>
+                <div className="space-y-2">
+                  <label className="text-sm">{translations['data.size']}: {stackSize}</label>
+                  <Slider
+                    value={[stackSize]}
+                    onValueChange={(value) => setStackSize(value[0])}
+                    max={10}
+                    min={1}
+                    step={1}
+                  />
+                </div>
+                <Button onClick={generateRandomStack} variant="outline" className="w-full">
+                  {translations['data.generate']}
+                </Button>
+                <div className="space-y-2">
+                  <Input
+                    type="number"
+                    placeholder={translations['data.value']}
+                    value={stackValue}
+                    onChange={(e) => setStackValue(e.target.value)}
+                  />
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button onClick={handleStackPush} variant="outline" className="w-full">
+                      Push
+                    </Button>
+                    <Button onClick={handleStackPop} variant="outline" className="w-full">
+                      Pop
+                    </Button>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {dataStructure === 'queue' && (
+              <>
+                <div className="space-y-2">
+                  <label className="text-sm">{translations['data.size']}: {queueSize}</label>
+                  <Slider
+                    value={[queueSize]}
+                    onValueChange={(value) => setQueueSize(value[0])}
+                    max={10}
+                    min={1}
+                    step={1}
+                  />
+                </div>
+                <Button onClick={generateRandomQueue} variant="outline" className="w-full">
+                  {translations['data.generate']}
+                </Button>
+                <div className="space-y-2">
+                  <Input
+                    type="number"
+                    placeholder={translations['data.value']}
+                    value={queueValue}
+                    onChange={(e) => setQueueValue(e.target.value)}
+                  />
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button onClick={handleQueueEnqueue} variant="outline" className="w-full">
+                      Enqueue
+                    </Button>
+                    <Button onClick={handleQueueDequeue} variant="outline" className="w-full">
+                      Dequeue
+                    </Button>
+                  </div>
+                </div>
+              </>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Центральная часть с визуализацией и контролами */}
+        <div className="lg:col-span-3 space-y-6">
+          {renderVisualization()}
+
+          <AnimationControls
+            isPlaying={isPlaying}
+            onPlay={handlePlay}
+            onPause={handlePause}
+            onStepForward={handleStepForward}
+            onStepBackward={handleStepBackward}
+            onReset={handleReset}
+            speed={speed}
+            onSpeedChange={setSpeed}
+            hidePlayButton={!(dataStructure === 'array' || dataStructure === 'tree' || dataStructure === 'graph')}
+          />
+
+          {steps.length > 0 && (
+            <div className="text-center text-sm text-muted-foreground">
+              Шаг {currentStep + 1} из {steps.length}
+            </div>
+          )}
+
+          {showComparison && (dataStructure === 'array' || dataStructure === 'tree' || dataStructure === 'graph') && (
+            <AlgorithmComparison 
+              currentAlgorithm={algorithm}
+              dataStructure={dataStructure}
+            />
+          )}
+        </div>
+
+        {/* Правая панель со статистикой/теорией и переключателем */}
+        <div className="lg:col-span-1">
+          <Card>
+            <CardHeader className="pb-3">
+              <div className="flex">
+                <div className="flex space-x-1">
+                  <Button
+                    variant={rightPanelMode === 'stats' ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setRightPanelMode('stats')}
+                    className="h-8 px-3"
+                  >
+                    Статистика
+                  </Button>
+                  <Button
+                    variant={rightPanelMode === 'theory' ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setRightPanelMode('theory')}
+                    className="h-8 px-3"
+                    disabled={!(dataStructure === 'array' || dataStructure === 'tree' || dataStructure === 'graph')}
+                  >
+                    Теория
+                  </Button>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {rightPanelMode === 'stats' ? (
+                <>
+                  <div>
+                    <div className="text-sm text-muted-foreground mb-1">Алгоритм:</div>
+                    <div className="font-medium">
+                      {dataStructure === 'array' && algorithm === 'bubblesort' && 'Пузырьковая сортировка'}
+                      {dataStructure === 'array' && algorithm === 'quicksort' && 'Быстрая сортировка'}
+                      {dataStructure === 'array' && algorithm === 'insertionsort' && 'Сортировка вставками'}
+                      {dataStructure === 'array' && algorithm === 'selectionsort' && 'Сортировка выбором'}
+                      {dataStructure === 'tree' && algorithm === 'bst.inorder' && 'Центрированный обход'}
+                      {dataStructure === 'tree' && algorithm === 'bst.preorder' && 'Прямой обход'}
+                      {dataStructure === 'tree' && algorithm === 'bst.postorder' && 'Обратный обход'}
+                      {dataStructure === 'tree' && algorithm === 'bst.levelorder' && 'Обход в ширину'}
+                      {dataStructure === 'graph' && algorithm === 'bfs' && 'Поиск в ширину (BFS)'}
+                      {dataStructure === 'graph' && algorithm === 'dfs' && 'Поиск в глубину (DFS)'}
+                      {dataStructure === 'graph' && algorithm === 'dijkstra' && 'Алгоритм Дейкстры'}
+                    </div>
+                  </div>
+
+                  {getDataSize() !== undefined && (
+                    <div>
+                      <div className="text-sm text-muted-foreground mb-1">Размер данных:</div>
+                      <div className="font-medium">{getDataSize()}</div>
+                    </div>
+                  )}
+
+                  <div className="space-y-2">
+                    <div className="text-sm text-muted-foreground">Сложность:</div>
+                    <div className="grid grid-cols-3 gap-2 text-sm">
+                      <div className="text-center">
+                        <div className="text-xs text-muted-foreground">Лучший</div>
+                        <div className="font-mono">
+                          {dataStructure === 'array' && algorithm === 'bubblesort' && 'O(n)'}
+                          {dataStructure === 'array' && algorithm === 'quicksort' && 'O(n log n)'}
+                          {dataStructure === 'array' && algorithm === 'insertionsort' && 'O(n)'}
+                          {dataStructure === 'array' && algorithm === 'selectionsort' && 'O(n²)'}
+                          {dataStructure === 'tree' && 'O(n)'}
+                          {dataStructure === 'graph' && algorithm === 'bfs' && 'O(V + E)'}
+                          {dataStructure === 'graph' && algorithm === 'dfs' && 'O(V + E)'}
+                          {dataStructure === 'graph' && algorithm === 'dijkstra' && 'O((V+E)log V)'}
+                        </div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-xs text-muted-foreground">Средний</div>
+                        <div className="font-mono">
+                          {dataStructure === 'array' && algorithm === 'bubblesort' && 'O(n²)'}
+                          {dataStructure === 'array' && algorithm === 'quicksort' && 'O(n log n)'}
+                          {dataStructure === 'array' && algorithm === 'insertionsort' && 'O(n²)'}
+                          {dataStructure === 'array' && algorithm === 'selectionsort' && 'O(n²)'}
+                          {dataStructure === 'tree' && 'O(n)'}
+                          {dataStructure === 'graph' && algorithm === 'bfs' && 'O(V + E)'}
+                          {dataStructure === 'graph' && algorithm === 'dfs' && 'O(V + E)'}
+                          {dataStructure === 'graph' && algorithm === 'dijkstra' && 'O((V+E)log V)'}
+                        </div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-xs text-muted-foreground">Худший</div>
+                        <div className="font-mono">
+                          {dataStructure === 'array' && algorithm === 'bubblesort' && 'O(n²)'}
+                          {dataStructure === 'array' && algorithm === 'quicksort' && 'O(n²)'}
+                          {dataStructure === 'array' && algorithm === 'insertionsort' && 'O(n²)'}
+                          {dataStructure === 'array' && algorithm === 'selectionsort' && 'O(n²)'}
+                          {dataStructure === 'tree' && 'O(n)'}
+                          {dataStructure === 'graph' && algorithm === 'bfs' && 'O(V + E)'}
+                          {dataStructure === 'graph' && algorithm === 'dfs' && 'O(V + E)'}
+                          {dataStructure === 'graph' && algorithm === 'dijkstra' && 'O((V+E)log V)'}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2 pt-2 border-t">
+                    <div className="text-sm text-muted-foreground">Выполнение:</div>
+                    
+                    {dataStructure === 'array' && (
+                      <>
+                        {stats.comparisons !== undefined && (
+                          <div className="flex justify-between text-sm">
+                            <span>Сравнения:</span>
+                            <span className="font-medium text-primary">{stats.comparisons}</span>
+                          </div>
+                        )}
+                        {stats.swaps !== undefined && (
+                          <div className="flex justify-between text-sm">
+                            <span>Перестановки:</span>
+                            <span className="font-medium text-primary">{stats.swaps}</span>
+                          </div>
+                        )}
+                      </>
+                    )}
+                    
+                    {stats.operations !== undefined && (
+                      <div className="flex justify-between text-sm">
+                        <span>Операции:</span>
+                        <span className="font-medium text-primary">{stats.operations}</span>
+                      </div>
+                    )}
+                    
+                    {stats.time !== undefined && (
+                      <div className="flex justify-between text-sm">
+                        <span>Время:</span>
+                        <span className="font-medium text-primary">{stats.time.toFixed(2)} мс</span>
+                      </div>
+                    )}
+                    
+                    {stats.comparisons === undefined && 
+                     stats.swaps === undefined && 
+                     stats.operations === undefined && 
+                     stats.time === undefined && (
+                      <div className="text-sm text-muted-foreground">
+                        Запустите алгоритм для получения статистики
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="pt-2 border-t">
+                    <div className="text-xs text-muted-foreground">
+                      V - количество вершин, E - количество рёбер, n - размер данных
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <div className="space-y-4">
+                  {dataStructure === 'array' || dataStructure === 'tree' || dataStructure === 'graph' ? (
+                    <div className="space-y-4">
+                      <h4 className="font-semibold text-lg mb-2">Теория алгоритма</h4>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        {dataStructure === 'array' && 'Алгоритмы сортировки упорядочивают элементы массива по возрастанию или убыванию.'}
+                        {dataStructure === 'tree' && 'Обходы деревьев посещают все узлы дерева в определённом порядке.'}
+                        {dataStructure === 'graph' && 'Графовые алгоритмы находят пути и связи между вершинами графа.'}
+                      </p>
+                      
+                      <div className="space-y-3">
+                        <div>
+                          <h5 className="font-medium mb-1">Описание:</h5>
+                          <p className="text-sm">
+                            {dataStructure === 'array' && algorithm === 'bubblesort' && 'Пузырьковая сортировка — простой алгоритм, который многократно проходит по массиву, сравнивая соседние элементы и меняя их местами при необходимости.'}
+                            {dataStructure === 'array' && algorithm === 'quicksort' && 'Быстрая сортировка — эффективный алгоритм "разделяй и властвуй", который выбирает опорный элемент и рекурсивно сортирует элементы относительно него.'}
+                            {dataStructure === 'array' && algorithm === 'insertionsort' && 'Сортировка вставками — строит отсортированную последовательность, постепенно вставляя элементы на правильные позиции.'}
+                            {dataStructure === 'array' && algorithm === 'selectionsort' && 'Сортировка выбором — находит минимальный элемент и помещает его в начало, затем повторяет для оставшейся части.'}
+                            {dataStructure === 'tree' && algorithm === 'bst.inorder' && 'Центрированный обход посещает узлы в порядке: левое поддерево → корень → правое поддерево.'}
+                            {dataStructure === 'tree' && algorithm === 'bst.preorder' && 'Прямой обход посещает узлы в порядке: корень → левое поддерево → правое поддерево.'}
+                            {dataStructure === 'tree' && algorithm === 'bst.postorder' && 'Обратный обход посещает узлы в порядке: левое поддерево → правое поддерево → корень.'}
+                            {dataStructure === 'tree' && algorithm === 'bst.levelorder' && 'Обход в ширину посещает узлы уровень за уровнем, слева направо.'}
+                            {dataStructure === 'graph' && algorithm === 'bfs' && 'Поиск в ширину — обходит граф уровень за уровнем, исследуя все соседние вершины перед переходом на следующий уровень.'}
+                            {dataStructure === 'graph' && algorithm === 'dfs' && 'Поиск в глубину — идёт как можно глубже по одной ветке графа перед возвратом.'}
+                            {dataStructure === 'graph' && algorithm === 'dijkstra' && 'Алгоритм Дейкстры — находит кратчайшие пути от одной вершины до всех остальных во взвешенном графе.'}
+                          </p>
+                        </div>
+                        
+                        <div>
+                          <h5 className="font-medium mb-1">Сложность:</h5>
+                          <div className="grid grid-cols-3 gap-2 text-sm">
+                            <div className="bg-muted p-2 rounded">
+                              <div className="text-xs text-muted-foreground">Лучший</div>
+                              <div className="font-mono">
+                                {dataStructure === 'array' && algorithm === 'bubblesort' && 'O(n)'}
+                                {dataStructure === 'array' && algorithm === 'quicksort' && 'O(n log n)'}
+                                {dataStructure === 'array' && algorithm === 'insertionsort' && 'O(n)'}
+                                {dataStructure === 'array' && algorithm === 'selectionsort' && 'O(n²)'}
+                                {dataStructure === 'tree' && 'O(n)'}
+                                {dataStructure === 'graph' && algorithm === 'bfs' && 'O(V + E)'}
+                                {dataStructure === 'graph' && algorithm === 'dfs' && 'O(V + E)'}
+                                {dataStructure === 'graph' && algorithm === 'dijkstra' && 'O((V+E)log V)'}
+                              </div>
+                            </div>
+                            <div className="bg-muted p-2 rounded">
+                              <div className="text-xs text-muted-foreground">Средний</div>
+                              <div className="font-mono">
+                                {dataStructure === 'array' && algorithm === 'bubblesort' && 'O(n²)'}
+                                {dataStructure === 'array' && algorithm === 'quicksort' && 'O(n log n)'}
+                                {dataStructure === 'array' && algorithm === 'insertionsort' && 'O(n²)'}
+                                {dataStructure === 'array' && algorithm === 'selectionsort' && 'O(n²)'}
+                                {dataStructure === 'tree' && 'O(n)'}
+                                {dataStructure === 'graph' && algorithm === 'bfs' && 'O(V + E)'}
+                                {dataStructure === 'graph' && algorithm === 'dfs' && 'O(V + E)'}
+                                {dataStructure === 'graph' && algorithm === 'dijkstra' && 'O((V+E)log V)'}
+                              </div>
+                            </div>
+                            <div className="bg-muted p-2 rounded">
+                              <div className="text-xs text-muted-foreground">Худший</div>
+                              <div className="font-mono">
+                                {dataStructure === 'array' && algorithm === 'bubblesort' && 'O(n²)'}
+                                {dataStructure === 'array' && algorithm === 'quicksort' && 'O(n²)'}
+                                {dataStructure === 'array' && algorithm === 'insertionsort' && 'O(n²)'}
+                                {dataStructure === 'array' && algorithm === 'selectionsort' && 'O(n²)'}
+                                {dataStructure === 'tree' && 'O(n)'}
+                                {dataStructure === 'graph' && algorithm === 'bfs' && 'O(V + E)'}
+                                {dataStructure === 'graph' && algorithm === 'dfs' && 'O(V + E)'}
+                                {dataStructure === 'graph' && algorithm === 'dijkstra' && 'O((V+E)log V)'}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div>
+                          <h5 className="font-medium mb-1">Когда использовать:</h5>
+                          <ul className="text-sm space-y-1 list-disc list-inside">
+                            {dataStructure === 'array' && algorithm === 'bubblesort' && (
+                              <>
+                                <li>Для обучения основам алгоритмов</li>
+                                <li>Сортировка небольших массивов</li>
+                                <li>Когда массив почти отсортирован</li>
+                              </>
+                            )}
+                            {dataStructure === 'array' && algorithm === 'quicksort' && (
+                              <>
+                                <li>Сортировка больших массивов</li>
+                                <li>Когда нужна высокая производительность</li>
+                                <li>Встроенная сортировка во многих языках</li>
+                              </>
+                            )}
+                            {dataStructure === 'array' && algorithm === 'insertionsort' && (
+                              <>
+                                <li>Маленькие массивы</li>
+                                <li>Почти отсортированные массивы</li>
+                                <li>Онлайн-сортировка (поступление данных в реальном времени)</li>
+                              </>
+                            )}
+                            {dataStructure === 'array' && algorithm === 'selectionsort' && (
+                              <>
+                                <li>Когда нужно минимизировать количество перестановок</li>
+                                <li>Обучение алгоритмам сортировки</li>
+                                <li>Небольшие массивы</li>
+                              </>
+                            )}
+                            {dataStructure === 'tree' && algorithm === 'bst.inorder' && (
+                              <>
+                                <li>Получение элементов в возрастающем порядке (для BST)</li>
+                                <li>Копирование дерева</li>
+                                <li>Выражение деревьев (инфиксная нотация)</li>
+                              </>
+                            )}
+                            {dataStructure === 'tree' && algorithm === 'bst.preorder' && (
+                              <>
+                                <li>Создание копии дерева</li>
+                                <li>Префиксная нотация выражений</li>
+                                <li>Сериализация дерева</li>
+                              </>
+                            )}
+                            {dataStructure === 'tree' && algorithm === 'bst.postorder' && (
+                              <>
+                                <li>Удаление дерева</li>
+                                <li>Постфиксная нотация выражений</li>
+                                <li>Вычисление выражений</li>
+                              </>
+                            )}
+                            {dataStructure === 'tree' && algorithm === 'bst.levelorder' && (
+                              <>
+                                <li>Поиск кратчайшего пути</li>
+                                <li>Построчное отображение дерева</li>
+                                <li>Нахождение ширины дерева</li>
+                              </>
+                            )}
+                            {dataStructure === 'graph' && algorithm === 'bfs' && (
+                              <>
+                                <li>Поиск кратчайшего пути в невзвешенном графе</li>
+                                <li>Проверка связности графа</li>
+                                <li>Поиск компонент связности</li>
+                              </>
+                            )}
+                            {dataStructure === 'graph' && algorithm === 'dfs' && (
+                              <>
+                                <li>Поиск цикла в графе</li>
+                                <li>Топологическая сортировка</li>
+                                <li>Поиск компонент сильной связности</li>
+                              </>
+                            )}
+                            {dataStructure === 'graph' && algorithm === 'dijkstra' && (
+                              <>
+                                <li>Поиск кратчайшего пути во взвешенном графе</li>
+                                <li>Маршрутизация в сетях</li>
+                                <li>Навигационные системы</li>
+                              </>
+                            )}
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <p className="text-muted-foreground">Теория доступна только для массивов, деревьев и графов</p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
 }

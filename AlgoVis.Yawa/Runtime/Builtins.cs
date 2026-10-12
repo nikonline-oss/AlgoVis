@@ -13,7 +13,7 @@ public static class Builtins
         "chr", "ord", "int", "str", "float", "bool", "sum", "any", "all",
         "enumerate", "zip", "list", "tuple", "sorted", "sorted_by_abs", "sorted_by_len",
         "sorted_with", "make_pair", "sort", "reverse", "min_element", "max_element", "accumulate",
-        "erase_first","erase_at","begin", "end", "make_vector"
+        "erase_first","erase_at","sort_desc","sort_with","begin", "end", "make_vector"
     };
 
     public static RuntimeValue Call(string name, List<RuntimeValue> args, TraceRecorder rec)
@@ -321,6 +321,16 @@ public static class Builtins
                         throw new YawaRuntimeException("sort() needs array");
                     var items = arr.Items.ToList();
                     items.Sort(CompareValues);
+                    arr.Items.Clear();
+                    arr.Items.AddRange(items);
+                    return NullValue.Instance;
+                }
+            case "sort_desc":
+                {
+                    if (args[0] is not ArrayValue arr)
+                        throw new YawaRuntimeException("sort_desc() needs array");
+                    var items = arr.Items.ToList();
+                    items.Sort((a, b) => CompareValues(b, a));
                     arr.Items.Clear();
                     arr.Items.AddRange(items);
                     return NullValue.Instance;

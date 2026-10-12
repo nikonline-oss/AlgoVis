@@ -18,6 +18,9 @@ public sealed class CppToYawa
     private readonly byte[] _bytes;
     private readonly List<string> _warnings = new();
     private readonly HashSet<string> _functionNames = new(StringComparer.Ordinal);
+    private int _tmpCounter;
+    private readonly Dictionary<int, string> _lambdaCache = new();
+    private readonly List<YawaFunction> _pendingNestedFunctions = new();
     public CppToYawa(string source)
     {
         _source = source;
@@ -157,6 +160,14 @@ public sealed class CppToYawa
                 mainCandidate.Body.InsertRange(0, prefix);
             }
         }
+
+        // Добавляем лямбды, накопленные при обходе top-level функций
+        foreach (var nested in _pendingNestedFunctions)
+        {
+            if (_functionNames.Add(nested.Name))
+                program.Functions.Add(nested);
+        }
+        _pendingNestedFunctions.Clear();
 
         // Ищем main
         var mainFn = program.Functions.FirstOrDefault(f => f.Name == "main")
@@ -1507,7 +1518,12 @@ public sealed class CppToYawa
                 return Lit(null);
 
             case "identifier":
-                return new RefExpr { Name = Text(node) };
+                {
+                    var name = Text(node);
+                    if (_functionNames.Contains(name) && !_classNamesCpp.Contains(name))
+                        return new FunctionRefExpr { Name = name };
+                    return new RefExpr { Name = name };
+                }
 
             case "subscript_expression":
                 return ConvertSubscript(node);
@@ -1540,6 +1556,8 @@ public sealed class CppToYawa
                 // Внутри выражения — редко. Например, (x = f())
                 // Пока не поддерживаем.
                 throw Err("Присваивание внутри выражения не поддерживается", node);
+            case "lambda_expression":
+                return ConvertLambda(node);
 
             case "call_expression":
                 return ConvertCall(node);
@@ -1565,6 +1583,59 @@ public sealed class CppToYawa
             default:
                 throw Err($"Неподдерживаемое выражение: {node.Type}", node);
         }
+    }
+    private YawaExpression ConvertLambda(TsNode node)
+    {
+        // Кэш по позиции в исходнике: одна и та же лямбда может обходиться дважды
+        var key = (int)node.StartByte;
+        if (_lambdaCache.TryGetValue(key, out var cached))
+            return new FunctionRefExpr { Name = cached };
+
+        var kids = node.NamedChildren().ToList();
+        var captureSpec = kids.FirstOrDefault(c =>
+            c.Type == "capture_specifier" || c.Type == "lambda_capture_specifier");
+        if (captureSpec.IsValid)
+        {
+            var captures = captureSpec.NamedChildren()
+                .Where(c => c.Type != "comment").ToList();
+            if (captures.Count > 0)
+                throw Err(
+                    "C++ лямбды с непустым capture ([=], [&], [x]) не поддерживаются. " +
+                    "Используйте [].", node);
+        }
+
+        // tree-sitter-cpp оборачивает params в lambda_declarator.
+        // Пробуем сначала внутри него, потом как прямого ребёнка.
+        var declarator = kids.FirstOrDefault(c =>
+            c.Type == "lambda_declarator" || c.Type == "abstract_function_declarator");
+        var paramList = declarator.IsValid
+            ? FindChildByType(declarator, "parameter_list")
+            : kids.FirstOrDefault(c => c.Type == "parameter_list");
+
+        var body = kids.FirstOrDefault(c => c.Type == "compound_statement");
+
+        var name = $"__lambda_{Interlocked.Increment(ref _tmpCounter)}";
+        var fn = new YawaFunction { Name = name };
+
+        if (paramList.IsValid)
+        {
+            foreach (var p in paramList.NamedChildren())
+            {
+                if (p.Type == "parameter_declaration")
+                {
+                    var pname = FindDeepIdentifier(p);
+                    if (!string.IsNullOrEmpty(pname))
+                        fn.Params.Add(new YawaParam { Name = pname });
+                }
+            }
+        }
+
+        if (body.IsValid)
+            fn.Body = ConvertBlock(body);
+
+        _lambdaCache[key] = name;
+        _pendingNestedFunctions.Add(fn);
+        return new FunctionRefExpr { Name = name };
     }
 
     private YawaExpression ConvertSubscript(TsNode node)
@@ -1776,16 +1847,42 @@ public sealed class CppToYawa
         // Ловим паттерн: args[0] = v.begin(), args[1] = v.end() с одинаковым v
         if (args.Count >= 2 && IsBeginEndPair(argsList, out var container))
         {
-            var cleanArgs = new List<YawaExpression> { container! };
-            // Для accumulate третьим аргументом идёт начальное значение — оставляем его
-            for (int i = 2; i < args.Count; i++)
-                cleanArgs.Add(args[i]);
+            var rawArgs = argsList.NamedChildren()
+                .Where(a => a.Type != "comment").ToList();
 
-            // min_element/max_element возвращают указатель — обычно используется как *min_element
-            // а мы уже развернули pointer_expression в значении — значит просто отдаём container.
+            // Третий аргумент — компаратор?
+            if (rawArgs.Count >= 3)
+            {
+                var cmpNode = rawArgs[2];
 
-            var simpleName = Text(callee);
-            return new CallExpr { Name = simpleName, Args = cleanArgs };
+                if (IsTemplateCallWithName(cmpNode, "greater"))
+                    return new CallExpr
+                    {
+                        Name = "sort_desc",
+                        Args = new List<YawaExpression> { container! }
+                    };
+
+                if (IsTemplateCallWithName(cmpNode, "less"))
+                    return new CallExpr
+                    {
+                        Name = "sort",
+                        Args = new List<YawaExpression> { container! }
+                    };
+
+                if (cmpNode.Type == "lambda_expression" ||
+                    (cmpNode.Type == "identifier" && _functionNames.Contains(Text(cmpNode))))
+                {
+                    var cmpExpr = ConvertExpr(cmpNode);
+                    return new CallExpr
+                    {
+                        Name = "sort_with",
+                        Args = new List<YawaExpression> { container!, cmpExpr }
+                    };
+                }
+            }
+
+            // Без компаратора — обычный sort
+            return new CallExpr { Name = Text(callee), Args = new List<YawaExpression> { container! } };
         }
 
         // Прямой вызов функции
@@ -1827,6 +1924,17 @@ public sealed class CppToYawa
         // std::cout << ... — сюда обычно не попадает (обработано на statement)
 
         throw Err($"Неподдерживаемый вызов: {callee.Type}", callee);
+    }
+
+    private bool IsTemplateCallWithName(TsNode node, string name)
+    {
+        if (node.Type != "call_expression") return false;
+        var kids = node.NamedChildren().ToList();
+        if (kids.Count == 0) return false;
+        var callee = kids[0];
+        if (callee.Type != "template_function") return false;
+        var inner = callee.NamedChildren().FirstOrDefault();
+        return inner.IsValid && inner.Type == "identifier" && Text(inner) == name;
     }
 
     /// <summary>

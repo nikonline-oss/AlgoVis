@@ -126,6 +126,9 @@ public sealed class Interpreter
         if (name == "sorted_with")
             return CallSortedWith(args, callerFrame);
 
+        if (name == "sort_with")
+            return CallSortWith(args, callerFrame);
+
         // 2. Builtin (только если нет пользовательской)
         if (!_functions.ContainsKey(name) && Builtins.Names.Contains(name))
         {
@@ -150,6 +153,35 @@ public sealed class Interpreter
     {
         CheckLimits();
         return CallUserFunction(fn.Name, args, callerFrame, fn.CapturedFrame, nodeId, false);
+    }
+
+    /// <summary>
+    /// In-place сортировка с пользовательским компаратором (C++ sort с функцией).
+    /// Компаратор возвращает true, если первый аргумент "меньше" второго.
+    /// </summary>
+    private RuntimeValue CallSortWith(List<RuntimeValue> args, Frame callerFrame)
+    {
+        if (args.Count != 2) throw new YawaRuntimeException("sort_with() needs 2 args");
+        if (args[0] is not ArrayValue arr) throw new YawaRuntimeException("sort_with() needs array");
+        if (args[1] is not FunctionRefValue fn) throw new YawaRuntimeException("sort_with() needs function");
+
+        var items = arr.Items.ToList();
+        for (int i = 1; i < items.Count; i++)
+        {
+            var current = items[i];
+            int j = i - 1;
+            while (j >= 0)
+            {
+                var cmp = CallFunctionValue(fn, new List<RuntimeValue> { items[j], current }, callerFrame, null);
+                if (Evaluator.AsBool(cmp)) break;
+                items[j + 1] = items[j];
+                j--;
+            }
+            items[j + 1] = current;
+        }
+        arr.Items.Clear();
+        arr.Items.AddRange(items);
+        return NullValue.Instance;
     }
 
     private RuntimeValue CallUserFunction(string name, List<RuntimeValue> args, Frame callerFrame, Frame? capturedFrame, string? nodeId, bool syncLocalsBackToCaller)
